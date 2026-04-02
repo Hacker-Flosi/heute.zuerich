@@ -1,0 +1,48 @@
+# heute.zürich — Projekt-Kontext für Cursor AI
+
+## Was ist das?
+Eine radikal minimalistische Website die eine Frage beantwortet: "Was läuft heute in Zürich?"
+AI-kuratiert, 10–15 Events pro Tag, kein Noise. Vorbild: heute.sg (offline).
+
+## Tech Stack
+- **Framework:** Next.js 14 (App Router)
+- **CMS:** Sanity (Free Tier)
+- **Hosting:** Vercel
+- **AI:** Anthropic API (Claude Sonnet 4.6) für Event-Kuratierung
+- **Instagram:** Meta Graph API für automatisches Posting
+- **Scraping:** Eventfrog REST API + Cheerio für hellozurich.ch
+
+## Design
+- Brutalistisch, edge-to-edge farbige Blöcke
+- Jeder Event-Block hat eigene Hintergrundfarbe (12er Rotation)
+- Schwarzer Hintergrund, schwarzer Text auf farbigen Karten
+- Typo: Outfit (Display/Headlines, 900 weight, uppercase) + Space Mono (Meta/UI)
+- Mobile-first, kein Border-Radius
+
+## Struktur pro Event-Block
+- Oben links: Location (Space Mono, 0.72rem)
+- Oben rechts: Uhrzeit (Space Mono, 0.72rem, bold)
+- Unten: Event-Name (Outfit, 1.5rem+, 900, uppercase)
+- Ganzer Block ist klickbar → externer Link zum Veranstalter
+
+## Tägliche Pipeline (Vercel Cron, 05:00 UTC)
+1. Scraping: Eventfrog API + hellozurich HTML
+2. Deduplizierung: Fuzzy Matching (Levenshtein + Location + Zeit)
+3. AI-Kuratierung: Claude Sonnet wählt 10–15 Events
+4. Sanity: Kuratierte Events schreiben
+5. Instagram: Bilder generieren + posten via Meta Graph API
+
+## Sprache
+- Code + Kommentare: Deutsch/Englisch gemischt (wie üblich in CH Tech)
+- UI-Text: Deutsch
+- Variablennamen: Englisch
+
+## Wichtige Env-Variablen
+- NEXT_PUBLIC_SANITY_PROJECT_ID
+- NEXT_PUBLIC_SANITY_DATASET
+- SANITY_API_TOKEN
+- EVENTFROG_API_KEY
+- ANTHROPIC_API_KEY
+- META_ACCESS_TOKEN
+- INSTAGRAM_ACCOUNT_ID
+- CRON_SECRET
