@@ -1,4 +1,3 @@
-import 'dotenv/config'
 import { EventfrogService, EventfrogEventRequest } from 'eventfrog-api'
 
 // Fix: package uses protocol-relative URL (//...) designed for browsers.

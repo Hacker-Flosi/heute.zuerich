@@ -3,9 +3,6 @@
 // Orchestriert: Scraping → Deduplizierung → AI-Kuratierung → Sanity
 // Wird via Vercel Cron täglich um 05:00 ausgeführt
 
-import { config } from 'dotenv'
-// Load .env.local when running as a local script; no-op in Vercel (vars already injected)
-config({ path: '.env.local' })
 import { scrapeEventfrog } from './scrapers/eventfrog'
 import { scrapeHellozurich } from './scrapers/hellozurich'
 import { deduplicateEvents } from './deduplicate'
@@ -134,8 +131,11 @@ export async function runPipeline() {
   console.log(`\n=== Pipeline abgeschlossen in ${duration}s ===`)
 }
 
-// Direct execution
-runPipeline().catch((error) => {
-  console.error('Pipeline fatal error:', error)
-  process.exit(1)
-})
+// Only auto-execute when run directly as a script (not when imported by the cron route).
+// process.argv[1] contains the path of the entry file when run with tsx/node directly.
+if (process.argv[1]?.endsWith('pipeline.ts') || process.argv[1]?.endsWith('pipeline.js')) {
+  runPipeline().catch((error) => {
+    console.error('Pipeline fatal error:', error)
+    process.exit(1)
+  })
+}
