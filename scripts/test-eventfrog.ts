@@ -29,7 +29,7 @@ if (!API_KEY) { console.error('❌ EVENTFROG_API_KEY fehlt'); process.exit(1) }
 async function run() {
   console.log('\n🔍 Teste Eventfrog via npm Package...\n')
 
-  const service = new EventfrogService(API_KEY)
+  const service = new EventfrogService(API_KEY!)
   const request = new EventfrogEventRequest({
     perPage: 5,
     city: 'Zürich',

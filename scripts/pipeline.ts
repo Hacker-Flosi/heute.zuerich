@@ -4,6 +4,7 @@
 // Wird via Vercel Cron täglich um 05:00 ausgeführt
 
 import { config } from 'dotenv'
+// Load .env.local when running as a local script; no-op in Vercel (vars already injected)
 config({ path: '.env.local' })
 import { scrapeEventfrog } from './scrapers/eventfrog'
 import { scrapeHellozurich } from './scrapers/hellozurich'
