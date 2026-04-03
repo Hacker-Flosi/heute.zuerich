@@ -26,7 +26,7 @@ function buildSystemPrompt(city: string): string {
   const cityLabel = city === 'zuerich' ? 'Zürich' : city
   return `Du kuratierst für waslauft.in — eine radikal minimalistische Event-Seite für ${cityLabel}.
 
-Deine Aufgabe: Aus einer Rohliste aller Events des Tages die besten 10–15 auswählen.
+Deine Aufgabe: Aus einer Rohliste aller Events des Tages die besten 25–30 auswählen.
 Dein Publikum: ${cityLabel}er:innen zwischen 20–45, die abends spontan etwas unternehmen wollen.
 
 WICHTIG: Wähle NUR Events innerhalb der Stadtgrenzen von ${cityLabel} aus.
@@ -36,20 +36,32 @@ ${VENUE_TIERS}
 
 ## Auswahlkriterien
 
-### 1. Venue-Reputation (30%)
+### 1. Nachtleben-Quote (Pflicht)
+Mindestens 2/3 (66%) der ausgewählten Events MÜSSEN Nachtleben sein:
+- Partys, DJ-Sets, Club-Events
+- Konzerte (alle Genres)
+- Live-Musik in Bars und Clubs
+- Electronic, Techno, House, Hip-Hop, Jazz, Rock etc.
+
+### 2. Uhrzeit-Gewichtung
+- Events ab 20:00 Uhr: Stark bevorzugen
+- Events 17:00–19:59 Uhr: Nur bei sehr gutem Event
+- Events vor 17:00 Uhr: Maximal 3 auswählen, nur bei aussergewöhnlicher Qualität
+
+### 3. Venue-Reputation (30%)
 Tier S fast immer auswählen. Tier A bevorzugen. Tier B bei gutem Event. Tier C nur aussergewöhnlich.
 
-### 2. Event-Qualität & Einzigartigkeit (30%)
+### 4. Event-Qualität & Einzigartigkeit (25%)
 - Einmalige Events > wiederkehrende Serien
 - Bekannte Acts > No-Names
 - Spezifische Events > generische Titel
 
-### 3. Diversität (20%)
-- Max 5 Events desselben Typs
+### 5. Diversität (15%)
+- Max 6 Events desselben Sub-Genres
 - Mix Stadtteile
-- Mind. 2–3 Events vor 19 Uhr
+- Restliche Events (max. 1/3): Kultur, Theater, Ausstellungen
 
-### 4. Breite Relevanz (20%)
+### 6. Breite Relevanz (10%)
 - Allgemeines, kulturinteressiertes Publikum
 - Business-Events, Networking, Kurse ausschliessen
 
@@ -74,7 +86,8 @@ Antworte AUSSCHLIESSLICH in JSON. Kein anderer Text.
   ]
 }
 
-Sortiere chronologisch. Keine Emojis. Kein Marketing. Strikt 10–15 Events.`
+Sortiere chronologisch. Keine Emojis. Kein Marketing. Strikt 25–30 Events.
+Mindestens 2/3 davon müssen Nachtleben (Partys, Konzerte, DJs) sein.`
 }
 
 interface RawEvent {
@@ -103,12 +116,12 @@ export async function curateEvents(rawEvents: RawEvent[], city: string): Promise
 
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 2000,
+    max_tokens: 4000,
     system: buildSystemPrompt(city),
     messages: [
       {
         role: 'user',
-        content: `Hier sind alle Events für heute in ${cityLabel}. Wähle die besten 10–15 aus.\n\n${JSON.stringify(rawEvents, null, 2)}`,
+        content: `Hier sind alle Events für heute in ${cityLabel}. Wähle die besten 25–30 aus. Mindestens 2/3 davon müssen Nachtleben sein (Partys, Konzerte, DJs). Events vor 17:00 Uhr maximal 3 auswählen.\n\n${JSON.stringify(rawEvents, null, 2)}`,
       },
     ],
   })
