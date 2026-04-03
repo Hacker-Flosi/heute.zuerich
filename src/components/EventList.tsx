@@ -2,11 +2,14 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Event } from '@/lib/constants'
 import EventBlock from './EventBlock'
 import styles from './EventList.module.css'
 
 interface EventListProps {
+  city: string
+  cityLabel: string
   today: Event[]
   tomorrow: Event[]
   dayAfter: Event[]
@@ -14,7 +17,7 @@ interface EventListProps {
 
 const TABS = ['heute', 'morgen', 'übermorgen'] as const
 
-export default function EventList({ today, tomorrow, dayAfter }: EventListProps) {
+export default function EventList({ city, cityLabel, today, tomorrow, dayAfter }: EventListProps) {
   const [activeTab, setActiveTab] = useState<number>(0)
 
   const events = [today, tomorrow, dayAfter]
@@ -22,9 +25,9 @@ export default function EventList({ today, tomorrow, dayAfter }: EventListProps)
 
   return (
     <>
-      {/* Header */}
       <header className={styles.header}>
-        <a href="/" className={styles.logo}>heute.zürich</a>
+        <Link href="/" className={styles.logo}>waslauft.in</Link>
+        <span className={styles.city}>{cityLabel}</span>
         <nav className={styles.tabs}>
           {TABS.map((tab, i) => (
             <button
@@ -38,7 +41,6 @@ export default function EventList({ today, tomorrow, dayAfter }: EventListProps)
         </nav>
       </header>
 
-      {/* Event List */}
       <ul className={styles.list}>
         {currentEvents.length > 0 ? (
           currentEvents.map((event, i) => (
@@ -46,20 +48,14 @@ export default function EventList({ today, tomorrow, dayAfter }: EventListProps)
           ))
         ) : (
           <li className={styles.empty}>
-            Keine kuratierten Events für diesen Tag.
+            Keine Events für diesen Tag.
           </li>
         )}
       </ul>
 
-      {/* Footer */}
       <footer className={styles.footer}>
-        <span className={styles.footerLeft}>AI-kuratiert · Zürich · 2026</span>
-        <div className={styles.footerRight}>
-          <a href="https://instagram.com/heute.zuerich" target="_blank" rel="noopener">
-            Instagram
-          </a>
-          <a href="mailto:hallo@heute-zuerich.ch">Event melden</a>
-        </div>
+        <a href="https://instagram.com/waslauft.in" target="_blank" rel="noopener">Instagram</a>
+        <Link href="/about">About</Link>
       </footer>
     </>
   )

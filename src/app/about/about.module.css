@@ -1,0 +1,121 @@
+/* src/app/about/about.module.css */
+
+.main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  max-width: 640px;
+}
+
+.header {
+  padding: 1.2rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.breadcrumb {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: #F5A623;
+  text-decoration: none;
+}
+
+.breadcrumbSep {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: #444;
+}
+
+.breadcrumbCurrent {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.content {
+  padding: 2rem 1rem;
+  border-top: 1px solid #222;
+}
+
+.headline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.5rem;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+}
+
+.body {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: #999;
+  margin-bottom: 1rem;
+}
+
+.contact {
+  padding: 2rem 1rem;
+  border-top: 1px solid #222;
+}
+
+.contactHeadline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+  color: #fff;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.email {
+  display: inline-block;
+  margin-top: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: #F5A623;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+
+.email:hover {
+  text-decoration: underline;
+}
+
+.footer {
+  margin-top: auto;
+  padding: 1.5rem 1rem;
+  display: flex;
+  gap: 1.5rem;
+  border-top: 1px solid #111;
+}
+
+.footer a {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: #fff;
+  opacity: 0.25;
+  text-decoration: none;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: opacity 0.2s ease;
+}
+
+.footer a:hover {
+  opacity: 0.8;
+}
+
+@media (min-width: 768px) {
+  .header { padding: 1.5rem 2rem; }
+  .content { padding: 2.5rem 2rem; }
+  .headline { font-size: 3.5rem; }
+  .contact { padding: 2.5rem 2rem; }
+  .footer { padding: 2rem; }
+}

@@ -1,6 +1,5 @@
 /* src/components/EventList.module.css */
 
-/* Header */
 .header {
   padding: 1.2rem 1rem 0;
   border-bottom: 2px solid #000;
@@ -12,16 +11,26 @@
 
 .logo {
   font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 1.8rem;
-  letter-spacing: -0.04em;
-  line-height: 1;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
   color: #F5A623;
   text-decoration: none;
   display: block;
+  opacity: 0.7;
 }
 
-/* Tabs */
+.city {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.8rem;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: #fff;
+  display: block;
+  margin-top: 0.1rem;
+}
+
 .tabs {
   display: flex;
   gap: 0;
@@ -29,8 +38,8 @@
 }
 
 .tab {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   color: #fff;
@@ -56,7 +65,6 @@
   color: #000;
 }
 
-/* List */
 .list {
   list-style: none;
   padding: 0;
@@ -67,59 +75,40 @@
   padding: 3rem 1rem;
   text-align: center;
   color: #666;
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.85rem;
   background: #111;
 }
 
-/* Footer */
 .footer {
   padding: 1.5rem 1rem;
   background: #000;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 1.5rem;
 }
 
-.footerLeft {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.6rem;
-  color: #fff;
-  opacity: 0.25;
-  letter-spacing: 0.05em;
-}
-
-.footerRight {
-  display: flex;
-  gap: 1rem;
-}
-
-.footerRight a {
-  font-family: 'Space Mono', monospace;
+.footer a {
+  font-family: var(--font-mono);
   font-size: 0.6rem;
   color: #fff;
   opacity: 0.25;
   text-decoration: none;
   letter-spacing: 0.05em;
+  text-transform: uppercase;
   transition: opacity 0.2s ease;
 }
 
-.footerRight a:hover {
+.footer a:hover {
   opacity: 0.8;
 }
 
-/* Responsive */
 @media (min-width: 768px) {
   .header {
     padding: 1.5rem 2rem 0;
   }
-
-  .logo {
+  .city {
     font-size: 2.4rem;
   }
-
   .footer {
     padding: 2rem;
   }
@@ -129,15 +118,12 @@
   .header {
     padding: 2rem 3rem 0;
   }
-
-  .logo {
+  .city {
     font-size: 2.8rem;
   }
-
   .list {
     max-width: 800px;
   }
-
   .footer {
     padding: 2.5rem 3rem;
   }

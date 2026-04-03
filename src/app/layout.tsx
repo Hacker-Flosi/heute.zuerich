@@ -4,11 +4,11 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'heute.zürich — Was läuft heute in Zürich?',
-  description: 'AI-kuratierte Events in Zürich. Jeden Tag die besten 10–15 Veranstaltungen. Keine Filter, kein Scrollen, kein Noise.',
+  title: 'waslauft.in — Was läuft heute?',
+  description: 'Kuratierte Events in deiner Stadt. Täglich die besten 10–15 Veranstaltungen. Kein Noise.',
   openGraph: {
-    title: 'heute.zürich',
-    description: 'Was läuft heute in Zürich? AI-kuratiert, täglich.',
+    title: 'waslauft.in',
+    description: 'Was läuft heute? Kuratiert, täglich.',
     type: 'website',
   },
 }

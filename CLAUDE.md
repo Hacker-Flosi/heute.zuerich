@@ -1,16 +1,46 @@
-# CLAUDE.md — heute.zürich Project Context
+# CLAUDE.md — waslauft.in Project Context
 
 > This file gives Claude Code full context about the project.
 > Read this before doing anything.
 
 ## What is this?
 
-**heute.zürich** is a radically minimal website answering one question: "Was läuft heute in Zürich?" (What's happening today in Zurich?)
+**waslauft.in** is a radically minimal multi-city event platform answering: "Was läuft in [Stadt]?"
 
-- AI-curated, 10–15 events per day
+- Domain: **waslauft.in**
+- Landing page: waslauft.in → city selection
+- City pages: waslauft.in/zuerich, waslauft.in/bern, waslauft.in/basel etc.
+- MVP: Zürich only (waslauft.in/zuerich)
+- AI-curated, 10–15 events per city per day
 - No accounts, no filters, no categories
 - One chronological list, click → external link to organizer
 - Inspired by heute.sg (offline), a former St. Gallen event site
+
+## CRITICAL: Multi-City Architecture
+
+### Routing
+- `src/app/page.tsx` → Landing page (city selection)
+- `src/app/[city]/page.tsx` → Dynamic city route
+- City slug format: lowercase, no umlauts ("zuerich" not "zürich")
+
+### Sanity Schema
+- Event documents MUST have a `city` field (string, e.g. "zuerich")
+- ALL GROQ queries MUST filter by `city == $city`
+- Venue lists are per-city
+
+### Geo-Filtering (Zürich)
+Events MUST be within Zürich city limits. Include:
+- All Kreise 1–12, Oerlikon, Altstetten, Wiedikon, Wipkingen etc.
+- Dübendorf (The Hall — de facto Zürich venue)
+- Wollishofen (Rote Fabrik)
+
+EXCLUDE:
+- Winterthur, Baden, Brugg, Aarau, Rapperswil, Zug, Schaffhausen
+
+### Curation Prompt
+- Must include city context: "Du kuratierst für Zürich"
+- Venue tiers are per-city (see venue directory below)
+- Only select events within the city radius
 
 ## Current State
 
@@ -118,9 +148,13 @@ heute-zuerich/
 │
 ├── src/
 │   ├── app/
-│   │   ├── globals.css       # Fonts: Outfit + Space Mono
+│   │   ├── globals.css       # Fonts: Instrument Sans + JetBrains Mono
 │   │   ├── layout.tsx        # Root layout + SEO metadata
-│   │   ├── page.tsx          # Main page (Server Component)
+│   │   ├── page.tsx          # Landing page (city selection)
+│   │   ├── about/
+│   │   │   └── page.tsx      # About page (mission + email signup)
+│   │   ├── [city]/
+│   │   │   └── page.tsx      # City page (dynamic route)
 │   │   └── api/cron/pipeline/
 │   │       └── route.ts      # Vercel Cron endpoint (secured with CRON_SECRET)
 │   ├── components/
@@ -177,18 +211,33 @@ CRON_SECRET=                     # Random string, set in Vercel dashboard
 ```
 
 ### Typography
-- **Event names:** Outfit, weight 900, uppercase, 1.5–2rem
-- **Location/Time:** Space Mono, 0.72rem
-- **Logo:** Outfit or custom, yellow (#F5A623) on black
-- **UI/Nav:** Space Mono, 0.72rem, lowercase
+- **Event names:** Instrument Sans, weight 700, uppercase, 1.4–1.9rem
+- **Location/Time:** JetBrains Mono, 0.62rem, uppercase
+- **Logo:** Instrument Sans, weight 700
+- **UI/Nav:** JetBrains Mono, 0.68rem
+
+### CRITICAL: No AI branding
+Never show "AI-kuratiert", "powered by AI", or any AI reference in the UI. AI is an internal tool. The user-facing message is simply "kuratiert" or nothing at all.
 
 ### Layout per event block
 - Background: full-width colored block, no border-radius
-- Top left: Location (mono, small)
+- Top left: Location (mono, small, uppercase)
 - Top right: Time (mono, small, bold)
 - Bottom: Event name (display, large, bold, uppercase)
 - Entire block is clickable → external link
-- Separated by 1.5px black border
+- Separated by 1px black border
+
+### Footer (all pages)
+- Only TWO links: **Instagram** + **About**
+- NEVER show "AI-kuratiert" or any AI branding — AI is an internal tool, not a user-facing feature
+- No "Event melden" link (this is handled via the About page)
+
+### About page (waslauft.in/about)
+- Breadcrumb: waslauft.in / About
+- Mission text: Short, direct, German. Core message: "Weniger Noise, mehr Ausgang."
+- Email signup for venue owners/promoters who want to promote events
+- Lead generation for future Sponsored Listings feature
+- No AI mention anywhere
 
 ## Daily Pipeline (05:00 UTC)
 
@@ -232,16 +281,53 @@ All project docs live in Notion under "📍 heute.zh":
 
 ## Immediate Next Steps
 
-1. **Fix Eventfrog scraper** — Rewrite to use `eventfrog-api` npm package
-2. **Run first successful API call** — See actual event data structure
-3. **Set up Sanity project** — `npx sanity init`, deploy schema
-4. **Connect Next.js to Sanity** — Verify events render on the page
-5. **Test full pipeline** — Scrape → Deduplicate → Curate → Display
+1. **Restructure routing for multi-city** — Add `src/app/[city]/page.tsx` dynamic route, move current page logic there. Create landing page at `src/app/page.tsx` with city selection.
+2. **Add `city` field to Sanity schema** — Every event needs a city slug. Update all GROQ queries to filter by city.
+3. **Enforce geo-filtering in scrapers** — Eventfrog: filter by city=Zürich strictly. hellozurich: already Zürich-only. Exclude surrounding cities (Winterthur, Baden etc.)
+4. **Update curation prompt** — Add city context, venue tiers per city, geo-radius enforcement.
+5. **Deploy to Vercel** — Connect waslauft.in domain
+6. **Instagram automation** (Paket E) — Templates, image gen, Meta Graph API
 
 ## Language Convention
 - Code: English variable names, German/English comments
 - UI text: German
 - Docs: German (Notion) + English (code docs)
+
+## Zürich Venue Directory (for AI Curation)
+
+The site focuses on Ausgang/Nightlife/Concerts/Culture. The curation AI must know these venues and their tiers. Events at higher-tier venues get priority.
+
+### Tier S — Big Players (almost always select)
+Hallenstadion (Oerlikon), The Hall (Dübendorf), X-TRA (Limmatstrasse), Komplex 457 (Altstetten), Kaufleuten (City), Volkshaus (Helvetiaplatz), Maag Halle (Hardbrücke), Mascotte (Bellevue)
+
+### Tier A — Electronic / Techno / House (high priority)
+Hive (Hardbrücke), Supermarket (Geroldstrasse), Frieda's Büxe (Albisriederplatz), Zukunft/Zukki (Langstrasse), Kauzu (Langstrasse), Exil (Hardbrücke), Mädchere (ehem. Härterei), Klaus (Langstrasse), Friedas Garten (Sommer)
+
+### Tier A — Alternative / Rock / Underground (high priority)
+Dynamo (Limmat), Rote Fabrik (Wollishofen), Bogen F (Viadukt), Moods (Schiffbau), Sender (Kurzgasse)
+
+### Tier B — Mainstream / Hip-Hop / Charts
+Plaza (Badenerstrasse), Vior (City), Jade (City), Aura (Paradeplatz), Icon (City), Alice Choo (City)
+
+### Tier B — Bars with Dancefloor & Special Spots
+Gonze (Langstrasse), Olé Olé Bar (Langstrasse), Kasheme (Langstrasse), Frau Gerolds Garten (Hardbrücke), Rimini Bar (City), Barfussbar (City), Samigo Amusement (Enge)
+
+### Tier B — Culture & Event Locations
+Schiffbau (Hardbrücke), Labor Bar (Schiffbau), Papiersaal (Sihlcity), Folium (Sihlcity), Millers (Tiefenbrunnen), Kosmos (Europaallee), Gessnerallee (City), Kirche Neumünster
+
+### Tier C — Hidden Gems & Newcomers
+Heile Welt (Langstrasse), Bagatelle (Langstrasse), Sektor 11 (Oerlikon), Hard One (Hardbrücke), Garage (Hardbrücke), Space Monki (Limmatstrasse)
+
+### Tier Scoring for Curation
+- **S:** Almost always select events here
+- **A:** Prefer selecting
+- **B:** Select if event quality is good
+- **C:** Only for exceptionally good events
+- **Unknown venue:** Lower priority but don't exclude
+
+### Seasonal
+- Summer (May–Sep): Friedas Garten, Frau Gerolds Garten, Rimini Bar, Barfussbar get bonus
+- Winter (Oct–Apr): Prefer indoor venues
 
 ## Owner
 Florin Grunder — Senior UI/UX Designer, Zürich

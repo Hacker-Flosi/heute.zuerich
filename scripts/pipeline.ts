@@ -1,7 +1,6 @@
 // scripts/pipeline.ts
-// Tägliche Pipeline für heute.zürich
-// Orchestriert: Scraping → Deduplizierung → AI-Kuratierung → Sanity
-// Wird via Vercel Cron täglich um 05:00 ausgeführt
+// Tägliche Pipeline für waslauft.in
+// Orchestriert: Scraping → Geo-Filter → Dedup → Kuratierung → Sanity
 
 import { scrapeEventfrog } from './scrapers/eventfrog'
 import { scrapeHellozurich } from './scrapers/hellozurich'
@@ -10,29 +9,36 @@ import { curateEvents } from './curate'
 import { getSanityWriteClient } from '../src/lib/sanity'
 import type { RawEvent } from './types'
 
-/**
- * Gibt YYYY-MM-DD für heute + offset Tage zurück
- */
+// Geo-filter: exclude events from outside Zürich city limits
+const EXCLUDED_CITIES = [
+  'winterthur', 'baden', 'brugg', 'aarau', 'rapperswil',
+  'zug', 'schaffhausen', 'frauenfeld', 'olten', 'solothurn',
+  'luzern', 'bern', 'st. gallen', 'luzerne',
+]
+
+function isInZuerich(event: RawEvent): boolean {
+  const loc = event.location.toLowerCase()
+  return !EXCLUDED_CITIES.some((city) => loc.includes(city))
+}
+
 function getDate(offset: number): string {
   const d = new Date()
   d.setDate(d.getDate() + offset)
   return d.toISOString().split('T')[0]
 }
 
-/**
- * Schreibt kuratierte Events nach Sanity
- */
-async function writeToSanity(events: RawEvent[], date: string, curatedIds: Set<string>) {
+async function writeToSanity(events: RawEvent[], date: string, city: string, curatedNames: Set<string>) {
   const transaction = getSanityWriteClient().transaction()
 
   for (let i = 0; i < events.length; i++) {
     const event = events[i]
-    const isCurated = curatedIds.has(event.name) // Match über bereinigten Namen
-    const docId = `event-${date}-${i}`.replace(/[^a-zA-Z0-9-]/g, '-')
+    const isCurated = curatedNames.has(event.name)
+    const docId = `event-${city}-${date}-${i}`.replace(/[^a-zA-Z0-9-]/g, '-')
 
     transaction.createOrReplace({
       _type: 'event',
       _id: docId,
+      city,
       name: event.name,
       rawName: event.rawName,
       location: event.location,
@@ -47,18 +53,16 @@ async function writeToSanity(events: RawEvent[], date: string, curatedIds: Set<s
   }
 
   await transaction.commit()
-  console.log(`[Sanity] ${events.length} Events geschrieben für ${date}`)
+  console.log(`[Sanity] ${events.length} Events geschrieben für ${city}/${date}`)
 }
 
-/**
- * Hauptpipeline — wird täglich ausgeführt
- */
 export async function runPipeline() {
   const startTime = Date.now()
-  console.log('=== heute.zürich Pipeline gestartet ===')
+  console.log('=== waslauft.in Pipeline gestartet ===')
   console.log(`Zeitpunkt: ${new Date().toISOString()}`)
 
-  // Für 3 Tage ausführen: heute, morgen, übermorgen
+  const city = 'zuerich'
+
   for (const offset of [0, 1, 2]) {
     const date = getDate(offset)
     const dayLabel = ['Heute', 'Morgen', 'Übermorgen'][offset]
@@ -76,31 +80,34 @@ export async function runPipeline() {
     if (hellozurichEvents.status === 'rejected')
       console.error('[hellozurich] Fehler:', hellozurichEvents.reason)
 
-    const allEvents: RawEvent[] = [
+    const rawEvents: RawEvent[] = [
       ...(eventfrogEvents.status === 'fulfilled' ? eventfrogEvents.value : []),
       ...(hellozurichEvents.status === 'fulfilled' ? hellozurichEvents.value : []),
     ]
+
+    // 2. GEO-FILTER
+    const allEvents = rawEvents.filter(isInZuerich)
+    const filtered = rawEvents.length - allEvents.length
+    if (filtered > 0) console.log(`[Geo] ${filtered} Events aus Umgebung ausgeschlossen`)
 
     if (allEvents.length === 0) {
       console.warn(`[WARNUNG] Keine Events gefunden für ${date}!`)
       continue
     }
 
-    console.log(`[Scraping] Total: ${allEvents.length} Events`)
+    console.log(`[Scraping] Total nach Geo-Filter: ${allEvents.length} Events`)
 
-    // 2. DEDUPLIZIERUNG
+    // 3. DEDUPLIZIERUNG
     console.log('[2/4] Deduplizierung...')
     const uniqueEvents = deduplicateEvents(allEvents)
 
-    // 3. AI-KURATIERUNG
+    // 4. AI-KURATIERUNG
     console.log('[3/4] AI-Kuratierung...')
     try {
-      const curated = await curateEvents(uniqueEvents)
+      const curated = await curateEvents(uniqueEvents, city)
 
       console.log(`[Kuratierung] ${curated.length} von ${uniqueEvents.length} Events ausgewählt`)
 
-      // c.id = original name; c.name = bereinigter Name von Claude
-      // Wir matchen via originalem Namen (id) oder fuzzy über den bereinigten Namen
       for (const event of uniqueEvents) {
         const match = curated.find((c) =>
           c.id === event.name ||
@@ -113,17 +120,15 @@ export async function runPipeline() {
         }
       }
 
-      // Nach dem Umbenennen: curated erkennen über aktualisierten Namen
       const curatedNames = new Set(curated.map((e) => e.name))
 
-      // 4. IN SANITY SCHREIBEN
+      // 5. IN SANITY SCHREIBEN
       console.log('[4/4] Sanity schreiben...')
-      await writeToSanity(uniqueEvents, date, curatedNames)
+      await writeToSanity(uniqueEvents, date, city, curatedNames)
     } catch (error) {
       console.error('[FEHLER] Kuratierung fehlgeschlagen:', error)
-      // Fallback: Alle Events unkuratiert speichern
       console.log('[Fallback] Speichere alle Events ohne Kuratierung...')
-      await writeToSanity(uniqueEvents, date, new Set())
+      await writeToSanity(uniqueEvents, date, city, new Set())
     }
   }
 
@@ -131,8 +136,6 @@ export async function runPipeline() {
   console.log(`\n=== Pipeline abgeschlossen in ${duration}s ===`)
 }
 
-// Only auto-execute when run directly as a script (not when imported by the cron route).
-// process.argv[1] contains the path of the entry file when run with tsx/node directly.
 if (process.argv[1]?.endsWith('pipeline.ts') || process.argv[1]?.endsWith('pipeline.js')) {
   runPipeline().catch((error) => {
     console.error('Pipeline fatal error:', error)

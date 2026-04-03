@@ -1,44 +1,30 @@
-// src/app/page.tsx
-// heute.zürich — Hauptseite
+// src/app/page.tsx — Landing page: city selection
 
-import { sanityClient } from '@/lib/sanity'
-import { CURATED_EVENTS_QUERY } from '@/lib/queries'
-import { getDateString, Event } from '@/lib/constants'
-import EventList from '@/components/EventList'
+import Link from 'next/link'
+import styles from './page.module.css'
 
-// Revalidate every hour (events change once per day, but we check hourly)
-export const revalidate = 3600
+const CITIES = [
+  { slug: 'zuerich', label: 'Zürich' },
+]
 
-async function getEventsForDays(): Promise<{
-  today: Event[]
-  tomorrow: Event[]
-  dayAfter: Event[]
-}> {
-  const [today, tomorrow, dayAfter] = await Promise.all([
-    sanityClient.fetch<Event[]>(CURATED_EVENTS_QUERY, {
-      date: getDateString(0),
-    }),
-    sanityClient.fetch<Event[]>(CURATED_EVENTS_QUERY, {
-      date: getDateString(1),
-    }),
-    sanityClient.fetch<Event[]>(CURATED_EVENTS_QUERY, {
-      date: getDateString(2),
-    }),
-  ])
-
-  return { today, tomorrow, dayAfter }
-}
-
-export default async function Home() {
-  const { today, tomorrow, dayAfter } = await getEventsForDays()
-
+export default function Home() {
   return (
-    <main>
-      <EventList
-        today={today}
-        tomorrow={tomorrow}
-        dayAfter={dayAfter}
-      />
+    <main className={styles.main}>
+      <header className={styles.header}>
+        <span className={styles.logo}>waslauft.in</span>
+      </header>
+
+      <section className={styles.cities}>
+        {CITIES.map((city) => (
+          <Link key={city.slug} href={`/${city.slug}`} className={styles.cityLink}>
+            {city.label}
+          </Link>
+        ))}
+      </section>
+
+      <footer className={styles.footer}>
+        <Link href="/about">About</Link>
+      </footer>
     </main>
   )
 }

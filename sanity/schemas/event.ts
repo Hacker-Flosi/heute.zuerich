@@ -1,6 +1,5 @@
 // sanity/schemas/event.ts
-// Schema für heute.zürich Events
-// Dieses Schema definiert die Struktur jedes Events in Sanity
+// Schema für waslauft.in Events
 
 import { defineField, defineType } from 'sanity'
 
@@ -9,6 +8,13 @@ export default defineType({
   title: 'Event',
   type: 'document',
   fields: [
+    defineField({
+      name: 'city',
+      title: 'Stadt',
+      type: 'string',
+      description: 'Stadt-Slug (z.B. "zuerich", "bern", "basel")',
+      validation: (Rule) => Rule.required(),
+    }),
     defineField({
       name: 'name',
       title: 'Event Name',
@@ -20,27 +26,25 @@ export default defineType({
       name: 'rawName',
       title: 'Original Name',
       type: 'string',
-      description: 'Unbereinigter Name aus der Quelle',
     }),
     defineField({
       name: 'location',
       title: 'Location',
       type: 'string',
-      description: 'Venue-Name (kurz, z.B. "Kaufleuten" statt "Kaufleuten Zürich Event GmbH")',
+      description: 'Venue-Name (kurz)',
       validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'date',
       title: 'Datum',
       type: 'date',
-      description: 'Event-Datum (YYYY-MM-DD)',
       validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'time',
       title: 'Uhrzeit',
       type: 'string',
-      description: 'Startzeit im Format HH:MM',
+      description: 'HH:MM',
       validation: (Rule) => Rule.required().regex(/^\d{2}:\d{2}$/, {
         name: 'time format',
         invert: false,
@@ -50,21 +54,16 @@ export default defineType({
       name: 'url',
       title: 'Externer Link',
       type: 'url',
-      description: 'Link zum Veranstalter oder Ticketing',
       validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'source',
       title: 'Quelle',
       type: 'string',
-      description: 'Scraping-Quelle',
       options: {
         list: [
           { title: 'Eventfrog', value: 'eventfrog' },
           { title: 'hellozurich', value: 'hellozurich' },
-          { title: 'kulturzueri', value: 'kulturzueri' },
-          { title: 'Stadt Zürich', value: 'stadt-zuerich' },
-          { title: 'Guidle', value: 'guidle' },
           { title: 'Manuell', value: 'manual' },
         ],
       },
@@ -73,27 +72,24 @@ export default defineType({
       name: 'curated',
       title: 'Kuratiert',
       type: 'boolean',
-      description: 'Von AI als relevant ausgewählt',
       initialValue: false,
     }),
     defineField({
       name: 'curatedReason',
       title: 'Kuratierungs-Begründung',
       type: 'string',
-      description: 'AI-Begründung warum dieser Event ausgewählt wurde',
     }),
     defineField({
       name: 'sponsored',
       title: 'Gesponsert',
       type: 'boolean',
-      description: 'Ist dies ein gesponserter Eintrag?',
       initialValue: false,
     }),
     defineField({
       name: 'colorIndex',
       title: 'Farb-Index',
       type: 'number',
-      description: 'Index für die Farbrotation (0-11)',
+      description: '0–11',
     }),
   ],
   preview: {
@@ -103,11 +99,12 @@ export default defineType({
       date: 'date',
       time: 'time',
       curated: 'curated',
+      city: 'city',
     },
-    prepare({ title, subtitle, date, time, curated }) {
+    prepare({ title, subtitle, date, time, curated, city }) {
       return {
         title: `${curated ? '✅ ' : ''}${title}`,
-        subtitle: `${subtitle} · ${time} · ${date}`,
+        subtitle: `${city} · ${subtitle} · ${time} · ${date}`,
       }
     },
   },
