@@ -28,12 +28,31 @@ function getDate(offset: number): string {
 }
 
 async function writeToSanity(events: RawEvent[], date: string, city: string, curatedNames: Set<string>) {
-  const transaction = getSanityWriteClient().transaction()
+  const client = getSanityWriteClient()
+
+  // Delete all existing events for this city+date to prevent stale duplicates
+  const existingIds: string[] = await client.fetch(
+    `*[_type == "event" && city == $city && date == $date]._id`,
+    { city, date }
+  )
+  if (existingIds.length > 0) {
+    const deleteTx = client.transaction()
+    for (const id of existingIds) deleteTx.delete(id)
+    await deleteTx.commit()
+    console.log(`[Sanity] ${existingIds.length} alte Docs gelöscht für ${city}/${date}`)
+  }
+
+  const transaction = client.transaction()
 
   for (let i = 0; i < events.length; i++) {
     const event = events[i]
     const isCurated = curatedNames.has(event.name)
-    const docId = `event-${city}-${date}-${i}`.replace(/[^a-zA-Z0-9-]/g, '-')
+    // Stable content-based ID
+    const slug = `${event.name}-${event.location}-${event.time}`
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .slice(0, 80)
+    const docId = `event-${city}-${date}-${slug}`
 
     transaction.createOrReplace({
       _type: 'event',

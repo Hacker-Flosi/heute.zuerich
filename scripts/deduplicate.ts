@@ -42,6 +42,21 @@ function normalize(str: string): string {
 }
 
 /**
+ * Fraction of the shorter location's words that appear in the other location.
+ * e.g. "Moods" vs "Moods Schiffbau" → 1/1 = 1.0
+ *      "Moods Jazz Club" vs "Moods Schiffbau" → 1/2 = 0.5
+ */
+function locationWordOverlap(a: string, b: string): number {
+  const wordsA = a.split(/\s+/).filter(Boolean)
+  const wordsB = b.split(/\s+/).filter(Boolean)
+  if (!wordsA.length || !wordsB.length) return 0
+  const [shorter, longer] = wordsA.length <= wordsB.length ? [wordsA, wordsB] : [wordsB, wordsA]
+  const longerSet = new Set(longer)
+  const overlap = shorter.filter((w) => longerSet.has(w)).length
+  return overlap / shorter.length
+}
+
+/**
  * Berechnet die Zeitdifferenz in Minuten zwischen zwei Uhrzeiten
  */
 function timeDiffMinutes(time1: string, time2: string): number {
@@ -60,11 +75,12 @@ function isSameEvent(a: RawEvent, b: RawEvent): boolean {
   const normalizedLocationA = normalize(a.location)
   const normalizedLocationB = normalize(b.location)
 
-  // Exakt-Match: Gleiche Location + Zeitfenster ±30 Min
+  // Location match: exact, substring, or word-overlap (≥50% of shorter name's words)
   const locationMatch =
     normalizedLocationA === normalizedLocationB ||
     normalizedLocationA.includes(normalizedLocationB) ||
-    normalizedLocationB.includes(normalizedLocationA)
+    normalizedLocationB.includes(normalizedLocationA) ||
+    locationWordOverlap(normalizedLocationA, normalizedLocationB) >= 0.5
 
   if (!locationMatch) return false
 
