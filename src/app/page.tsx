@@ -4,7 +4,11 @@ import Link from 'next/link'
 import styles from './page.module.css'
 
 const CITIES = [
-  { slug: 'zuerich', label: 'Zürich' },
+  { slug: 'zuerich', label: 'Zürich', active: true },
+  { slug: 'basel', label: 'Basel', active: false },
+  { slug: 'bern', label: 'Bern', active: false },
+  { slug: 'stgallen', label: 'St. Gallen', active: false },
+  { slug: 'luzern', label: 'Luzern', active: false },
 ]
 
 export default function Home() {
@@ -15,11 +19,18 @@ export default function Home() {
       </header>
 
       <section className={styles.cities}>
-        {CITIES.map((city) => (
-          <Link key={city.slug} href={`/${city.slug}`} className={styles.cityLink}>
-            {city.label}
-          </Link>
-        ))}
+        {CITIES.map((city) =>
+          city.active ? (
+            <Link key={city.slug} href={`/${city.slug}`} className={styles.cityLink}>
+              {city.label}
+            </Link>
+          ) : (
+            <div key={city.slug} className={styles.cityDisabled}>
+              <span>{city.label}</span>
+              <span className={styles.comingSoon}>Coming Soon</span>
+            </div>
+          )
+        )}
       </section>
 
       <footer className={styles.footer}>

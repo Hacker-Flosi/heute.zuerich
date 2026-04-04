@@ -43,6 +43,33 @@
   background: #111;
 }
 
+.cityDisabled {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 1.2rem 1rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.5rem;
+  letter-spacing: -0.03em;
+  color: #fff;
+  text-transform: uppercase;
+  border-bottom: 1px solid #222;
+  opacity: 0.25;
+  cursor: default;
+  pointer-events: none;
+}
+
+.comingSoon {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  align-self: center;
+}
+
 .footer {
   padding: 1.5rem 1rem;
   display: flex;
@@ -69,6 +96,10 @@
     padding: 1.5rem 2rem;
   }
   .cityLink {
+    padding: 1.5rem 2rem;
+    font-size: 4rem;
+  }
+  .cityDisabled {
     padding: 1.5rem 2rem;
     font-size: 4rem;
   }
