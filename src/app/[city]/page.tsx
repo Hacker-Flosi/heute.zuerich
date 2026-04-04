@@ -11,6 +11,8 @@ export const revalidate = 3600
 
 const CITY_LABELS: Record<string, string> = {
   zuerich: 'Zürich',
+  luzern: 'Luzern',
+  stgallen: 'St. Gallen',
 }
 
 interface PageProps {

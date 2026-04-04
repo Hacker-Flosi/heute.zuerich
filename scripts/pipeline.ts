@@ -1,31 +1,48 @@
 // scripts/pipeline.ts
 // Tägliche Pipeline für waslauft.in
-// Orchestriert: Scraping → Geo-Filter → Dedup → Kuratierung → Sanity
+// Orchestriert: Scraping → Venue URL → Dedup → Kuratierung → Sanity
 
 import { scrapeEventfrog } from './scrapers/eventfrog'
 import { scrapeHellozurich } from './scrapers/hellozurich'
+import { scrapeGangus } from './scrapers/gangus'
+import { scrapeSaiten } from './scrapers/saiten'
 import { deduplicateEvents } from './deduplicate'
 import { curateEvents } from './curate'
 import { getSanityWriteClient } from '../src/lib/sanity'
 import { lookupVenueUrl, isAggregatorUrl } from './venues'
 import type { RawEvent } from './types'
 
-// Geo-filter: exclude events from outside Zürich city limits
-const EXCLUDED_CITIES = [
-  'winterthur', 'baden', 'brugg', 'aarau', 'rapperswil',
-  'zug', 'schaffhausen', 'frauenfeld', 'olten', 'solothurn',
-  'luzern', 'bern', 'st. gallen', 'luzerne',
-]
-
-function isInZuerich(event: RawEvent): boolean {
-  const loc = event.location.toLowerCase()
-  return !EXCLUDED_CITIES.some((city) => loc.includes(city))
-}
-
 function getDate(offset: number): string {
   const d = new Date()
   d.setDate(d.getDate() + offset)
   return d.toISOString().split('T')[0]
+}
+
+// Per-city scraper config
+type ScraperFn = (date: string) => Promise<RawEvent[]>
+
+const CITY_SCRAPERS: Record<string, ScraperFn[]> = {
+  zuerich: [scrapeEventfrog, scrapeHellozurich],
+  luzern: [scrapeGangus],
+  stgallen: [scrapeSaiten],
+}
+
+// Per-city geo-exclusion (words that disqualify a location)
+const CITY_EXCLUSIONS: Record<string, string[]> = {
+  zuerich: [
+    'winterthur', 'baden', 'brugg', 'aarau', 'rapperswil',
+    'zug', 'schaffhausen', 'frauenfeld', 'olten', 'solothurn',
+    'luzern', 'bern', 'st. gallen',
+  ],
+  luzern: [],    // gangus already geo-filters internally
+  stgallen: [],  // saiten already geo-filters internally
+}
+
+function geoFilter(event: RawEvent, city: string): boolean {
+  const exclusions = CITY_EXCLUSIONS[city] ?? []
+  if (exclusions.length === 0) return true
+  const loc = event.location.toLowerCase()
+  return !exclusions.some((excl) => loc.includes(excl))
 }
 
 async function writeToSanity(events: RawEvent[], date: string, city: string, curatedNames: Set<string>) {
@@ -48,7 +65,6 @@ async function writeToSanity(events: RawEvent[], date: string, city: string, cur
   for (let i = 0; i < events.length; i++) {
     const event = events[i]
     const isCurated = curatedNames.has(event.name)
-    // Stable content-based ID
     const slug = `${event.name}-${event.location}-${event.time}`
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
@@ -76,37 +92,25 @@ async function writeToSanity(events: RawEvent[], date: string, city: string, cur
   console.log(`[Sanity] ${events.length} Events geschrieben für ${city}/${date}`)
 }
 
-export async function runPipeline() {
-  const startTime = Date.now()
-  console.log('=== waslauft.in Pipeline gestartet ===')
-  console.log(`Zeitpunkt: ${new Date().toISOString()}`)
-
-  const city = 'zuerich'
+async function runCity(city: string) {
+  const scrapers = CITY_SCRAPERS[city]
+  if (!scrapers) throw new Error(`Kein Scraper konfiguriert für: ${city}`)
 
   for (const offset of [0, 1, 2]) {
     const date = getDate(offset)
     const dayLabel = ['Heute', 'Morgen', 'Übermorgen'][offset]
-    console.log(`\n--- ${dayLabel} (${date}) ---`)
+    console.log(`\n  --- ${dayLabel} (${date}) ---`)
 
     // 1. SCRAPING
-    console.log('[1/5] Scraping...')
-    const [eventfrogEvents, hellozurichEvents] = await Promise.allSettled([
-      scrapeEventfrog(date),
-      scrapeHellozurich(date),
-    ])
+    console.log('  [1/4] Scraping...')
+    const results = await Promise.allSettled(scrapers.map((fn) => fn(date)))
+    const rawEvents: RawEvent[] = []
+    for (const result of results) {
+      if (result.status === 'fulfilled') rawEvents.push(...result.value)
+      else console.error('  [Scraper] Fehler:', result.reason)
+    }
 
-    if (eventfrogEvents.status === 'rejected')
-      console.error('[Eventfrog] Fehler:', eventfrogEvents.reason)
-    if (hellozurichEvents.status === 'rejected')
-      console.error('[hellozurich] Fehler:', hellozurichEvents.reason)
-
-    const rawEvents: RawEvent[] = [
-      ...(eventfrogEvents.status === 'fulfilled' ? eventfrogEvents.value : []),
-      ...(hellozurichEvents.status === 'fulfilled' ? hellozurichEvents.value : []),
-    ]
-
-    // 2. VENUE URL ENRICHMENT — replace aggregator URLs with official venue websites
-    console.log('[2/5] Venue URL Enrichment...')
+    // 2. VENUE URL ENRICHMENT
     for (const event of rawEvents) {
       if (!event.url || isAggregatorUrl(event.url)) {
         const venueUrl = lookupVenueUrl(event.location, city)
@@ -115,27 +119,24 @@ export async function runPipeline() {
     }
 
     // 3. GEO-FILTER
-    const allEvents = rawEvents.filter(isInZuerich)
+    const allEvents = rawEvents.filter((e) => geoFilter(e, city))
     const filtered = rawEvents.length - allEvents.length
-    if (filtered > 0) console.log(`[Geo] ${filtered} Events aus Umgebung ausgeschlossen`)
+    if (filtered > 0) console.log(`  [Geo] ${filtered} Events ausgeschlossen`)
 
     if (allEvents.length === 0) {
-      console.warn(`[WARNUNG] Keine Events gefunden für ${date}!`)
+      console.warn(`  [WARNUNG] Keine Events für ${city}/${date}`)
       continue
     }
-
-    console.log(`[Scraping] Total nach Geo-Filter: ${allEvents.length} Events`)
+    console.log(`  [Scraping] ${allEvents.length} Events nach Geo-Filter`)
 
     // 4. DEDUPLIZIERUNG
-    console.log('[3/5] Deduplizierung...')
     const uniqueEvents = deduplicateEvents(allEvents)
 
     // 5. AI-KURATIERUNG
-    console.log('[4/5] AI-Kuratierung...')
+    console.log('  [3/4] AI-Kuratierung...')
     try {
       const curated = await curateEvents(uniqueEvents, city)
-
-      console.log(`[Kuratierung] ${curated.length} von ${uniqueEvents.length} Events ausgewählt`)
+      console.log(`  [Kuratierung] ${curated.length} von ${uniqueEvents.length} ausgewählt`)
 
       for (const event of uniqueEvents) {
         const match = curated.find((c) =>
@@ -150,14 +151,29 @@ export async function runPipeline() {
       }
 
       const curatedNames = new Set(curated.map((e) => e.name))
-
-      // 5. IN SANITY SCHREIBEN
-      console.log('[5/5] Sanity schreiben...')
+      console.log('  [4/4] Sanity schreiben...')
       await writeToSanity(uniqueEvents, date, city, curatedNames)
     } catch (error) {
-      console.error('[FEHLER] Kuratierung fehlgeschlagen:', error)
-      console.log('[Fallback] Speichere alle Events ohne Kuratierung...')
+      console.error('  [FEHLER] Kuratierung fehlgeschlagen:', error)
+      console.log('  [Fallback] Speichere alle Events ohne Kuratierung...')
       await writeToSanity(uniqueEvents, date, city, new Set())
+    }
+  }
+}
+
+export async function runPipeline() {
+  const startTime = Date.now()
+  console.log('=== waslauft.in Pipeline gestartet ===')
+  console.log(`Zeitpunkt: ${new Date().toISOString()}`)
+
+  const cities = Object.keys(CITY_SCRAPERS)
+
+  for (const city of cities) {
+    console.log(`\n=== Stadt: ${city.toUpperCase()} ===`)
+    try {
+      await runCity(city)
+    } catch (error) {
+      console.error(`[FEHLER] Pipeline für ${city} abgebrochen:`, error)
     }
   }
 
