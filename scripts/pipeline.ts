@@ -7,6 +7,7 @@ import { scrapeHellozurich } from './scrapers/hellozurich'
 import { deduplicateEvents } from './deduplicate'
 import { curateEvents } from './curate'
 import { getSanityWriteClient } from '../src/lib/sanity'
+import { lookupVenueUrl, isAggregatorUrl } from './venues'
 import type { RawEvent } from './types'
 
 // Geo-filter: exclude events from outside Zürich city limits
@@ -88,7 +89,7 @@ export async function runPipeline() {
     console.log(`\n--- ${dayLabel} (${date}) ---`)
 
     // 1. SCRAPING
-    console.log('[1/4] Scraping...')
+    console.log('[1/5] Scraping...')
     const [eventfrogEvents, hellozurichEvents] = await Promise.allSettled([
       scrapeEventfrog(date),
       scrapeHellozurich(date),
@@ -104,7 +105,16 @@ export async function runPipeline() {
       ...(hellozurichEvents.status === 'fulfilled' ? hellozurichEvents.value : []),
     ]
 
-    // 2. GEO-FILTER
+    // 2. VENUE URL ENRICHMENT — replace aggregator URLs with official venue websites
+    console.log('[2/5] Venue URL Enrichment...')
+    for (const event of rawEvents) {
+      if (!event.url || isAggregatorUrl(event.url)) {
+        const venueUrl = lookupVenueUrl(event.location, city)
+        if (venueUrl) event.url = venueUrl
+      }
+    }
+
+    // 3. GEO-FILTER
     const allEvents = rawEvents.filter(isInZuerich)
     const filtered = rawEvents.length - allEvents.length
     if (filtered > 0) console.log(`[Geo] ${filtered} Events aus Umgebung ausgeschlossen`)
@@ -116,12 +126,12 @@ export async function runPipeline() {
 
     console.log(`[Scraping] Total nach Geo-Filter: ${allEvents.length} Events`)
 
-    // 3. DEDUPLIZIERUNG
-    console.log('[2/4] Deduplizierung...')
+    // 4. DEDUPLIZIERUNG
+    console.log('[3/5] Deduplizierung...')
     const uniqueEvents = deduplicateEvents(allEvents)
 
-    // 4. AI-KURATIERUNG
-    console.log('[3/4] AI-Kuratierung...')
+    // 5. AI-KURATIERUNG
+    console.log('[4/5] AI-Kuratierung...')
     try {
       const curated = await curateEvents(uniqueEvents, city)
 
@@ -142,7 +152,7 @@ export async function runPipeline() {
       const curatedNames = new Set(curated.map((e) => e.name))
 
       // 5. IN SANITY SCHREIBEN
-      console.log('[4/4] Sanity schreiben...')
+      console.log('[5/5] Sanity schreiben...')
       await writeToSanity(uniqueEvents, date, city, curatedNames)
     } catch (error) {
       console.error('[FEHLER] Kuratierung fehlgeschlagen:', error)

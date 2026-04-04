@@ -64,6 +64,8 @@ export default defineType({
         list: [
           { title: 'Eventfrog', value: 'eventfrog' },
           { title: 'hellozurich', value: 'hellozurich' },
+          { title: 'saiten.ch', value: 'saiten' },
+          { title: 'gangus.ch', value: 'gangus' },
           { title: 'Manuell', value: 'manual' },
         ],
       },

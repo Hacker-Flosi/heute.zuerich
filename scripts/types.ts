@@ -8,7 +8,7 @@ export interface RawEvent {
   date: string       // YYYY-MM-DD
   time: string       // HH:MM
   url: string
-  source: 'eventfrog' | 'hellozurich' | 'kulturzueri' | 'stadt-zuerich' | 'guidle' | 'manual'
+  source: 'eventfrog' | 'hellozurich' | 'saiten' | 'gangus' | 'kulturzueri' | 'stadt-zuerich' | 'guidle' | 'manual'
 }
 
 export interface CuratedEvent extends RawEvent {
