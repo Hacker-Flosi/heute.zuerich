@@ -23,26 +23,32 @@ type ScraperFn = (date: string) => Promise<RawEvent[]>
 
 const CITY_SCRAPERS: Record<string, ScraperFn[]> = {
   zuerich: [scrapeEventfrog, scrapeHellozurich],
-  luzern: [scrapeGangus],
-  stgallen: [scrapeSaiten],
+  luzern: [scrapeGangus, scrapeEventfrog],
+  stgallen: [scrapeSaiten, scrapeEventfrog],
 }
 
-// Per-city geo-exclusion (words that disqualify a location)
+// Per-city geo-exclusion: words in location that disqualify an event
 const CITY_EXCLUSIONS: Record<string, string[]> = {
   zuerich: [
     'winterthur', 'baden', 'brugg', 'aarau', 'rapperswil',
     'zug', 'schaffhausen', 'frauenfeld', 'olten', 'solothurn',
     'luzern', 'bern', 'st. gallen',
   ],
-  luzern: [],    // gangus already geo-filters internally
-  stgallen: [],  // saiten already geo-filters internally
+}
+
+// Per-city geo-inclusion: at least one word must match (for cities where eventfrog returns all CH)
+const CITY_INCLUSIONS: Record<string, string[]> = {
+  luzern: ['luzern', 'lucerne', 'emmen', 'kriens', 'horw', 'ebikon'],
+  stgallen: ['st. gallen', 'st gallen', 'saint-gallen', 'gossau', 'rorschach'],
 }
 
 function geoFilter(event: RawEvent, city: string): boolean {
-  const exclusions = CITY_EXCLUSIONS[city] ?? []
-  if (exclusions.length === 0) return true
   const loc = event.location.toLowerCase()
-  return !exclusions.some((excl) => loc.includes(excl))
+  const exclusions = CITY_EXCLUSIONS[city]
+  if (exclusions && exclusions.some((excl) => loc.includes(excl))) return false
+  const inclusions = CITY_INCLUSIONS[city]
+  if (inclusions) return inclusions.some((incl) => loc.includes(incl))
+  return true
 }
 
 async function writeToSanity(events: RawEvent[], date: string, city: string, curatedNames: Set<string>) {
