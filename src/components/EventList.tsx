@@ -15,7 +15,19 @@ interface EventListProps {
   dayAfter: Event[]
 }
 
-const TABS = ['heute', 'morgen', 'übermorgen'] as const
+const WEEKDAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
+
+function getTabLabel(label: string, offsetDays: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + offsetDays)
+  return `${label}, ${WEEKDAYS[d.getDay()]}`
+}
+
+const TAB_LABELS = [
+  getTabLabel('Heute', 0),
+  getTabLabel('Morgen', 1),
+  getTabLabel('Übermorgen', 2),
+]
 
 export default function EventList({ city, cityLabel, today, tomorrow, dayAfter }: EventListProps) {
   const [activeTab, setActiveTab] = useState<number>(0)
@@ -29,13 +41,13 @@ export default function EventList({ city, cityLabel, today, tomorrow, dayAfter }
         <Link href="/" className={styles.logo}>waslauft.in</Link>
         <span className={styles.city}>{cityLabel}</span>
         <nav className={styles.tabs}>
-          {TABS.map((tab, i) => (
+          {TAB_LABELS.map((label, i) => (
             <button
-              key={tab}
+              key={i}
               className={`${styles.tab} ${i === activeTab ? styles.tabActive : ''}`}
               onClick={() => setActiveTab(i)}
             >
-              {tab}
+              {label}
             </button>
           ))}
         </nav>
