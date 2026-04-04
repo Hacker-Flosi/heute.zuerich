@@ -7,6 +7,7 @@ import type { RawEvent } from '../types'
 
 const BASE_URL = 'https://www.saiten.ch'
 const PAGE_SIZE = 100
+const MAX_PAGES = 5  // cap at 500 events per day — geo-filter handles the rest
 
 interface SaitenResponse {
   content: string
@@ -28,8 +29,9 @@ function parseTime(raw: string): string {
 export async function scrapeSaiten(date: string): Promise<RawEvent[]> {
   const events: RawEvent[] = []
   let offset = 0
+  let page = 0
 
-  while (true) {
+  while (page < MAX_PAGES) {
     const url = `${BASE_URL}/api/calendar-list.json?from=${date}&to=${date}&limit=${PAGE_SIZE}&offset=${offset}`
 
     const res = await fetch(url, {
@@ -76,10 +78,11 @@ export async function scrapeSaiten(date: string): Promise<RawEvent[]> {
       })
     })
 
-    // If this page added no new events, we've passed the target date — stop
+    // If this page added no new events, stop
     if (events.length === prevCount) break
 
     offset += PAGE_SIZE
+    page++
   }
 
   console.log(`[saiten] ${events.length} Events gefunden für ${date}`)
