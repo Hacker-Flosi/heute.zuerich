@@ -1,48 +1,28 @@
 // scripts/scrapers/saiten.ts
 // saiten.ch Scraper für St. Gallen
-// Nutzt die JSON REST API: /api/calendar-list.json
+// API gibt HTML in `content` zurück — wird mit Cheerio geparst
 
+import * as cheerio from 'cheerio'
 import type { RawEvent } from '../types'
 
 const BASE_URL = 'https://www.saiten.ch'
 const PAGE_SIZE = 100
 
-// Only include events in the St. Gallen region
-const SG_CITIES = ['st. gallen', 'st gallen', 'saint-gallen', 'gossau', 'rorschach', 'arbon', 'romanshorn']
-
-interface SaitenItem {
-  title: string
-  date: string        // "Sa. 4.4." or "Sa. 4. Apr."
-  time: string        // "19:00–22:00" or "19:00"
-  location: {
-    place: string     // venue name
-    city: string      // city name
-  }
-  url: string         // relative, e.g. "kalender/event-slug"
-  category?: string
-}
-
 interface SaitenResponse {
-  items: SaitenItem[]
+  content: string
   totalCount: number
   totalPages: number
 }
 
-function parseTime(raw: string | null | undefined): string {
+function parseTime(raw: string): string {
   if (!raw) return '00:00'
-  // "19:00–22:00" or "19:00 – 22:00" → take start time
-  const clean = raw.split(/[–\-]/)[0].trim()
-  // Validate HH:MM
-  if (/^\d{1,2}:\d{2}$/.test(clean)) {
-    const [h, m] = clean.split(':')
+  // "19:00—22:00" or "19:00" → take start time
+  const start = raw.split(/[—\-–]/)[0].trim()
+  if (/^\d{1,2}:\d{2}$/.test(start)) {
+    const [h, m] = start.split(':')
     return `${h.padStart(2, '0')}:${m}`
   }
   return '00:00'
-}
-
-function isInStGallen(item: SaitenItem): boolean {
-  const city = item.location?.city?.toLowerCase() ?? ''
-  return SG_CITIES.some((c) => city.includes(c))
 }
 
 export async function scrapeSaiten(date: string): Promise<RawEvent[]> {
@@ -65,28 +45,40 @@ export async function scrapeSaiten(date: string): Promise<RawEvent[]> {
     }
 
     const data: SaitenResponse = await res.json()
-    if (!data.items?.length) break
 
-    for (const item of data.items) {
-      if (!item.title || !item.location?.place) continue
-      if (!isInStGallen(item)) continue
+    if (!data.content?.trim()) break
 
-      const eventUrl = item.url
-        ? (item.url.startsWith('http') ? item.url : `${BASE_URL}/${item.url}`)
-        : BASE_URL
+    const prevCount = events.length
+
+    const $ = cheerio.load(data.content)
+
+    $('a.a-calendar-item').each((_, el) => {
+      const title = $(el).find('.a-calendar-item__title').text().trim()
+      const place = $(el).find('.a-calendar-item__location__place').text().trim()
+      const city  = $(el).find('.a-calendar-item__location__name').text().trim()
+      const time  = $(el).find('.a-calendar-item__time').text().trim()
+      const href  = $(el).attr('href') ?? ''
+
+      if (!title || !place) return
+
+      const eventUrl = href.startsWith('http')
+        ? href
+        : `${BASE_URL}/${href.replace(/^\//, '')}`
 
       events.push({
-        name: item.title,
-        rawName: item.title,
-        location: item.location.place,
+        name: title,
+        rawName: title,
+        location: `${place}${city ? ', ' + city : ''}`,
         date,
-        time: parseTime(item.time),
+        time: parseTime(time),
         url: eventUrl,
         source: 'saiten',
       })
-    }
+    })
 
-    if (offset + PAGE_SIZE >= data.totalCount) break
+    // If this page added no new events, we've passed the target date — stop
+    if (events.length === prevCount) break
+
     offset += PAGE_SIZE
   }
 
