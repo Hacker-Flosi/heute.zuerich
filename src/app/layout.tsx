@@ -1,6 +1,7 @@
 // src/app/layout.tsx
 
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -20,6 +21,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="de">
+      <head>
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-TME0GKBTFB" strategy="afterInteractive" />
+        <Script id="gtag-init" strategy="afterInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-TME0GKBTFB');
+        `}</Script>
+      </head>
       <body>{children}</body>
     </html>
   )
