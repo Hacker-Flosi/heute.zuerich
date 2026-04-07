@@ -8,73 +8,50 @@ import { formatDateLabel, getDateString } from '../src/lib/constants'
 import { generatePostImage } from './generate-image'
 import type { ImageEvent } from './generate-image'
 
-const IG_ACCOUNT_ID  = process.env.INSTAGRAM_ACCOUNT_ID!
-const ACCESS_TOKEN   = process.env.META_ACCESS_TOKEN!
-const GRAPH_BASE     = 'https://graph.instagram.com/v21.0'
+const GRAPH_BASE      = 'https://graph.instagram.com/v21.0'
 const EVENTS_PER_PAGE = 8
-const MAX_CAROUSEL    = 10  // Meta API Limit
-
-if (!IG_ACCOUNT_ID || !ACCESS_TOKEN) {
-  console.error('INSTAGRAM_ACCOUNT_ID oder META_ACCESS_TOKEN fehlt')
-  process.exit(1)
-}
+const MAX_CAROUSEL    = 10
 
 // ─── Meta Graph API Helpers ───────────────────────────────────────────────────
 
-async function createCarouselItem(imageUrl: string): Promise<string> {
-  const res = await fetch(`${GRAPH_BASE}/${IG_ACCOUNT_ID}/media`, {
+async function createCarouselItem(imageUrl: string, igId: string, token: string): Promise<string> {
+  const res = await fetch(`${GRAPH_BASE}/${igId}/media`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      image_url: imageUrl,
-      is_carousel_item: true,
-      access_token: ACCESS_TOKEN,
-    }),
+    body: JSON.stringify({ image_url: imageUrl, is_carousel_item: true, access_token: token }),
   })
   const data = await res.json()
   if (!res.ok || !data.id) throw new Error(`Carousel-Item-Fehler: ${JSON.stringify(data)}`)
   return data.id
 }
 
-async function createSingleContainer(imageUrl: string, caption: string): Promise<string> {
-  const res = await fetch(`${GRAPH_BASE}/${IG_ACCOUNT_ID}/media`, {
+async function createSingleContainer(imageUrl: string, caption: string, igId: string, token: string): Promise<string> {
+  const res = await fetch(`${GRAPH_BASE}/${igId}/media`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      image_url: imageUrl,
-      caption,
-      access_token: ACCESS_TOKEN,
-    }),
+    body: JSON.stringify({ image_url: imageUrl, caption, access_token: token }),
   })
   const data = await res.json()
   if (!res.ok || !data.id) throw new Error(`Container-Fehler: ${JSON.stringify(data)}`)
   return data.id
 }
 
-async function createCarouselContainer(childIds: string[], caption: string): Promise<string> {
-  const res = await fetch(`${GRAPH_BASE}/${IG_ACCOUNT_ID}/media`, {
+async function createCarouselContainer(childIds: string[], caption: string, igId: string, token: string): Promise<string> {
+  const res = await fetch(`${GRAPH_BASE}/${igId}/media`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      media_type: 'CAROUSEL',
-      children: childIds.join(','),
-      caption,
-      access_token: ACCESS_TOKEN,
-    }),
+    body: JSON.stringify({ media_type: 'CAROUSEL', children: childIds.join(','), caption, access_token: token }),
   })
   const data = await res.json()
   if (!res.ok || !data.id) throw new Error(`Carousel-Container-Fehler: ${JSON.stringify(data)}`)
   return data.id
 }
 
-async function publishContainer(containerId: string): Promise<string> {
-  const res = await fetch(`${GRAPH_BASE}/${IG_ACCOUNT_ID}/media_publish`, {
+async function publishContainer(containerId: string, igId: string, token: string): Promise<string> {
+  const res = await fetch(`${GRAPH_BASE}/${igId}/media_publish`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      creation_id: containerId,
-      access_token: ACCESS_TOKEN,
-    }),
+    body: JSON.stringify({ creation_id: containerId, access_token: token }),
   })
   const data = await res.json()
   if (!res.ok || !data.id) throw new Error(`Publish-Fehler: ${JSON.stringify(data)}`)
@@ -113,6 +90,13 @@ function buildCaption(dateLabel: string): string {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export async function postInstagram(): Promise<void> {
+  const igId  = process.env.INSTAGRAM_ACCOUNT_ID
+  const token = process.env.META_ACCESS_TOKEN
+  if (!igId || !token) {
+    console.error('INSTAGRAM_ACCOUNT_ID oder META_ACCESS_TOKEN fehlt')
+    process.exit(1)
+  }
+
   const date = getDateString(0)
   const dateLabel = formatDateLabel(0)
 
@@ -127,7 +111,7 @@ export async function postInstagram(): Promise<void> {
     return
   }
 
-  // 2. Events in Seiten aufteilen (max 10 Bilder für Carousel)
+  // 2. Events in Seiten aufteilen
   const chunks: ImageEvent[][] = []
   for (let i = 0; i < events.length; i += EVENTS_PER_PAGE) {
     chunks.push(events.slice(i, i + EVENTS_PER_PAGE))
@@ -150,28 +134,28 @@ export async function postInstagram(): Promise<void> {
 
   const caption = buildCaption(dateLabel)
 
-  // 4a. Einzelbild-Post (nur 1 Seite)
+  // 4a. Einzelbild-Post
   if (pages.length === 1) {
-    const containerId = await createSingleContainer(imageUrls[0], caption)
+    const containerId = await createSingleContainer(imageUrls[0], caption, igId, token)
     console.log(`[instagram] Container erstellt: ${containerId}`)
-    const postId = await publishContainer(containerId)
+    const postId = await publishContainer(containerId, igId, token)
     console.log(`[instagram] ✅ Post publiziert: ${postId}`)
     return
   }
 
-  // 4b. Karussell-Post (mehrere Seiten)
+  // 4b. Karussell-Post
   console.log('[instagram] Erstelle Karussell-Items...')
   const childIds: string[] = []
   for (const url of imageUrls) {
-    const itemId = await createCarouselItem(url)
+    const itemId = await createCarouselItem(url, igId, token)
     childIds.push(itemId)
     console.log(`[instagram] Carousel-Item: ${itemId}`)
   }
 
-  const carouselId = await createCarouselContainer(childIds, caption)
+  const carouselId = await createCarouselContainer(childIds, caption, igId, token)
   console.log(`[instagram] Carousel-Container: ${carouselId}`)
 
-  const postId = await publishContainer(carouselId)
+  const postId = await publishContainer(carouselId, igId, token)
   console.log(`[instagram] ✅ Karussell-Post publiziert: ${postId}`)
 }
 
