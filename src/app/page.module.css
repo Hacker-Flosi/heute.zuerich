@@ -4,7 +4,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #EEEEEE;
+  background: var(--bg);
 }
 
 .header {
@@ -17,7 +17,7 @@
   font-size: 1.8rem;
   letter-spacing: -0.04em;
   line-height: 1;
-  color: #000;
+  color: var(--fg);
   text-decoration: none;
   opacity: 0.4;
 }
@@ -42,15 +42,15 @@
   font-weight: 700;
   font-size: 2.5rem;
   letter-spacing: -0.03em;
-  color: #000;
+  color: var(--fg);
   text-decoration: none;
   text-transform: uppercase;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid var(--border-muted);
   transition: background 0.1s ease;
 }
 
 .cityLink:hover {
-  background: #e0e0e0;
+  background: var(--hover-bg);
 }
 
 .cityDisabled {
@@ -62,9 +62,9 @@
   font-weight: 700;
   font-size: 2.5rem;
   letter-spacing: -0.03em;
-  color: #000;
+  color: var(--fg);
   text-transform: uppercase;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid var(--border-muted);
   opacity: 0.25;
   cursor: default;
   pointer-events: none;
@@ -84,13 +84,13 @@
   padding: 1.5rem 1rem;
   display: flex;
   gap: 1.5rem;
-  border-top: 1px solid #ccc;
+  border-top: 1px solid var(--border-muted);
 }
 
 .footer a {
   font-family: var(--font-mono);
   font-size: 0.6rem;
-  color: #000;
+  color: var(--fg);
   opacity: 0.3;
   text-decoration: none;
   letter-spacing: 0.05em;
@@ -103,36 +103,16 @@
 }
 
 @media (min-width: 768px) {
-  .header {
-    padding: 1.5rem 2rem 1rem;
-  }
-  .logo {
-    font-size: 2.4rem;
-  }
-  .logoImage {
-    height: 2rem;
-  }
-  .cityLink {
-    padding: 1.5rem 2rem;
-    font-size: 4rem;
-  }
-  .cityDisabled {
-    padding: 1.5rem 2rem;
-    font-size: 4rem;
-  }
-  .footer {
-    padding: 2rem;
-  }
+  .header { padding: 1.5rem 2rem 1rem; }
+  .logo { font-size: 2.4rem; }
+  .logoImage { height: 2rem; }
+  .cityLink { padding: 1.5rem 2rem; font-size: 4rem; }
+  .cityDisabled { padding: 1.5rem 2rem; font-size: 4rem; }
+  .footer { padding: 2rem; }
 }
 
 @media (min-width: 1024px) {
-  .header {
-    padding: 2rem 3rem 1rem;
-  }
-  .logo {
-    font-size: 2.8rem;
-  }
-  .logoImage {
-    height: 2.4rem;
-  }
+  .header { padding: 2rem 3rem 1rem; }
+  .logo { font-size: 2.8rem; }
+  .logoImage { height: 2.4rem; }
 }

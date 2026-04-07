@@ -3,11 +3,31 @@
 
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap');
 
-:root {
+:root,
+[data-theme="light"] {
   --font-display: 'JetBrains Mono', monospace;
   --font-mono: 'JetBrains Mono', monospace;
   --bg: #EEEEEE;
   --fg: #000000;
+  --border: #000000;
+  --border-muted: #ccc;
+  --muted: #555;
+  --tab-bg: #ffffff;
+  --tab-active-bg: #000000;
+  --tab-active-fg: #ffffff;
+  --hover-bg: #e0e0e0;
+}
+
+[data-theme="dark"] {
+  --bg: #000000;
+  --fg: #ffffff;
+  --border: #ffffff;
+  --border-muted: #333;
+  --muted: #aaa;
+  --tab-bg: #000000;
+  --tab-active-bg: #ffffff;
+  --tab-active-fg: #000000;
+  --hover-bg: #111111;
 }
 
 * {
@@ -27,4 +47,5 @@ body {
   color: var(--fg);
   font-family: var(--font-display);
   min-height: 100vh;
+  transition: background 0.2s ease, color 0.2s ease;
 }

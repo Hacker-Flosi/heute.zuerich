@@ -13,7 +13,7 @@
   font-size: 1.8rem;
   letter-spacing: -0.04em;
   line-height: 1;
-  color: #000;
+  color: var(--fg);
   text-decoration: none;
   opacity: 0.4;
 }
@@ -31,7 +31,7 @@
   font-size: 1.8rem;
   letter-spacing: -0.04em;
   line-height: 1;
-  color: #000;
+  color: var(--fg);
 }
 
 .stickyNav {
@@ -56,9 +56,9 @@
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: #000;
-  background: #fff;
-  border: 1.5px solid #000;
+  color: var(--fg);
+  background: var(--tab-bg);
+  border: 1.5px solid var(--border);
   border-radius: 999px;
   padding: 0.4rem 0.9rem;
   cursor: pointer;
@@ -68,13 +68,13 @@
 }
 
 .tab:hover:not(.tabActive) {
-  background: #f0f0f0;
+  background: var(--hover-bg);
 }
 
 .tabActive {
-  background: #000;
-  color: #fff;
-  border-color: #000;
+  background: var(--tab-active-bg);
+  color: var(--tab-active-fg);
+  border-color: var(--border);
 }
 
 .list {
@@ -86,7 +86,7 @@
 .empty {
   padding: 3rem 1rem;
   text-align: center;
-  color: #999;
+  color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.85rem;
 }
@@ -95,13 +95,13 @@
   padding: 1.5rem 1rem;
   display: flex;
   gap: 1.5rem;
-  border-top: 1px solid #ccc;
+  border-top: 1px solid var(--border-muted);
 }
 
 .footer a {
   font-family: var(--font-mono);
   font-size: 0.6rem;
-  color: #000;
+  color: var(--fg);
   opacity: 0.3;
   text-decoration: none;
   letter-spacing: 0.05em;
@@ -118,34 +118,16 @@
     padding: 1.5rem 2rem 1rem;
     gap: 0.75rem;
   }
-  .logo {
-    font-size: 2.4rem;
-  }
-  .city {
-    font-size: 2.4rem;
-  }
-  .stickyNav {
-    padding: 0.6rem 2rem;
-  }
-  .footer {
-    padding: 2rem;
-  }
+  .logo { font-size: 2.4rem; }
+  .city { font-size: 2.4rem; }
+  .stickyNav { padding: 0.6rem 2rem; }
+  .footer { padding: 2rem; }
 }
 
 @media (min-width: 1024px) {
-  .header {
-    padding: 2rem 3rem 1rem;
-  }
-  .logo {
-    font-size: 2.8rem;
-  }
-  .city {
-    font-size: 2.8rem;
-  }
-  .stickyNav {
-    padding: 0.6rem 3rem;
-  }
-  .footer {
-    padding: 2.5rem 3rem;
-  }
+  .header { padding: 2rem 3rem 1rem; }
+  .logo { font-size: 2.8rem; }
+  .city { font-size: 2.8rem; }
+  .stickyNav { padding: 0.6rem 3rem; }
+  .footer { padding: 2.5rem 3rem; }
 }

@@ -4,7 +4,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #EEEEEE;
+  background: var(--bg);
 }
 
 .header {
@@ -20,7 +20,7 @@
   font-size: 1.8rem;
   letter-spacing: -0.04em;
   line-height: 1;
-  color: #000;
+  color: var(--fg);
   text-decoration: none;
   opacity: 0.4;
 }
@@ -38,12 +38,12 @@
   font-size: 1.8rem;
   letter-spacing: -0.04em;
   line-height: 1;
-  color: #000;
+  color: var(--fg);
 }
 
 .content {
   padding: 2rem 1rem;
-  border-top: 1px solid #ccc;
+  border-top: 1px solid var(--border-muted);
 }
 
 .headline {
@@ -52,7 +52,7 @@
   font-size: 2.5rem;
   letter-spacing: -0.03em;
   line-height: 1.1;
-  color: #000;
+  color: var(--fg);
   margin-bottom: 1.5rem;
   text-transform: uppercase;
 }
@@ -61,13 +61,13 @@
   font-family: var(--font-mono);
   font-size: 0.78rem;
   line-height: 1.7;
-  color: #555;
+  color: var(--muted);
   margin-bottom: 1rem;
 }
 
 .contact {
   padding: 2rem 1rem;
-  border-top: 1px solid #ccc;
+  border-top: 1px solid var(--border-muted);
 }
 
 .contactHeadline {
@@ -75,7 +75,7 @@
   font-weight: 700;
   font-size: 1.2rem;
   letter-spacing: -0.02em;
-  color: #000;
+  color: var(--fg);
   text-transform: uppercase;
   margin-bottom: 1rem;
 }
@@ -85,10 +85,10 @@
   margin-top: 1rem;
   font-family: var(--font-mono);
   font-size: 0.78rem;
-  color: #000;
+  color: var(--fg);
   text-decoration: none;
   letter-spacing: 0.02em;
-  border-bottom: 1px solid #000;
+  border-bottom: 1px solid var(--fg);
 }
 
 .email:hover {
@@ -100,13 +100,13 @@
   padding: 1.5rem 1rem;
   display: flex;
   gap: 1.5rem;
-  border-top: 1px solid #ccc;
+  border-top: 1px solid var(--border-muted);
 }
 
 .footer a {
   font-family: var(--font-mono);
   font-size: 0.6rem;
-  color: #000;
+  color: var(--fg);
   opacity: 0.3;
   text-decoration: none;
   letter-spacing: 0.05em;

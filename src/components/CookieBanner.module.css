@@ -5,8 +5,8 @@
   transform: translateX(-50%);
   width: calc(100% - 48px);
   max-width: 600px;
-  background: #000;
-  color: #fff;
+  background: var(--fg);
+  color: var(--bg);
   padding: 16px 20px;
   display: flex;
   flex-direction: column;
@@ -31,7 +31,7 @@
 }
 
 .link {
-  color: #fff;
+  color: var(--bg);
   text-decoration: underline;
 }
 
@@ -48,17 +48,17 @@
   font-weight: 700;
   padding: 8px 16px;
   cursor: pointer;
-  border: 1px solid #fff;
+  border: 1px solid var(--bg);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .decline {
   background: transparent;
-  color: #fff;
+  color: var(--bg);
 }
 
 .accept {
-  background: #fff;
-  color: #000;
+  background: var(--bg);
+  color: var(--fg);
 }
