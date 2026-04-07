@@ -71,6 +71,37 @@ export default defineType({
       },
     }),
     defineField({
+      name: 'eventType',
+      title: 'Event-Typ',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Konzert', value: 'konzert' },
+          { title: 'DJ / Club', value: 'dj_club' },
+          { title: 'Party', value: 'party' },
+          { title: 'Kultur', value: 'kultur' },
+          { title: 'Kunst / Vernissage', value: 'kunst' },
+          { title: 'Markt / Festival', value: 'markt' },
+          { title: 'Open Air / Outdoor', value: 'open_air' },
+          { title: 'Special', value: 'special' },
+        ],
+      },
+    }),
+    defineField({
+      name: 'layer',
+      title: 'Pipeline-Layer',
+      type: 'string',
+      description: '"venue" = garantiert via Venue-Liste, "discovery" = KI-kuratiert',
+      options: {
+        list: [
+          { title: 'Venue (Layer 1)', value: 'venue' },
+          { title: 'Discovery (Layer 2)', value: 'discovery' },
+        ],
+        layout: 'radio',
+      },
+      initialValue: 'discovery',
+    }),
+    defineField({
       name: 'curated',
       title: 'Kuratiert',
       type: 'boolean',
