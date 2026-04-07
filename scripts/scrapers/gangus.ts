@@ -125,6 +125,8 @@ export async function scrapeGangus(date: string): Promise<RawEvent[]> {
         time: formatTime(rawDate),
         url,
         source: 'gangus',
+        // gangus.ch covers only Zentralschweiz; default to luzern if locality not set
+        locationCity: locality || 'luzern',
       })
     }
 

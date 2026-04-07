@@ -1,21 +1,33 @@
 // src/app/about/page.tsx — About page
 
 import Link from 'next/link'
+import Image from 'next/image'
+import { getSanityClient } from '@/lib/sanity'
+import { SITE_SETTINGS_QUERY } from '@/lib/queries'
 import styles from './about.module.css'
 import type { Metadata } from 'next'
+
+export const revalidate = 3600
 
 export const metadata: Metadata = {
   title: 'waslauft.in / About',
   description: 'Weniger Noise, mehr Ausgang.',
 }
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const settings = await getSanityClient().fetch<Record<string, { asset: { url: string } } | null>>(SITE_SETTINGS_QUERY)
+  const logoUrl = settings?.homeLogo?.asset?.url ?? null
+
   return (
     <main className={styles.main}>
       <header className={styles.header}>
-        <Link href="/" className={styles.breadcrumb}>waslauft.in</Link>
-        <span className={styles.breadcrumbSep}>/</span>
-        <span className={styles.breadcrumbCurrent}>About</span>
+        <Link href="/" className={styles.logo}>
+          {logoUrl
+            ? <Image src={logoUrl} alt="waslauft.in" className={styles.logoImage} width={200} height={32} />
+            : 'waslauft.in'
+          }
+        </Link>
+        <span className={styles.current}>About</span>
       </header>
 
       <section className={styles.content}>
@@ -26,7 +38,7 @@ export default function AboutPage() {
           die es wirklich wert sind.
         </p>
         <p className={styles.body}>
-          Täglich werden die besten 10–15 Events ausgewählt und chronologisch aufgelistet.
+          Täglich werden die besten Events ausgewählt und chronologisch aufgelistet.
           Ein Klick führt direkt zum Veranstalter.
         </p>
       </section>

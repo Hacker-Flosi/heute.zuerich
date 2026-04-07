@@ -4,11 +4,11 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #000;
+  background: #EEEEEE;
 }
 
 .header {
-  padding: 1.2rem 1rem;
+  padding: 1.2rem 1rem 0.8rem;
 }
 
 .logo {
@@ -16,7 +16,17 @@
   font-weight: 700;
   font-size: 1.8rem;
   letter-spacing: -0.04em;
-  color: #F5A623;
+  line-height: 1;
+  color: #000;
+  text-decoration: none;
+  opacity: 0.4;
+}
+
+.logoImage {
+  display: block;
+  height: 1.6rem;
+  width: auto;
+  opacity: 0.6;
 }
 
 .cities {
@@ -32,15 +42,15 @@
   font-weight: 700;
   font-size: 2.5rem;
   letter-spacing: -0.03em;
-  color: #fff;
+  color: #000;
   text-decoration: none;
   text-transform: uppercase;
-  border-bottom: 1px solid #222;
+  border-bottom: 1px solid #ccc;
   transition: background 0.1s ease;
 }
 
 .cityLink:hover {
-  background: #111;
+  background: #e0e0e0;
 }
 
 .cityDisabled {
@@ -52,9 +62,9 @@
   font-weight: 700;
   font-size: 2.5rem;
   letter-spacing: -0.03em;
-  color: #fff;
+  color: #000;
   text-transform: uppercase;
-  border-bottom: 1px solid #222;
+  border-bottom: 1px solid #ccc;
   opacity: 0.25;
   cursor: default;
   pointer-events: none;
@@ -74,13 +84,14 @@
   padding: 1.5rem 1rem;
   display: flex;
   gap: 1.5rem;
+  border-top: 1px solid #ccc;
 }
 
 .footer a {
   font-family: var(--font-mono);
   font-size: 0.6rem;
-  color: #fff;
-  opacity: 0.25;
+  color: #000;
+  opacity: 0.3;
   text-decoration: none;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -93,7 +104,13 @@
 
 @media (min-width: 768px) {
   .header {
-    padding: 1.5rem 2rem;
+    padding: 1.5rem 2rem 1rem;
+  }
+  .logo {
+    font-size: 2.4rem;
+  }
+  .logoImage {
+    height: 2rem;
   }
   .cityLink {
     padding: 1.5rem 2rem;
@@ -105,5 +122,17 @@
   }
   .footer {
     padding: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .header {
+    padding: 2rem 3rem 1rem;
+  }
+  .logo {
+    font-size: 2.8rem;
+  }
+  .logoImage {
+    height: 2.4rem;
   }
 }

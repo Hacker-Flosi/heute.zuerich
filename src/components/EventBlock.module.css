@@ -9,7 +9,6 @@
   display: block;
   padding: 0.6rem 1rem 0.7rem;
   text-decoration: none;
-  color: #000;
   cursor: pointer;
   transition: filter 0.15s ease;
   position: relative;
@@ -22,7 +21,30 @@
 .meta {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.metaLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.categoryPill {
+  display: inline-block;
+  background: #000;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.15em 0.5em;
+  border-radius: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .location {
@@ -31,7 +53,6 @@
   font-weight: 400;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #000;
   opacity: 0.7;
 }
 
@@ -41,8 +62,9 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #000;
   opacity: 0.7;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .name {
@@ -51,20 +73,9 @@
   font-size: 1.4rem;
   letter-spacing: -0.02em;
   line-height: 1.1;
-  color: #000;
   margin-top: 0.15rem;
   word-wrap: break-word;
   text-transform: uppercase;
-}
-
-.eventType {
-  font-family: var(--font-mono);
-  font-size: 0.55rem;
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  opacity: 0.45;
-  margin-top: 0.3rem;
 }
 
 .sponsoredBadge {

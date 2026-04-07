@@ -1,8 +1,8 @@
-// src/components/EventList.tsx
 'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Event } from '@/lib/constants'
 import EventBlock from './EventBlock'
 import styles from './EventList.module.css'
@@ -10,6 +10,7 @@ import styles from './EventList.module.css'
 interface EventListProps {
   city: string
   cityLabel: string
+  logoUrl?: string | null
   today: Event[]
   tomorrow: Event[]
   dayAfter: Event[]
@@ -29,7 +30,7 @@ const TAB_LABELS = [
   getTabLabel('Übermorgen', 2),
 ]
 
-export default function EventList({ city, cityLabel, today, tomorrow, dayAfter }: EventListProps) {
+export default function EventList({ city, cityLabel, logoUrl, today, tomorrow, dayAfter }: EventListProps) {
   const [activeTab, setActiveTab] = useState<number>(0)
 
   const events = [today, tomorrow, dayAfter]
@@ -37,9 +38,19 @@ export default function EventList({ city, cityLabel, today, tomorrow, dayAfter }
 
   return (
     <>
+      {/* Non-sticky: scrolls away */}
       <header className={styles.header}>
-        <Link href="/" className={styles.logo}>waslauft.in</Link>
+        <Link href="/" className={styles.logo}>
+          {logoUrl
+            ? <Image src={logoUrl} alt="waslauft.in" className={styles.logoImage} width={160} height={28} />
+            : 'waslauft.in'
+          }
+        </Link>
         <span className={styles.city}>{cityLabel}</span>
+      </header>
+
+      {/* Sticky: only the pills, transparent background */}
+      <div className={styles.stickyNav}>
         <nav className={styles.tabs}>
           {TAB_LABELS.map((label, i) => (
             <button
@@ -51,7 +62,7 @@ export default function EventList({ city, cityLabel, today, tomorrow, dayAfter }
             </button>
           ))}
         </nav>
-      </header>
+      </div>
 
       <ul className={styles.list}>
         {currentEvents.length > 0 ? (

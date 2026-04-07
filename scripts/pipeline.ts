@@ -6,7 +6,7 @@
 import { scrapeEventfrog } from './scrapers/eventfrog'
 import { scrapeHellozurich } from './scrapers/hellozurich'
 import { scrapeGangus } from './scrapers/gangus'
-import { scrapeSaiten } from './scrapers/saiten'
+import { scrapeResidentAdvisor } from './scrapers/residentadvisor'
 import { deduplicateEvents } from './deduplicate'
 import { curateEvents, curateDiscovery } from './curate'
 import { getSanityClient, getSanityWriteClient } from '../src/lib/sanity'
@@ -19,22 +19,33 @@ import type { RawEvent, SanityVenue } from './types'
 type ScraperFn = (date: string) => Promise<RawEvent[]>
 
 const CITY_CONFIG: Record<string, { twoLayer: boolean; scrapers: ScraperFn[] }> = {
-  zuerich:  { twoLayer: true,  scrapers: [scrapeEventfrog, scrapeHellozurich] },
-  luzern:   { twoLayer: false, scrapers: [scrapeGangus, scrapeEventfrog] },
-  stgallen: { twoLayer: false, scrapers: [scrapeSaiten, scrapeEventfrog] },
+  zuerich:  { twoLayer: true, scrapers: [scrapeEventfrog, scrapeHellozurich, scrapeResidentAdvisor] },
+  stgallen: { twoLayer: true, scrapers: [scrapeEventfrog] },
+  luzern:   { twoLayer: true, scrapers: [scrapeGangus, scrapeEventfrog] },
+  // Basel + Bern: Coming Soon — not scraped until active
 }
 
-// Excluded cities for Zürich geo-filter
+// Zürich: blacklist approach (exclude surrounding cities)
 const ZH_EXCLUDED = [
   'winterthur', 'baden', 'brugg', 'aarau', 'rapperswil', 'zug',
   'schaffhausen', 'frauenfeld', 'olten', 'solothurn', 'luzern',
   'bern', 'st. gallen',
 ]
 
-// Inclusion lists for other cities (location must contain at least one term)
+// All other cities: whitelist approach (location must contain at least one term)
 const CITY_INCLUSIONS: Record<string, string[]> = {
-  luzern:   ['luzern', 'lucerne', 'emmen', 'kriens', 'horw', 'ebikon'],
-  stgallen: ['st. gallen', 'st gallen', 'saint-gallen', 'gossau', 'rorschach'],
+  basel:    ['basel', 'riehen'],
+  bern:     ['bern', 'muri bei bern', 'köniz'],
+  stgallen: ['st. gallen', 'st gallen', 'st.gallen', 'saint-gallen'],
+  luzern:   ['luzern', 'lucerne', 'kriens', 'horw', 'ebikon'],
+}
+
+// Cities excluded from whitelist even if they contain a matching term
+const CITY_EXCLUSIONS: Record<string, string[]> = {
+  basel:    ['liestal', 'aesch', 'muttenz', 'lörrach', 'weil am rhein'],
+  bern:     ['thun', 'biel', 'burgdorf', 'langenthal'],
+  stgallen: ['rorschach', 'herisau', 'gossau', 'wil'],
+  luzern:   ['sursee', 'emmen', 'zug'],
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -62,34 +73,118 @@ function geoFilterCity(event: RawEvent, city: string): boolean {
   const inclusions = CITY_INCLUSIONS[city]
   if (!inclusions) return true
   const loc = (event.location + ' ' + (event.locationCity ?? '')).toLowerCase()
+  const excluded = CITY_EXCLUSIONS[city] ?? []
+  if (excluded.some((excl) => loc.includes(excl))) return false
   return inclusions.some((incl) => loc.includes(incl))
 }
 
-/** Match a venue's eventfrogName against the event's location string */
+// Generic words that appear in many unrelated location strings — never use for matching.
+// Includes all city names used as suffixes in eventfrogName (e.g. "Grabenhalle St. Gallen")
+const VENUE_STOPWORDS = new Set([
+  // Zürich
+  'zürich', 'zuerich', 'zurich',
+  // St. Gallen — "st" is already <4 chars, but "gallen" must be excluded
+  'gallen',
+  // Luzern
+  'luzern', 'lucerne',
+  // Basel
+  'basel', 'riehen',
+  // Bern
+  'bern', 'berne',
+  // Generic venue-type words
+  'club', 'bar', 'the', 'und', 'von', 'der', 'die', 'das', 'für',
+  'garten', 'kirche', 'museum', 'theater', 'halle', 'haus',
+  'zentrum', 'hof', 'platz', 'str', 'strasse', 'restaurant',
+])
+
+/** Strip trailing city suffix from venue names like "Grabenhalle St. Gallen" → "Grabenhalle" */
+function stripCitySuffix(name: string): string {
+  return name
+    .replace(/\s+st\.?\s+gallen$/i, '')
+    .replace(/\s+luzern$/i, '')
+    .replace(/\s+z[uü]rich$/i, '')
+    .replace(/\s+basel$/i, '')
+    .replace(/\s+bern$/i, '')
+    .trim()
+}
+
+/** Extract venue-specific tokens: ≥4 chars, not a stopword */
+function venueTokens(s: string): string[] {
+  return s.toLowerCase()
+    .split(/[\s\-\/&,.()+]+/)
+    .filter((t) => t.length >= 4 && !VENUE_STOPWORDS.has(t))
+}
+
+/** Match a venue against the event's location string.
+ *  Pass 1: word-boundary match on name + stripped name + eventfrogName + stripped eventfrogName.
+ *  Pass 2: token overlap using only the stripped name (no city suffix tokens). */
 function matchVenue(event: RawEvent, venues: SanityVenue[], summer: boolean): SanityVenue | null {
   const loc = event.location.toLowerCase()
-  // Summer: prioritise summerBonus venues
+  const locTokens = venueTokens(loc)
+
   const sorted = summer
     ? [...venues].sort((a, b) => (b.summerBonus ? 1 : 0) - (a.summerBonus ? 1 : 0))
     : venues
+
+  // Pass 1: word-boundary substring match (try full name AND city-stripped name)
+  const exact = sorted.find((v) => {
+    const names = [v.name, stripCitySuffix(v.name), v.eventfrogName, v.eventfrogName ? stripCitySuffix(v.eventfrogName) : undefined]
+      .filter((n): n is string => !!n)
+      .map((n) => n.toLowerCase())
+    return names.some((n) => {
+      const re = new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`)
+      return re.test(loc)
+    })
+  })
+  if (exact) return exact
+
+  // Pass 2: token overlap — use ONLY stripped name (no city suffix) to avoid "gallen" matching everything
   return sorted.find((v) => {
-    const search = (v.eventfrogName ?? v.name).toLowerCase()
-    return loc.includes(search) || search.includes(loc) ||
-      // also match on display name alone (e.g. "Hive" in "Hive Club Zürich")
-      loc.includes(v.name.toLowerCase())
+    const vTok = venueTokens(stripCitySuffix(v.name))
+    return vTok.length > 0 && vTok.some((t) => locTokens.includes(t))
   }) ?? null
 }
 
-/** Enforce ≥60% nightlife ratio. Trims non-nightlife events from the end if needed. */
-function enforceNightlifeRatio(events: RawEvent[]): RawEvent[] {
+const TARGET_EVENTS = 30
+
+/** Enforce ≥60% nightlife ratio — only for Zürich AND only when pool > 30 events. */
+function enforceNightlifeRatio(events: RawEvent[], city: string): RawEvent[] {
+  if (events.length === 0) return events
+  if (city !== 'zuerich') return events
+  if (events.length <= TARGET_EVENTS) return events  // don't trim small pools
   const nightlife = events.filter((e) => isNightlife(e.eventType ?? 'special'))
   const other = events.filter((e) => !isNightlife(e.eventType ?? 'special'))
+  if (nightlife.length === 0) return events
   const ratio = nightlife.length / events.length
-  if (ratio >= 0.6 || events.length === 0) return events
-
-  // Calculate max non-nightlife to keep
+  if (ratio >= 0.6) return events
   const maxOther = Math.floor(nightlife.length / 0.6 * 0.4)
   return [...nightlife, ...other.slice(0, maxOther)]
+}
+
+/** Fill up to TARGET_EVENTS using remaining discovery pool (not AI-chosen).
+ *  Adds events sorted by eventType priority (nightlife first). */
+function fillToTarget(chosen: RawEvent[], pool: RawEvent[]): RawEvent[] {
+  if (chosen.length >= TARGET_EVENTS) return chosen
+  const chosenIds = new Set(chosen.map((e) => e.name.toLowerCase()))
+  const remaining = pool
+    .filter((e) => !chosenIds.has(e.name.toLowerCase()))
+    .sort((a, b) => {
+      // nightlife events first when filling
+      const aNl = isNightlife(a.eventType ?? 'special') ? 0 : 1
+      const bNl = isNightlife(b.eventType ?? 'special') ? 0 : 1
+      return aNl - bNl
+    })
+  const needed = TARGET_EVENTS - chosen.length
+  return [...chosen, ...remaining.slice(0, needed)]
+}
+
+async function hasEventsForDate(city: string, date: string): Promise<boolean> {
+  const client = getSanityClient()
+  const count = await client.fetch<number>(
+    `count(*[_type == "event" && city == $city && date == $date])`,
+    { city, date }
+  )
+  return count > 0
 }
 
 async function loadActiveVenues(city: string): Promise<SanityVenue[]> {
@@ -152,10 +247,16 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]) {
   console.log(`  [Venues] ${venues.length} aktive Venues geladen`)
   const summer = isSummerSeason()
 
-  for (const offset of [0, 1, 2]) {
+  for (const [offsetIdx, offset] of ([0, 1, 2] as const).entries()) {
+    if (offsetIdx > 0) await new Promise((r) => setTimeout(r, 5_000))
     const date = getDate(offset)
     const label = ['Heute', 'Morgen', 'Übermorgen'][offset]
     console.log(`\n  ── ${label} (${date}) ──`)
+
+    if (await hasEventsForDate(city, date)) {
+      console.log('  [Skip] Bereits kuratiert — übersprungen')
+      continue
+    }
 
     // ── Scraping
     console.log('  [1/5] Scraping...')
@@ -166,8 +267,9 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]) {
       else console.error('  Scraper Fehler:', r.reason)
     }
 
-    // ── Geo-filter
-    const geoFiltered = raw.filter(geoFilterZuerich)
+    // ── Geo-filter (Zürich uses blacklist; all other cities use whitelist)
+    const geoFilter = city === 'zuerich' ? geoFilterZuerich : (e: RawEvent) => geoFilterCity(e, city)
+    const geoFiltered = raw.filter(geoFilter)
     if (raw.length - geoFiltered.length > 0)
       console.log(`  [Geo] ${raw.length - geoFiltered.length} Events ausgeschlossen`)
 
@@ -236,9 +338,10 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]) {
       console.error('  [AI] Kuratierung fehlgeschlagen, Discovery wird übersprungen:', err)
     }
 
-    // ── Post-processing
-    const allEvents = [...dedupL1, ...chosenDiscovery]
-    const final = enforceNightlifeRatio(allEvents)
+    // ── Post-processing: fill to 30, then apply nightlife ratio
+    const aiChosen = [...dedupL1, ...chosenDiscovery]
+    const filled = fillToTarget(aiChosen, discoveryPool)
+    const final = enforceNightlifeRatio(filled, city)
     final.sort((a, b) => a.time.localeCompare(b.time))
 
     const nightlifeCount = final.filter((e) => isNightlife(e.eventType ?? 'special')).length
@@ -257,6 +360,11 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]) {
     const date = getDate(offset)
     const label = ['Heute', 'Morgen', 'Übermorgen'][offset]
     console.log(`\n  ── ${label} (${date}) ──`)
+
+    if (await hasEventsForDate(city, date)) {
+      console.log('  [Skip] Bereits kuratiert — übersprungen')
+      continue
+    }
 
     const results = await Promise.allSettled(scrapers.map((fn) => fn(date)))
     const raw: RawEvent[] = []
@@ -309,12 +417,34 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]) {
 
 // ─── Orchestrator ─────────────────────────────────────────────────────────────
 
+async function deleteExpiredEvents() {
+  const client = getSanityWriteClient()
+  const today = getDate(0)
+  const expired: string[] = await client.fetch(
+    `*[_type == "event" && date < $today]._id`,
+    { today }
+  )
+  if (expired.length === 0) {
+    console.log('  [Cleanup] Keine abgelaufenen Events')
+    return
+  }
+  const tx = client.transaction()
+  for (const id of expired) tx.delete(id)
+  await tx.commit()
+  console.log(`  [Cleanup] ${expired.length} abgelaufene Events gelöscht`)
+}
+
 export async function runPipeline() {
   const start = Date.now()
   console.log('=== waslauft.in Pipeline gestartet ===')
   console.log(`Zeitpunkt: ${new Date().toISOString()}`)
 
-  for (const [city, config] of Object.entries(CITY_CONFIG)) {
+  console.log('\n── Cleanup abgelaufene Events ──')
+  await deleteExpiredEvents()
+
+  const cities = Object.entries(CITY_CONFIG)
+  for (let i = 0; i < cities.length; i++) {
+    const [city, config] = cities[i]
     console.log(`\n══ Stadt: ${city.toUpperCase()} ══`)
     try {
       if (config.twoLayer) {
@@ -324,6 +454,11 @@ export async function runPipeline() {
       }
     } catch (err) {
       console.error(`[FEHLER] Pipeline für ${city} abgebrochen:`, err)
+    }
+    // Pause between cities to avoid Eventfrog rate-limiting (429)
+    if (i < cities.length - 1) {
+      console.log('  [Rate-Limit] 30s Pause vor nächster Stadt...')
+      await new Promise((resolve) => setTimeout(resolve, 30_000))
     }
   }
 

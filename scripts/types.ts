@@ -20,7 +20,7 @@ export interface RawEvent {
   date: string       // YYYY-MM-DD
   time: string       // HH:MM
   url: string
-  source: 'eventfrog' | 'hellozurich' | 'saiten' | 'gangus' | 'kulturzueri' | 'stadt-zuerich' | 'guidle' | 'manual'
+  source: 'eventfrog' | 'hellozurich' | 'saiten' | 'gangus' | 'kulturzueri' | 'stadt-zuerich' | 'guidle' | 'residentadvisor' | 'manual'
   eventType?: EventType
   layer?: PipelineLayer
   venueId?: string       // Sanity venue document _id (Layer 1 only)

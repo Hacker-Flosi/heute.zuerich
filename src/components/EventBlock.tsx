@@ -1,7 +1,6 @@
 // src/components/EventBlock.tsx
-// Einzelner Event-Block mit farbigem Hintergrund
 
-import { Event, getEventColor, EVENT_TYPE_LABELS } from '@/lib/constants'
+import { Event, getEventColor, getTextColor, EVENT_TYPE_LABELS } from '@/lib/constants'
 import styles from './EventBlock.module.css'
 
 interface EventBlockProps {
@@ -11,6 +10,7 @@ interface EventBlockProps {
 
 export default function EventBlock({ event, index }: EventBlockProps) {
   const bgColor = getEventColor(event.colorIndex ?? index)
+  const textColor = getTextColor(bgColor)
 
   return (
     <li className={styles.item}>
@@ -19,21 +19,23 @@ export default function EventBlock({ event, index }: EventBlockProps) {
         target="_blank"
         rel="noopener noreferrer"
         className={styles.link}
-        style={{ backgroundColor: bgColor }}
+        style={{ backgroundColor: bgColor, color: textColor }}
       >
         {event.sponsored && (
           <span className={styles.sponsoredBadge}>Gesponsert</span>
         )}
         <div className={styles.meta}>
-          <span className={styles.location}>{event.location}</span>
+          <div className={styles.metaLeft}>
+            {event.eventType && (
+              <span className={styles.categoryPill}>
+                {EVENT_TYPE_LABELS[event.eventType]}
+              </span>
+            )}
+            <span className={styles.location}>{event.location}</span>
+          </div>
           <span className={styles.time}>{event.time}</span>
         </div>
         <div className={styles.name}>{event.name}</div>
-        {event.eventType && (
-          <div className={styles.eventType}>
-            {EVENT_TYPE_LABELS[event.eventType]}
-          </div>
-        )}
       </a>
     </li>
   )

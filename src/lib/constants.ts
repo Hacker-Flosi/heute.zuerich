@@ -20,6 +20,17 @@ export const getEventColor = (index: number): string => {
   return COLORS[index % COLORS.length]
 }
 
+/** WCAG-konformer Text-Kontrast: gibt '#000' oder '#fff' zurück je nach Hintergrundluminanz. */
+export function getTextColor(hex: string): '#000000' | '#ffffff' {
+  const r = parseInt(hex.slice(1, 3), 16) / 255
+  const g = parseInt(hex.slice(3, 5), 16) / 255
+  const b = parseInt(hex.slice(5, 7), 16) / 255
+  const lin = (c: number) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+  // Switch to white text when luminance < 0.179 (equal contrast breakpoint)
+  return L < 0.179 ? '#ffffff' : '#000000'
+}
+
 // Datumshelfer
 export const getDateString = (offset: number = 0): string => {
   const d = new Date()

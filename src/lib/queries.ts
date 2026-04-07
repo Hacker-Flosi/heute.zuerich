@@ -16,6 +16,17 @@ export const CURATED_EVENTS_QUERY = `
   }
 `
 
+export const SITE_SETTINGS_QUERY = `
+  *[_type == "siteSettings" && _id == "siteSettings"][0] {
+    homeLogo { asset->{ url } },
+    zuerichLogo { asset->{ url } },
+    stgallenLogo { asset->{ url } },
+    luzernLogo { asset->{ url } },
+    baselLogo { asset->{ url } },
+    bernLogo { asset->{ url } }
+  }
+`
+
 export const ALL_EVENTS_QUERY = `
   *[_type == "event" && date == $date && city == $city] | order(time asc) {
     _id,
