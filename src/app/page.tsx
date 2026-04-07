@@ -48,6 +48,7 @@ export default async function Home() {
 
       <footer className={styles.footer}>
         <Link href="/about">About</Link>
+        <Link href="/datenschutz">Datenschutz</Link>
       </footer>
     </main>
   )

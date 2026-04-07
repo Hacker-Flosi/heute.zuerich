@@ -57,6 +57,7 @@ export default async function AboutPage() {
       <footer className={styles.footer}>
         <a href="https://instagram.com/waslauft.in" target="_blank" rel="noopener">Instagram</a>
         <Link href="/about">About</Link>
+        <Link href="/datenschutz">Datenschutz</Link>
       </footer>
     </main>
   )

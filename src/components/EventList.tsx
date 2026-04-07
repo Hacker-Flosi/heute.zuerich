@@ -79,6 +79,7 @@ export default function EventList({ city, cityLabel, logoUrl, today, tomorrow, d
       <footer className={styles.footer}>
         <a href="https://instagram.com/waslauft.in" target="_blank" rel="noopener">Instagram</a>
         <Link href="/about">About</Link>
+        <Link href="/datenschutz">Datenschutz</Link>
       </footer>
     </>
   )
