@@ -3,6 +3,7 @@
 // Zürich: Two-Layer (venue-first + AI discovery)
 // Other cities: Single-layer (AI curation of all events)
 
+import { postInstagram } from './post-instagram'
 import { scrapeEventfrog } from './scrapers/eventfrog'
 import { scrapeHellozurich } from './scrapers/hellozurich'
 import { scrapeGangus } from './scrapers/gangus'
@@ -463,6 +464,16 @@ export async function runPipeline() {
   }
 
   console.log(`\n=== Pipeline abgeschlossen in ${((Date.now() - start) / 1000).toFixed(1)}s ===`)
+
+  // Instagram Post für Zürich (nur wenn INSTAGRAM_ACCOUNT_ID gesetzt)
+  if (process.env.INSTAGRAM_ACCOUNT_ID && process.env.META_ACCESS_TOKEN) {
+    console.log('\n── Instagram Post ──')
+    try {
+      await postInstagram()
+    } catch (err) {
+      console.error('[instagram] Post fehlgeschlagen:', err)
+    }
+  }
 }
 
 if (process.argv[1]?.endsWith('pipeline.ts') || process.argv[1]?.endsWith('pipeline.js')) {

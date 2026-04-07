@@ -8,10 +8,12 @@
     "start": "next start",
     "lint": "next lint",
     "pipeline": "tsx --env-file=.env.local scripts/pipeline.ts",
-    "seed-venues": "tsx --env-file=.env.local scripts/seed-venues.ts"
+    "seed-venues": "tsx --env-file=.env.local scripts/seed-venues.ts",
+    "post-instagram": "tsx --env-file=.env.local scripts/post-instagram.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "@resvg/resvg-js": "^2.6.2",
     "@sanity/client": "^6.28.0",
     "@sanity/vision": "^5.19.0",
     "cheerio": "^1.0.0",
@@ -21,6 +23,8 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "sanity": "^5.14.1",
+    "satori": "^0.26.0",
+    "sharp": "^0.34.5",
     "styled-components": "^6.3.12"
   },
   "devDependencies": {

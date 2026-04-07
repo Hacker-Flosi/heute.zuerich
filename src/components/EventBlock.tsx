@@ -33,7 +33,9 @@ export default function EventBlock({ event, index }: EventBlockProps) {
             )}
             <span className={styles.location}>{event.location}</span>
           </div>
-          <span className={styles.time}>{event.time}</span>
+          {event.time && event.time !== '00:00' && (
+            <span className={styles.time}>{event.time}</span>
+          )}
         </div>
         <div className={styles.name}>{event.name}</div>
       </a>
