@@ -10,7 +10,9 @@ export const CURATED_EVENTS_QUERY = `
     time,
     url,
     sponsored,
-    colorIndex
+    colorIndex,
+    eventType,
+    layer
   }
 `
 

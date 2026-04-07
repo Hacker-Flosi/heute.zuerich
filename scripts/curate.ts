@@ -107,6 +107,46 @@ interface CuratedResult {
   reason: string
 }
 
+/**
+ * Layer 2 — Discovery curation.
+ * Receives a small filtered pool (~20–30 events) and picks the best 5–8.
+ * Much cheaper than full curation — saves ~80% on tokens.
+ */
+export async function curateDiscovery(rawEvents: RawEvent[], city: string): Promise<CuratedResult[]> {
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const cityLabel = city === 'zuerich' ? 'Zürich' : city
+
+  const systemPrompt = `Du kuratierst für waslauft.in — eine Event-Seite für ${cityLabel}.
+
+Dir werden 20–30 Discovery-Events präsentiert (Events die NICHT von bekannten Top-Venues stammen).
+Deine Aufgabe: Wähle die besten 5–8 aus.
+
+Kriterien:
+- Einzigartige oder besondere Events bevorzugen
+- Bekannte Acts / Künstler bevorzugen
+- Nightlife (Konzerte, DJs, Partys) bevorzugen
+- Keine Yoga-Kurse, Kinder-Events, Escape Rooms, Networking
+- Keine Events ausserhalb ${cityLabel}
+
+Antworte AUSSCHLIESSLICH in JSON:
+{"curated_events": [{"id": "original name", "name": "bereinigter Name", "location": "Venue kurz", "reason": "1 Satz"}]}`
+
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1500,
+    system: systemPrompt,
+    messages: [{
+      role: 'user',
+      content: `Discovery-Pool für ${cityLabel} — wähle 5–8 aus:\n\n${JSON.stringify(rawEvents, null, 2)}`,
+    }],
+  })
+
+  const text = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('')
+  const clean = text.replace(/```json|```/g, '').trim()
+  const parsed = JSON.parse(clean)
+  return parsed.curated_events || []
+}
+
 export async function curateEvents(rawEvents: RawEvent[], city: string): Promise<CuratedResult[]> {
   const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,

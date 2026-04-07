@@ -38,7 +38,21 @@ export const formatDateLabel = (offset: number): string => {
   return `${days[d.getDay()]}, ${d.getDate()}. ${months[d.getMonth()]} ${d.getFullYear()}`
 }
 
-// Event Type
+export type EventType =
+  | 'konzert' | 'dj_club' | 'party' | 'kultur'
+  | 'kunst' | 'markt' | 'open_air' | 'special'
+
+export const EVENT_TYPE_LABELS: Record<EventType, string> = {
+  konzert:  'Konzert',
+  dj_club:  'DJ / Club',
+  party:    'Party',
+  kultur:   'Kultur',
+  kunst:    'Kunst',
+  markt:    'Markt',
+  open_air: 'Open Air',
+  special:  'Special',
+}
+
 export interface Event {
   _id: string
   name: string
@@ -48,4 +62,6 @@ export interface Event {
   url: string
   sponsored: boolean
   colorIndex: number
+  eventType?: EventType
+  layer?: 'venue' | 'discovery'
 }

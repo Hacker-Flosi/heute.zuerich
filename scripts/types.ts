@@ -23,7 +23,8 @@ export interface RawEvent {
   source: 'eventfrog' | 'hellozurich' | 'saiten' | 'gangus' | 'kulturzueri' | 'stadt-zuerich' | 'guidle' | 'manual'
   eventType?: EventType
   layer?: PipelineLayer
-  venueId?: string   // Sanity venue document _id (Layer 1 only)
+  venueId?: string       // Sanity venue document _id (Layer 1 only)
+  locationCity?: string  // Raw city from scraper (used for geo-filtering)
 }
 
 export interface CuratedEvent extends RawEvent {

@@ -57,6 +57,16 @@
   text-transform: uppercase;
 }
 
+.eventType {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.45;
+  margin-top: 0.3rem;
+}
+
 .sponsoredBadge {
   font-family: var(--font-mono);
   font-size: 0.55rem;

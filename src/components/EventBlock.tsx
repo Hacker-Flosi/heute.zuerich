@@ -1,7 +1,7 @@
 // src/components/EventBlock.tsx
 // Einzelner Event-Block mit farbigem Hintergrund
 
-import { Event, getEventColor } from '@/lib/constants'
+import { Event, getEventColor, EVENT_TYPE_LABELS } from '@/lib/constants'
 import styles from './EventBlock.module.css'
 
 interface EventBlockProps {
@@ -29,6 +29,11 @@ export default function EventBlock({ event, index }: EventBlockProps) {
           <span className={styles.time}>{event.time}</span>
         </div>
         <div className={styles.name}>{event.name}</div>
+        {event.eventType && (
+          <div className={styles.eventType}>
+            {EVENT_TYPE_LABELS[event.eventType]}
+          </div>
+        )}
       </a>
     </li>
   )
