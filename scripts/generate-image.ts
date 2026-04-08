@@ -52,6 +52,12 @@ function loadFont(fontPath: string): ArrayBuffer {
   return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
 }
 
+function loadLogoDataUrl(): string {
+  const logoPath = path.join(process.cwd(), 'public', 'logo', 'waslauft.svg')
+  const svg = fs.readFileSync(logoPath, 'utf-8')
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+}
+
 function loadFonts() {
   const fontsDir = path.join(process.cwd(), 'public', 'fonts')
   const regularPath = path.join(fontsDir, 'JetBrainsMono-Regular.ttf')
@@ -85,6 +91,7 @@ export async function generateTitleImage(
   dateLabel: string,
 ): Promise<Buffer> {
   const { fontRegular, fontBold, fontName } = loadFonts()
+  const logoDataUrl = loadLogoDataUrl()
 
   const jsx = {
     type: 'div',
@@ -99,28 +106,23 @@ export async function generateTitleImage(
         padding: '80px 80px',
       },
       children: [
-        // Top: waslauft.in
+        // Logo top-left
         {
-          type: 'div',
+          type: 'img',
           props: {
+            src: logoDataUrl,
             style: {
-              fontSize: 32,
-              fontWeight: 400,
-              color: '#ffffff',
-              opacity: 0.4,
-              letterSpacing: '0.02em',
-              textTransform: 'uppercase',
+              width: 280,
+              height: 55,
+              objectFit: 'contain',
+              objectPosition: 'left center',
             },
-            children: 'waslauft.in',
           },
         },
         // Spacer
         {
           type: 'div',
-          props: {
-            style: { flex: 1 },
-            children: '',
-          },
+          props: { style: { flex: 1 }, children: '' },
         },
         // City — big
         {
