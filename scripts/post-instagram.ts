@@ -5,7 +5,7 @@
 import { getSanityClient } from '../src/lib/sanity'
 import { CURATED_EVENTS_QUERY } from '../src/lib/queries'
 import { formatDateLabel, getDateString } from '../src/lib/constants'
-import { generatePostImage } from './generate-image'
+import { generatePostImage, generateTitleImage } from './generate-image'
 import type { ImageEvent } from './generate-image'
 
 const GRAPH_BASE      = 'https://graph.instagram.com/v21.0'
@@ -80,10 +80,11 @@ async function uploadToImgbb(imageBuffer: Buffer): Promise<string> {
 
 function buildCaption(dateLabel: string): string {
   return [
-    `Was läuft heute in Zürich?`,
-    `${dateLabel} — alle Events auf waslauft.in/zuerich`,
+    `Du suchst Events in Zürich für heute? Wir zeigen dir, was im Zürcher Ausgang läuft — von Techno Partys bis Kultur-Events. ${dateLabel}`,
     '',
-    '#zürich #zuerich #ausgang #today #nightlife #events',
+    '→ Alle Veranstaltungen auf waslauft.in/zuerich',
+    '',
+    '#zürichgehtaus #ausgangzürich #zürichbynight #waslauft #waslauftzh',
   ].join('\n')
 }
 
@@ -116,19 +117,28 @@ export async function postInstagram(): Promise<void> {
   for (let i = 0; i < events.length; i += EVENTS_PER_PAGE) {
     chunks.push(events.slice(i, i + EVENTS_PER_PAGE))
   }
-  const pages = chunks.slice(0, MAX_CAROUSEL)
-  console.log(`[instagram] ${events.length} Events → ${pages.length} Bild(er)`)
+  // Max 9 event slides (1 title slide + 9 = 10 carousel limit)
+  const pages = chunks.slice(0, MAX_CAROUSEL - 1)
+  console.log(`[instagram] ${events.length} Events → 1 Titel + ${pages.length} Event-Slide(s)`)
 
   // 3. Bilder generieren + hochladen
   const imageUrls: string[] = []
-  for (let i = 0; i < pages.length; i++) {
-    console.log(`[instagram] Generiere Bild ${i + 1}/${pages.length} (${pages[i].length} Events)...`)
-    const buf = await generatePostImage('Zürich', dateLabel, pages[i], i + 1, pages.length)
-    console.log(`[instagram] Bild ${i + 1} generiert (${(buf.length / 1024).toFixed(0)} KB)`)
 
-    console.log(`[instagram] Lade Bild ${i + 1} hoch...`)
+  // Titel-Slide (Slide 1)
+  console.log('[instagram] Generiere Titel-Slide...')
+  const titleBuf = await generateTitleImage('Zürich', dateLabel)
+  console.log(`[instagram] Titel-Slide generiert (${(titleBuf.length / 1024).toFixed(0)} KB)`)
+  const titleUrl = await uploadToImgbb(titleBuf)
+  console.log(`[instagram] Titel-Slide URL: ${titleUrl}`)
+  imageUrls.push(titleUrl)
+
+  // Event-Slides (Slides 2+)
+  for (let i = 0; i < pages.length; i++) {
+    console.log(`[instagram] Generiere Event-Slide ${i + 1}/${pages.length} (${pages[i].length} Events)...`)
+    const buf = await generatePostImage('Zürich', dateLabel, pages[i], i + 1, pages.length)
+    console.log(`[instagram] Event-Slide ${i + 1} generiert (${(buf.length / 1024).toFixed(0)} KB)`)
     const url = await uploadToImgbb(buf)
-    console.log(`[instagram] Bild ${i + 1} URL: ${url}`)
+    console.log(`[instagram] Event-Slide ${i + 1} URL: ${url}`)
     imageUrls.push(url)
   }
 
