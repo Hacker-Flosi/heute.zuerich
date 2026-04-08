@@ -1,9 +1,9 @@
 // src/app/page.tsx — Landing page: city selection
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { getSanityClient } from '@/lib/sanity'
 import { SITE_SETTINGS_QUERY } from '@/lib/queries'
+import LogoAnimated from '@/components/LogoAnimated'
 import styles from './page.module.css'
 
 export const revalidate = 3600
@@ -24,10 +24,7 @@ export default async function Home() {
     <main className={styles.main}>
       <header className={styles.header}>
         <span className={styles.logo}>
-          {logoUrl
-            ? <Image src={logoUrl} alt="waslauft.in" className={styles.logoImage} width={200} height={32} />
-            : 'waslauft.in'
-          }
+          <LogoAnimated />
         </span>
       </header>
 

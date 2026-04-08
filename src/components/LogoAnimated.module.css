@@ -1,0 +1,17 @@
+/* src/components/LogoAnimated.module.css */
+
+.root {
+  display: inline-block;
+  height: 1.8rem;
+  width: auto;
+  vertical-align: baseline;
+  color: currentColor;
+}
+
+@media (min-width: 768px) {
+  .root { height: 2.4rem; }
+}
+
+@media (min-width: 1024px) {
+  .root { height: 2.8rem; }
+}

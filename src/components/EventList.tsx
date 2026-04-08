@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Event } from '@/lib/constants'
 import EventBlock from './EventBlock'
+import LogoAnimated from './LogoAnimated'
 import styles from './EventList.module.css'
 
 interface EventListProps {
@@ -41,10 +41,7 @@ export default function EventList({ city, cityLabel, logoUrl, today, tomorrow, d
       {/* Non-sticky: scrolls away */}
       <header className={styles.header}>
         <Link href="/" className={styles.logo}>
-          {logoUrl
-            ? <Image src={logoUrl} alt="waslauft.in" className={styles.logoImage} width={160} height={28} />
-            : 'waslauft.in'
-          }
+          <LogoAnimated />
         </Link>
         <span className={styles.city}>{cityLabel}</span>
       </header>

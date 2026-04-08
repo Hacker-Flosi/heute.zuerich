@@ -15,14 +15,11 @@
 }
 
 .logo {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.8rem;
-  letter-spacing: -0.04em;
+  display: flex;
+  align-items: flex-end;
+  text-decoration: none;
   line-height: 1;
   color: var(--fg);
-  text-decoration: none;
-  opacity: 0.4;
 }
 
 .logoImage {
@@ -97,7 +94,7 @@
 
 .footer {
   margin-top: auto;
-  padding: 1.5rem 1rem;
+  padding: 2.5rem 1rem;
   display: flex;
   gap: 1.5rem;
   border-top: 1px solid var(--border-muted);
@@ -105,9 +102,9 @@
 
 .footer a {
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.72rem;
   color: var(--fg);
-  opacity: 0.3;
+  opacity: 0.55;
   text-decoration: none;
   letter-spacing: 0.05em;
   text-transform: uppercase;

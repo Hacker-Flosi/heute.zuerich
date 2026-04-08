@@ -14,6 +14,9 @@ const GRAPH_FB_BASE   = 'https://graph.facebook.com/v21.0'
 const EVENTS_PER_PAGE = 8
 const MAX_CAROUSEL    = 10
 
+// Zürich Facebook location ID (for geotag) — find via Facebook Pages search
+// const ZUERICH_LOCATION_ID = '...'
+
 // ─── Meta Graph API Helpers ───────────────────────────────────────────────────
 
 async function createCarouselItem(imageUrl: string, igId: string, token: string): Promise<string> {
@@ -31,22 +34,26 @@ async function createCarouselItem(imageUrl: string, igId: string, token: string)
   return data.id
 }
 
-async function createSingleContainer(imageUrl: string, caption: string, igId: string, token: string): Promise<string> {
+async function createSingleContainer(imageUrl: string, caption: string, igId: string, token: string, locationId?: string): Promise<string> {
+  const body: Record<string, string> = { image_url: imageUrl, caption, access_token: token }
+  if (locationId) body.location_id = locationId
   const res = await fetch(`${GRAPH_BASE}/${igId}/media`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image_url: imageUrl, caption, access_token: token }),
+    body: JSON.stringify(body),
   })
   const data = await res.json()
   if (!res.ok || !data.id) throw new Error(`Container-Fehler: ${JSON.stringify(data)}`)
   return data.id
 }
 
-async function createCarouselContainer(childIds: string[], caption: string, igId: string, token: string): Promise<string> {
+async function createCarouselContainer(childIds: string[], caption: string, igId: string, token: string, locationId?: string): Promise<string> {
+  const body: Record<string, string> = { media_type: 'CAROUSEL', children: childIds.join(','), caption, access_token: token }
+  if (locationId) body.location_id = locationId
   const res = await fetch(`${GRAPH_BASE}/${igId}/media`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ media_type: 'CAROUSEL', children: childIds.join(','), caption, access_token: token }),
+    body: JSON.stringify(body),
   })
   const data = await res.json()
   if (!res.ok || !data.id) throw new Error(`Carousel-Container-Fehler: ${JSON.stringify(data)}`)
@@ -143,21 +150,22 @@ export async function postInstagram(): Promise<void> {
 
   // 3. Bilder generieren + hochladen
   const imageUrls: string[] = []
+  const ts = Date.now() // unique suffix to prevent Meta from serving cached images
 
-  // Titel-Slide (Slide 1)
+  // Titel-Slide (Slide 1) — zeigt erste 4 Events in der unteren Hälfte
   console.log('[instagram] Generiere Titel-Slide...')
-  const titleBuf = await generateTitleImage('Zürich', dateLabel)
+  const titleBuf = await generateTitleImage('Zürich', dateLabel, pages[0])
   console.log(`[instagram] Titel-Slide generiert (${(titleBuf.length / 1024).toFixed(0)} KB)`)
-  const titleUrl = await uploadToBlob(titleBuf, `title-${date}.png`)
+  const titleUrl = await uploadToBlob(titleBuf, `title-${date}-${ts}.png`)
   console.log(`[instagram] Titel-Slide URL: ${titleUrl}`)
   imageUrls.push(titleUrl)
 
   // Event-Slides (Slides 2+)
   for (let i = 0; i < pages.length; i++) {
     console.log(`[instagram] Generiere Event-Slide ${i + 1}/${pages.length} (${pages[i].length} Events)...`)
-    const buf = await generatePostImage('Zürich', dateLabel, pages[i], i + 1, pages.length)
+    const buf = await generatePostImage('Zürich', dateLabel, pages[i])
     console.log(`[instagram] Event-Slide ${i + 1} generiert (${(buf.length / 1024).toFixed(0)} KB)`)
-    const url = await uploadToBlob(buf, `events-${date}-${i + 1}.png`)
+    const url = await uploadToBlob(buf, `events-${date}-${i + 1}-${ts}.png`)
     console.log(`[instagram] Event-Slide ${i + 1} URL: ${url}`)
     imageUrls.push(url)
   }

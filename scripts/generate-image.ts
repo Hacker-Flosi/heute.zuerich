@@ -7,8 +7,9 @@ import sharp from 'sharp'
 import * as fs from 'fs'
 import * as path from 'path'
 
-const WIDTH  = 1080
-const HEIGHT = 1350
+const WIDTH       = 1080
+const HEIGHT      = 1350
+const HALF_HEIGHT = Math.floor(HEIGHT / 2)  // 675px — black title section
 
 const COLORS = [
   '#FF0000', '#FF00FF', '#00E5FF', '#FFFFFF', '#FFB800', '#00E05A',
@@ -52,12 +53,6 @@ function loadFont(fontPath: string): ArrayBuffer {
   return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
 }
 
-function loadLogoDataUrl(): string {
-  const logoPath = path.join(process.cwd(), 'public', 'logo', 'waslauft.svg')
-  const svg = fs.readFileSync(logoPath, 'utf-8')
-  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
-}
-
 function loadFonts() {
   const fontsDir = path.join(process.cwd(), 'public', 'fonts')
   const regularPath = path.join(fontsDir, 'JetBrainsMono-Regular.ttf')
@@ -72,6 +67,12 @@ function loadFonts() {
   }
 }
 
+function loadLogoDataUrl(): string {
+  const logoPath = path.join(process.cwd(), 'public', 'logo', 'waslauft.svg')
+  const svg = fs.readFileSync(logoPath, 'utf-8')
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+}
+
 async function renderSvgToPng(jsx: object, fontRegular: ArrayBuffer, fontBold: ArrayBuffer, fontName: string): Promise<Buffer> {
   const svg = await satori(jsx as any, {
     width: WIDTH,
@@ -84,14 +85,128 @@ async function renderSvgToPng(jsx: object, fontRegular: ArrayBuffer, fontBold: A
   return sharp(Buffer.from(svg)).png().toBuffer()
 }
 
-// ─── Titel-Slide (Slide 1) ────────────────────────────────────────────────────
+/** Build event block JSX — used in both title slide (bottom) and event slides */
+function buildEventBlock(event: ImageEvent, i: number, totalInSlide: number) {
+  const bg = getColor(event.colorIndex ?? i)
+  const fg = getTextColor(bg)
+  const label = event.eventType ? EVENT_TYPE_LABELS[event.eventType] ?? event.eventType : null
+  const isLast = i === totalInSlide - 1
+
+  return {
+    type: 'div',
+    props: {
+      style: {
+        flex: 1,
+        background: bg,
+        borderBottom: isLast ? 'none' : '1px solid #000',
+        padding: '0 60px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        gap: 6,
+        overflow: 'hidden',
+      },
+      children: [
+        // Meta row
+        {
+          type: 'div',
+          props: {
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 16,
+            },
+            children: [
+              {
+                type: 'div',
+                props: {
+                  style: { display: 'flex', alignItems: 'center', gap: 12 },
+                  children: [
+                    ...(label ? [{
+                      type: 'div',
+                      props: {
+                        style: {
+                          background: '#000',
+                          color: '#fff',
+                          fontSize: 18,
+                          fontWeight: 700,
+                          letterSpacing: '0.06em',
+                          textTransform: 'uppercase',
+                          padding: '4px 14px',
+                          borderRadius: 4,
+                        },
+                        children: label,
+                      },
+                    }] : []),
+                    {
+                      type: 'div',
+                      props: {
+                        style: {
+                          fontSize: 20,
+                          fontWeight: 400,
+                          color: fg,
+                          opacity: 0.7,
+                          letterSpacing: '0.04em',
+                          textTransform: 'uppercase',
+                        },
+                        children: event.location,
+                      },
+                    },
+                  ],
+                },
+              },
+              // Time
+              ...(event.time && event.time !== '00:00' ? [{
+                type: 'div',
+                props: {
+                  style: {
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: fg,
+                    opacity: 0.7,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    flexShrink: 0,
+                  },
+                  children: event.time,
+                },
+              }] : [{ type: 'div', props: { style: {}, children: '' } }]),
+            ],
+          },
+        },
+        // Event name
+        {
+          type: 'div',
+          props: {
+            style: {
+              fontSize: 44,
+              fontWeight: 700,
+              color: fg,
+              letterSpacing: '-0.02em',
+              lineHeight: 1.05,
+              textTransform: 'uppercase',
+            },
+            children: event.name.length > 40 ? event.name.slice(0, 38) + '…' : event.name,
+          },
+        },
+      ],
+    },
+  }
+}
+
+// ─── Titel-Slide (Slide 1): top half black + bottom half first events ──────────
 
 export async function generateTitleImage(
   cityLabel: string,
   dateLabel: string,
+  firstEvents: ImageEvent[],
 ): Promise<Buffer> {
   const { fontRegular, fontBold, fontName } = loadFonts()
   const logoDataUrl = loadLogoDataUrl()
+
+  // Show up to 4 events in bottom half
+  const displayEvents = firstEvents.slice(0, 4)
 
   const jsx = {
     type: 'div',
@@ -101,71 +216,84 @@ export async function generateTitleImage(
         height: HEIGHT,
         display: 'flex',
         flexDirection: 'column',
-        background: '#000000',
         fontFamily: fontName,
-        padding: '80px 80px',
       },
       children: [
-        // Logo top-left
+        // Top half — black, logo + city + date
         {
-          type: 'img',
+          type: 'div',
           props: {
-            src: logoDataUrl,
             style: {
-              width: 280,
-              height: 55,
-              objectFit: 'contain',
-              objectPosition: 'left center',
+              height: HALF_HEIGHT,
+              background: '#000000',
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '60px 80px',
             },
+            children: [
+              // Top row — logo left, date right
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  },
+                  children: [
+                    {
+                      type: 'img',
+                      props: {
+                        src: logoDataUrl,
+                        style: { width: 260, height: 52, objectFit: 'contain', objectPosition: 'left center' },
+                      },
+                    },
+                    {
+                      type: 'div',
+                      props: {
+                        style: {
+                          fontSize: 40,
+                          fontWeight: 700,
+                          color: '#ffffff',
+                          letterSpacing: '0.02em',
+                        },
+                        children: dateLabel,
+                      },
+                    },
+                  ],
+                },
+              },
+              // Spacer
+              { type: 'div', props: { style: { flex: 1 }, children: '' } },
+              // City
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    fontSize: 148,
+                    fontWeight: 700,
+                    color: '#ffffff',
+                    letterSpacing: '-0.04em',
+                    lineHeight: 0.88,
+                  },
+                  children: cityLabel,
+                },
+              },
+            ],
           },
         },
-        // Spacer
-        {
-          type: 'div',
-          props: { style: { flex: 1 }, children: '' },
-        },
-        // City — big
+        // Bottom half — first events
         {
           type: 'div',
           props: {
             style: {
-              fontSize: 160,
-              fontWeight: 700,
-              color: '#ffffff',
-              letterSpacing: '-0.04em',
-              lineHeight: 0.9,
-              textTransform: 'uppercase',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
             },
-            children: cityLabel,
-          },
-        },
-        // Date
-        {
-          type: 'div',
-          props: {
-            style: {
-              fontSize: 48,
-              fontWeight: 400,
-              color: '#ffffff',
-              opacity: 0.6,
-              letterSpacing: '0.04em',
-              textTransform: 'uppercase',
-              marginTop: 24,
-            },
-            children: dateLabel,
-          },
-        },
-        // Bottom line
-        {
-          type: 'div',
-          props: {
-            style: {
-              height: 2,
-              background: '#ffffff',
-              opacity: 0.2,
-              marginTop: 48,
-            },
-            children: '',
+            children: displayEvents.map((event, i) =>
+              buildEventBlock(event, i, displayEvents.length)
+            ),
           },
         },
       ],
@@ -175,19 +303,16 @@ export async function generateTitleImage(
   return renderSvgToPng(jsx, fontRegular, fontBold, fontName)
 }
 
-// ─── Event-Slide (Slides 2+) ──────────────────────────────────────────────────
+// ─── Event-Slide (Slides 2+): events fill full height ─────────────────────────
 
 export async function generatePostImage(
   cityLabel: string,
   dateLabel: string,
   events: ImageEvent[],
-  pageNum?: number,
-  totalPages?: number,
 ): Promise<Buffer> {
   const { fontRegular, fontBold, fontName } = loadFonts()
 
   const displayEvents = events.slice(0, 8)
-  const eventHeight = Math.floor(HEIGHT / displayEvents.length)
 
   const jsx = {
     type: 'div',
@@ -200,126 +325,9 @@ export async function generatePostImage(
         background: '#EEEEEE',
         fontFamily: fontName,
       },
-      children: displayEvents.map((event, i) => {
-        const bg = getColor(event.colorIndex ?? i)
-        const fg = getTextColor(bg)
-        const label = event.eventType ? EVENT_TYPE_LABELS[event.eventType] ?? event.eventType : null
-
-        return {
-          type: 'div',
-          props: {
-            key: i,
-            style: {
-              height: eventHeight,
-              background: bg,
-              borderBottom: '1px solid #000',
-              padding: '0 60px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              gap: 6,
-            },
-            children: [
-              // Meta row: pill + location + time
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 16,
-                  },
-                  children: [
-                    {
-                      type: 'div',
-                      props: {
-                        style: { display: 'flex', alignItems: 'center', gap: 12 },
-                        children: [
-                          ...(label ? [{
-                            type: 'div',
-                            props: {
-                              style: {
-                                background: '#000',
-                                color: '#fff',
-                                fontSize: 18,
-                                fontWeight: 700,
-                                letterSpacing: '0.06em',
-                                textTransform: 'uppercase',
-                                padding: '4px 14px',
-                                borderRadius: 4,
-                              },
-                              children: label,
-                            },
-                          }] : []),
-                          {
-                            type: 'div',
-                            props: {
-                              style: {
-                                fontSize: 20,
-                                fontWeight: 400,
-                                color: fg,
-                                opacity: 0.7,
-                                letterSpacing: '0.04em',
-                                textTransform: 'uppercase',
-                              },
-                              children: event.location,
-                            },
-                          },
-                        ],
-                      },
-                    },
-                    // Page indicator on last event of each slide
-                    ...(i === displayEvents.length - 1 && totalPages && totalPages > 1 ? [{
-                      type: 'div',
-                      props: {
-                        style: {
-                          fontSize: 18,
-                          fontWeight: 400,
-                          color: fg,
-                          opacity: 0.4,
-                          letterSpacing: '0.04em',
-                          flexShrink: 0,
-                        },
-                        children: `${pageNum}/${totalPages}`,
-                      },
-                    }] : [event.time && event.time !== '00:00' ? {
-                      type: 'div',
-                      props: {
-                        style: {
-                          fontSize: 20,
-                          fontWeight: 700,
-                          color: fg,
-                          opacity: 0.7,
-                          letterSpacing: '0.04em',
-                          textTransform: 'uppercase',
-                          flexShrink: 0,
-                        },
-                        children: event.time,
-                      },
-                    } : { type: 'div', props: { style: {}, children: '' } }]),
-                  ],
-                },
-              },
-              // Event name
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    fontSize: Math.min(52, Math.max(32, eventHeight * 0.32)),
-                    fontWeight: 700,
-                    color: fg,
-                    letterSpacing: '-0.02em',
-                    lineHeight: 1.05,
-                    textTransform: 'uppercase',
-                  },
-                  children: event.name.length > 40 ? event.name.slice(0, 38) + '…' : event.name,
-                },
-              },
-            ],
-          },
-        }
-      }),
+      children: displayEvents.map((event, i) =>
+        buildEventBlock(event, i, displayEvents.length)
+      ),
     },
   }
 
