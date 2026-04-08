@@ -10,16 +10,21 @@ import { generatePostImage, generateTitleImage } from './generate-image'
 import type { ImageEvent } from './generate-image'
 
 const GRAPH_BASE      = 'https://graph.instagram.com/v21.0'
+const GRAPH_FB_BASE   = 'https://graph.facebook.com/v21.0'
 const EVENTS_PER_PAGE = 8
 const MAX_CAROUSEL    = 10
 
 // ─── Meta Graph API Helpers ───────────────────────────────────────────────────
 
 async function createCarouselItem(imageUrl: string, igId: string, token: string): Promise<string> {
-  const res = await fetch(`${GRAPH_BASE}/${igId}/media`, {
+  const params = new URLSearchParams({
+    image_url: imageUrl,
+    is_carousel_item: 'true',
+    media_type: 'IMAGE',
+    access_token: token,
+  })
+  const res = await fetch(`${GRAPH_BASE}/${igId}/media?${params.toString()}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image_url: imageUrl, is_carousel_item: true, access_token: token }),
   })
   const data = await res.json()
   if (!res.ok || !data.id) throw new Error(`Carousel-Item-Fehler: ${JSON.stringify(data)}`)
@@ -48,7 +53,20 @@ async function createCarouselContainer(childIds: string[], caption: string, igId
   return data.id
 }
 
+async function waitForContainer(containerId: string, token: string): Promise<void> {
+  for (let i = 0; i < 12; i++) {
+    await new Promise((r) => setTimeout(r, 5000))
+    const res = await fetch(`${GRAPH_BASE}/${containerId}?fields=status_code&access_token=${token}`)
+    const data = await res.json()
+    if (data.status_code === 'FINISHED') return
+    if (data.status_code === 'ERROR') throw new Error(`Container fehlgeschlagen: ${JSON.stringify(data)}`)
+    console.log(`[instagram] Container Status: ${data.status_code ?? 'IN_PROGRESS'} (${i + 1}/12)`)
+  }
+  throw new Error('Container Timeout nach 60s')
+}
+
 async function publishContainer(containerId: string, igId: string, token: string): Promise<string> {
+  await waitForContainer(containerId, token)
   const res = await fetch(`${GRAPH_BASE}/${igId}/media_publish`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -65,6 +83,7 @@ async function uploadToBlob(imageBuffer: Buffer, filename: string): Promise<stri
   const blob = await put(`instagram/${filename}`, imageBuffer, {
     access: 'public',
     contentType: 'image/png',
+    allowOverwrite: true,
   })
   return blob.url
 }
@@ -160,8 +179,10 @@ export async function postInstagram(): Promise<void> {
   const childIds: string[] = []
   for (const url of imageUrls) {
     const itemId = await createCarouselItem(url, igId, token)
+    console.log(`[instagram] Carousel-Item erstellt: ${itemId} — warte auf Verarbeitung...`)
+    await waitForContainer(itemId, token)
     childIds.push(itemId)
-    console.log(`[instagram] Carousel-Item: ${itemId}`)
+    console.log(`[instagram] Carousel-Item bereit: ${itemId}`)
   }
 
   const carouselId = await createCarouselContainer(childIds, caption, igId, token)
