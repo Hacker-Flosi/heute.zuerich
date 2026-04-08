@@ -292,7 +292,12 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]) {
       if (venue) {
         e.layer = 'venue'
         e.venueId = `venue-${city}-${venue.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
-        e.eventType = eventTypeFromVenueCategory(venue.category)
+        // Title inference takes priority for specific types (workshop, markt, kunst, open_air)
+        // Venue category is used as fallback for generic titles
+        const titleType = inferEventTypeFromTitle(e.name)
+        const venueType = eventTypeFromVenueCategory(venue.category)
+        const specificTypes = new Set(['kunst', 'markt', 'open_air', 'special', 'dj_club', 'kultur'])
+        e.eventType = specificTypes.has(titleType) ? titleType : venueType
         layer1.push(e)
       } else {
         remainder.push(e)
