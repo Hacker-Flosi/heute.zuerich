@@ -72,6 +72,17 @@ Tier S fast immer auswählen. Tier A bevorzugen. Tier B bei gutem Event. Tier C 
 - Events ausserhalb ${cityLabel}
 - Events ohne klare Uhrzeit (00:00)
 
+## Event-Typen
+Klassifiziere jeden Event mit einem dieser Typen:
+- "konzert" — Live-Musik, Konzert, Band, Orchester, Jazz, Rock, Pop, Singer-Songwriter
+- "dj_club" — DJ-Set, Club Night, Electronic, Techno, House, Rave
+- "party" — Party, Themenabend, Hip-Hop/R&B Night, Apéro-Party, Chart-Night
+- "kultur" — Theater, Schauspiel, Oper, Tanz, Film, Lesung, Comedy, Kabarett, Vortrag, Führung
+- "kunst" — Vernissage, Ausstellung, Finissage, Art Opening
+- "markt" — Flohmarkt, Designmarkt, Foodmarket, Weihnachtsmarkt
+- "open_air" — Open Air, Outdoor-Event, Quartierfest, Strassenfest
+- "special" — Workshop, Dinner, Networking, After-Work, alles was nicht passt
+
 ## Output
 Antworte AUSSCHLIESSLICH in JSON. Kein anderer Text.
 
@@ -81,6 +92,7 @@ Antworte AUSSCHLIESSLICH in JSON. Kein anderer Text.
       "id": "original name aus dem Input (exakt)",
       "name": "Bereinigter, prägnanter Event-Name",
       "location": "Venue-Name (kurz)",
+      "eventType": "konzert",
       "reason": "1 Satz warum"
     }
   ]
@@ -104,6 +116,7 @@ interface CuratedResult {
   id: string
   name: string
   location: string
+  eventType?: string
   reason: string
 }
 
@@ -128,8 +141,10 @@ Kriterien:
 - Keine Yoga-Kurse, Kinder-Events, Escape Rooms, Networking
 - Keine Events ausserhalb ${cityLabel}
 
+Event-Typen: "konzert", "dj_club", "party", "kultur", "kunst", "markt", "open_air", "special"
+
 Antworte AUSSCHLIESSLICH in JSON:
-{"curated_events": [{"id": "original name", "name": "bereinigter Name", "location": "Venue kurz", "reason": "1 Satz"}]}`
+{"curated_events": [{"id": "original name", "name": "bereinigter Name", "location": "Venue kurz", "eventType": "konzert", "reason": "1 Satz"}]}`
 
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',

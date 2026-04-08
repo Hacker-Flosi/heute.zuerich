@@ -367,11 +367,19 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]) {
         const pickNames = new Set(picks.map((p) => p.name.toLowerCase()))
         chosenDiscovery = discoveryPool.filter((e) =>
           pickNames.has(e.name.toLowerCase()) ||
-          picks.some((p: { name: string }) =>
+          picks.some((p) =>
             e.name.toLowerCase().includes(p.name.toLowerCase()) ||
             p.name.toLowerCase().includes(e.name.toLowerCase())
           )
         )
+        // Apply AI-provided eventType
+        for (const e of chosenDiscovery) {
+          const pick = picks.find((p) =>
+            e.name.toLowerCase().includes(p.name.toLowerCase()) ||
+            p.name.toLowerCase().includes(e.name.toLowerCase())
+          )
+          if (pick?.eventType) e.eventType = pick.eventType as import('./types').EventType
+        }
         console.log(`  [Discovery] ${chosenDiscovery.length} von ${discoveryPool.length} ausgewählt`)
       }
     } catch (err) {
@@ -435,7 +443,6 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]) {
     }
 
     const unique = deduplicateEvents(geoFiltered)
-    for (const e of unique) e.eventType = inferEventTypeFromTitle(e.name)
 
     console.log(`  [AI] Kuratierung (${unique.length} Events)...`)
     try {
@@ -447,7 +454,11 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]) {
           e.name.toLowerCase().includes(c.name.toLowerCase()) ||
           c.name.toLowerCase().includes(e.name.toLowerCase())
         )
-        if (match) { e.name = match.name; e.location = match.location }
+        if (match) {
+          e.name = match.name
+          e.location = match.location
+          if (match.eventType) e.eventType = match.eventType as import('./types').EventType
+        }
       }
 
       const curatedNames = new Set(curated.map((c) => c.name))
