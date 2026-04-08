@@ -25,16 +25,9 @@
 
 .meta {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.metaLeft {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.4rem;
 }
 
 .categoryPill {
@@ -70,6 +63,7 @@
   opacity: 0.7;
   white-space: nowrap;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .name {

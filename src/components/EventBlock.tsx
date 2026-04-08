@@ -25,14 +25,12 @@ export default function EventBlock({ event, index }: EventBlockProps) {
           <span className={styles.sponsoredBadge}>Gesponsert</span>
         )}
         <div className={styles.meta}>
-          <div className={styles.metaLeft}>
-            {event.eventType && (
-              <span className={styles.categoryPill}>
-                {EVENT_TYPE_LABELS[event.eventType]}
-              </span>
-            )}
-            <span className={styles.location}>{event.location}</span>
-          </div>
+          {event.eventType && (
+            <span className={styles.categoryPill}>
+              {EVENT_TYPE_LABELS[event.eventType]}
+            </span>
+          )}
+          <span className={styles.location}>{event.location}</span>
           {event.time && event.time !== '00:00' && (
             <span className={styles.time}>{event.time}</span>
           )}
