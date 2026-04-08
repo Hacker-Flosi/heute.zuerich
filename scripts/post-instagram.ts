@@ -5,6 +5,7 @@
 import { getSanityClient } from '../src/lib/sanity'
 import { CURATED_EVENTS_QUERY } from '../src/lib/queries'
 import { formatDateLabel, getDateString } from '../src/lib/constants'
+import { put, del } from '@vercel/blob'
 import { generatePostImage, generateTitleImage } from './generate-image'
 import type { ImageEvent } from './generate-image'
 
@@ -58,22 +59,22 @@ async function publishContainer(containerId: string, igId: string, token: string
   return data.id
 }
 
-// ─── Image Upload via imgbb ───────────────────────────────────────────────────
+// ─── Image Upload via Vercel Blob ─────────────────────────────────────────────
 
-async function uploadToImgbb(imageBuffer: Buffer): Promise<string> {
-  const IMGBB_KEY = process.env.IMGBB_API_KEY
-  if (!IMGBB_KEY) throw new Error('IMGBB_API_KEY fehlt — Bild-Upload nicht möglich')
-
-  const form = new FormData()
-  form.append('image', imageBuffer.toString('base64'))
-
-  const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
-    method: 'POST',
-    body: form,
+async function uploadToBlob(imageBuffer: Buffer, filename: string): Promise<string> {
+  const blob = await put(`instagram/${filename}`, imageBuffer, {
+    access: 'public',
+    contentType: 'image/png',
   })
-  const data = await res.json()
-  if (!data.success) throw new Error(`imgbb Upload-Fehler: ${JSON.stringify(data)}`)
-  return data.data.url as string
+  return blob.url
+}
+
+async function deleteBlob(url: string): Promise<void> {
+  try {
+    await del(url)
+  } catch {
+    // Non-critical — blob will expire anyway
+  }
 }
 
 // ─── Caption Builder ──────────────────────────────────────────────────────────
@@ -128,7 +129,7 @@ export async function postInstagram(): Promise<void> {
   console.log('[instagram] Generiere Titel-Slide...')
   const titleBuf = await generateTitleImage('Zürich', dateLabel)
   console.log(`[instagram] Titel-Slide generiert (${(titleBuf.length / 1024).toFixed(0)} KB)`)
-  const titleUrl = await uploadToImgbb(titleBuf)
+  const titleUrl = await uploadToBlob(titleBuf, `title-${date}.png`)
   console.log(`[instagram] Titel-Slide URL: ${titleUrl}`)
   imageUrls.push(titleUrl)
 
@@ -137,7 +138,7 @@ export async function postInstagram(): Promise<void> {
     console.log(`[instagram] Generiere Event-Slide ${i + 1}/${pages.length} (${pages[i].length} Events)...`)
     const buf = await generatePostImage('Zürich', dateLabel, pages[i], i + 1, pages.length)
     console.log(`[instagram] Event-Slide ${i + 1} generiert (${(buf.length / 1024).toFixed(0)} KB)`)
-    const url = await uploadToImgbb(buf)
+    const url = await uploadToBlob(buf, `events-${date}-${i + 1}.png`)
     console.log(`[instagram] Event-Slide ${i + 1} URL: ${url}`)
     imageUrls.push(url)
   }
@@ -150,6 +151,7 @@ export async function postInstagram(): Promise<void> {
     console.log(`[instagram] Container erstellt: ${containerId}`)
     const postId = await publishContainer(containerId, igId, token)
     console.log(`[instagram] ✅ Post publiziert: ${postId}`)
+    for (const url of imageUrls) await deleteBlob(url)
     return
   }
 
@@ -167,6 +169,11 @@ export async function postInstagram(): Promise<void> {
 
   const postId = await publishContainer(carouselId, igId, token)
   console.log(`[instagram] ✅ Karussell-Post publiziert: ${postId}`)
+
+  // Cleanup Blobs nach erfolgreichem Post
+  console.log('[instagram] Lösche temporäre Blobs...')
+  for (const url of imageUrls) await deleteBlob(url)
+  console.log('[instagram] Blobs gelöscht')
 }
 
 // Direkt ausführbar
