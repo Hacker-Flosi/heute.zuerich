@@ -21,7 +21,7 @@ const WEEKDAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
 function getTabLabel(label: string, offsetDays: number): string {
   const d = new Date()
   d.setDate(d.getDate() + offsetDays)
-  return `${label}, ${WEEKDAYS[d.getDay()]}`
+  return `${label},${WEEKDAYS[d.getDay()]}`
 }
 
 const TAB_LABELS = [
