@@ -31,9 +31,9 @@ export default function EventBlock({ event, index }: EventBlockProps) {
             </span>
           )}
           <span className={styles.location}>{event.location}</span>
-          {event.time && event.time !== '00:00' && (
-            <span className={styles.time}>{event.time}</span>
-          )}
+          <span className={styles.time}>
+            {event.time && event.time !== '00:00' ? event.time : 'Ganztägig'}
+          </span>
         </div>
         <div className={styles.name}>{event.name}</div>
       </a>
