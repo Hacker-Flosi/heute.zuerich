@@ -8,9 +8,13 @@ import type { RawEvent } from '../types'
 import { isAggregatorUrl, lookupVenueUrl } from '../venues'
 
 const BASE = 'https://www.saiten.ch'
+const API = 'https://www.saiten.ch/api/calendar-list.json'
 const HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; waslauft-bot/1.0)' }
 const TIMEOUT_MS = 10_000
 const CONCURRENCY = 5
+// Max pages to scan — each page has 50 items, events are chronological
+// Pages 1-8 cover roughly today + 3 days ahead
+const MAX_PAGES = 8
 
 async function fetchHtml(url: string): Promise<string | null> {
   try {
@@ -20,6 +24,20 @@ async function fetchHtml(url: string): Promise<string | null> {
     })
     if (!res.ok) return null
     return res.text()
+  } catch {
+    return null
+  }
+}
+
+async function fetchApiPage(page: number): Promise<string | null> {
+  try {
+    const res = await fetch(`${API}?mode=events&page=${page}`, {
+      headers: HEADERS,
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    })
+    if (!res.ok) return null
+    const json = await res.json() as { content: string }
+    return json.content
   } catch {
     return null
   }
@@ -74,19 +92,15 @@ async function resolveOrganizerUrl(saitenUrl: string, location: string): Promise
   return saitenUrl
 }
 
-export async function scrapeSaiten(date: string): Promise<RawEvent[]> {
-  const html = await fetchHtml(`${BASE}/kalender`)
-  if (!html) {
-    console.warn('[Saiten] Kalender-Seite nicht erreichbar')
-    return []
-  }
-
+function parseItems(html: string, date: string, seenSlugs: Set<string>): {
+  entries: Array<{ slug: string; name: string; location: string; time: string }>
+  pastDate: boolean
+} {
   const $ = cheerio.load(html)
-  const seenSlugs = new Set<string>()
   const entries: Array<{ slug: string; name: string; location: string; time: string }> = []
+  let pastDate = false
 
   $('.a-calendar-item').each((_, el) => {
-    // href is directly on the element (not a child <a>)
     const href = (el as any).attribs?.href ?? ''
     if (!href.startsWith('kalender/')) return
     const slug = href.replace('kalender/', '').trim()
@@ -94,6 +108,18 @@ export async function scrapeSaiten(date: string): Promise<RawEvent[]> {
     seenSlugs.add(slug)
 
     const rawDate = $(el).find('.a-calendar-item__date').text().replace(/\s+/g, '').trim()
+
+    // Stop scanning if we've gone past the target date
+    const [, month, day] = date.split('-').map(Number)
+    const firstMatch = rawDate.match(/(\d{1,2})\.(\d{1,2})\./)
+    if (firstMatch) {
+      const itemDay = parseInt(firstMatch[1]), itemMo = parseInt(firstMatch[2])
+      if (itemMo > month || (itemMo === month && itemDay > day)) {
+        pastDate = true
+        return
+      }
+    }
+
     if (!matchesDate(rawDate, date)) return
 
     const name = $(el).find('.a-calendar-item__title').text().trim()
@@ -101,7 +127,6 @@ export async function scrapeSaiten(date: string): Promise<RawEvent[]> {
 
     const place = $(el).find('.a-calendar-item__location__place').text().trim()
     const city = $(el).find('.a-calendar-item__location__name').text().trim()
-    // Only keep St. Gallen events
     if (!city.toLowerCase().match(/st\.?\s*gallen/)) return
 
     const rawTime = $(el).find('.a-calendar-item__time').text().trim()
@@ -110,6 +135,26 @@ export async function scrapeSaiten(date: string): Promise<RawEvent[]> {
 
     entries.push({ slug, name, location: place, time })
   })
+
+  return { entries, pastDate }
+}
+
+export async function scrapeSaiten(date: string): Promise<RawEvent[]> {
+  const seenSlugs = new Set<string>()
+  const allEntries: Array<{ slug: string; name: string; location: string; time: string }> = []
+
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const html = await fetchApiPage(page)
+    if (!html) break
+
+    const { entries, pastDate } = parseItems(html, date, seenSlugs)
+    allEntries.push(...entries)
+
+    // Stop if we've gone past the target date
+    if (pastDate) break
+  }
+
+  const entries = allEntries
 
   console.log(`[Saiten] ${entries.length} Events gefunden für ${date}`)
   if (entries.length === 0) return []
