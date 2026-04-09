@@ -112,7 +112,7 @@ interface RawEvent {
   source: string
 }
 
-interface CuratedResult {
+export interface CuratedResult {
   id: string
   name: string
   location: string
@@ -189,5 +189,51 @@ export async function curateEvents(rawEvents: RawEvent[], city: string): Promise
   const clean = text.replace(/```json|```/g, '').trim()
   const parsed = JSON.parse(clean)
 
+  return parsed.curated_events || []
+}
+
+/**
+ * Rain Reserve curation.
+ * Receives events NOT already in the normal curated set.
+ * Picks 10–15 indoor-friendly events with rain context.
+ */
+export async function curateRainReserve(rawEvents: RawEvent[], city: string): Promise<CuratedResult[]> {
+  if (rawEvents.length === 0) return []
+
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const cityLabel = city === 'zuerich' ? 'Zürich' : city
+
+  const systemPrompt = `Du kuratierst für waslauft.in einen Regen-Reserve-Pool für ${cityLabel}.
+
+Kontext: Es regnet heute. Nutzer:innen suchen explizit nach Indoor-Events als Schlechtwetter-Alternative.
+Diese Events werden NUR angezeigt wenn jemand den Schlechtwetter-Filter aktiviert — zusätzlich zu den normalen Indoor-Events.
+
+Deine Aufgabe: Wähle 10–15 Indoor-Events aus dem Pool.
+
+Regeln:
+- NUR Indoor-Events: Konzert, DJ/Club, Party, Kultur, Theater, Kunst, Ausstellung, Film, Lesung
+- KEINE Outdoor-Events: Open Air, Märkte, Strassenfeste, Quartierfeste
+- Bevorzuge Events die bei Regen besonders attraktiv sind (gemütliche Locations, Kultur, Nachtleben)
+- Bevorzuge Events die im normalen Modus zu wenig Aufmerksamkeit bekämen
+- Keine Yoga-Kurse, Kinder-Events, Escape Rooms, Networking
+
+Event-Typen: "konzert", "dj_club", "party", "kultur", "kunst", "special"
+
+Antworte AUSSCHLIESSLICH in JSON:
+{"curated_events": [{"id": "original name", "name": "bereinigter Name", "location": "Venue kurz", "eventType": "konzert", "reason": "1 Satz warum bei Regen"}]}`
+
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 2000,
+    system: systemPrompt,
+    messages: [{
+      role: 'user',
+      content: `Regen-Reserve-Pool für ${cityLabel} — wähle 10–15 Indoor-Events:\n\n${JSON.stringify(rawEvents, null, 2)}`,
+    }],
+  })
+
+  const text = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('')
+  const clean = text.replace(/```json|```/g, '').trim()
+  const parsed = JSON.parse(clean)
   return parsed.curated_events || []
 }

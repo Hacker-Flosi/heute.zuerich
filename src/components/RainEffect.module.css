@@ -1,0 +1,33 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  overflow: hidden;
+  animation: fadeOut 0.6s ease 2.4s both;
+}
+
+.drop {
+  position: absolute;
+  top: -30px;
+  width: 1.5px;
+  border-radius: 999px;
+  background: #ffffff;
+  transform: rotate(15deg);
+  animation: fall linear infinite;
+}
+
+@keyframes fall {
+  0% {
+    transform: rotate(15deg) translateY(-30px);
+  }
+  100% {
+    transform: rotate(15deg) translateY(105vh);
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+  }
+}

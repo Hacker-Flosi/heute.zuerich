@@ -10,12 +10,37 @@
   color: #fff !important;
 }
 
+[data-theme="dark"] .item {
+  border-bottom-color: #333;
+}
+
+[data-rain="true"] .item {
+  border-bottom-color: #1E3A58;
+}
+
+[data-rain="true"] .categoryPill {
+  background: #2A5580;
+  color: #ffffff;
+}
+
+[data-rain="true"] .link {
+  background-color: #0D1A2D !important;
+  color: #ffffff !important;
+  filter: none !important;
+}
+
+[data-rain="true"] .link:hover {
+  background-color: #152236 !important;
+  filter: none !important;
+}
+
 .link {
   display: block;
   padding: 0.6rem 1rem 0.7rem;
   text-decoration: none;
   cursor: pointer;
-  transition: filter 0.15s ease;
+  transition: filter 0.15s ease, background-color 0.4s ease, color 0.4s ease;
+  transition-delay: 0s, calc(var(--i, 0) * 22ms), calc(var(--i, 0) * 22ms);
   position: relative;
 }
 

@@ -1,0 +1,53 @@
+.intro {
+  list-style: none;
+  padding: 1.8rem 1rem 1.6rem;
+  border-bottom: 1px solid var(--border-muted);
+  animation: fadeUp 0.35s ease both;
+}
+
+.headline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  text-transform: uppercase;
+  color: var(--fg);
+  margin-bottom: 0.6rem;
+}
+
+.sub {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg);
+  opacity: 0.55;
+  line-height: 1.6;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 768px) {
+  .intro {
+    padding: 2.2rem 2rem 2rem;
+  }
+  .headline {
+    font-size: 1.9rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .intro {
+    padding: 2.5rem 3rem 2.2rem;
+  }
+}

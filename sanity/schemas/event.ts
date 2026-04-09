@@ -119,6 +119,13 @@ export default defineType({
       initialValue: false,
     }),
     defineField({
+      name: 'rainReserve',
+      title: 'Regen-Reserve',
+      type: 'boolean',
+      description: 'Nur bei Schlechtwetter anzeigen (Rain Reserve Pool)',
+      initialValue: false,
+    }),
+    defineField({
       name: 'colorIndex',
       title: 'Farb-Index',
       type: 'number',

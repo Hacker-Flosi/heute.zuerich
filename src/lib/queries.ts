@@ -2,7 +2,22 @@
 // GROQ Queries für waslauft.in
 
 export const CURATED_EVENTS_QUERY = `
-  *[_type == "event" && date == $date && city == $city && curated == true] | order(time asc) {
+  *[_type == "event" && date == $date && city == $city && curated == true && rainReserve != true] | order(time asc) {
+    _id,
+    name,
+    location,
+    date,
+    time,
+    url,
+    sponsored,
+    colorIndex,
+    eventType,
+    layer
+  }
+`
+
+export const RAIN_RESERVE_QUERY = `
+  *[_type == "event" && date == $date && city == $city && rainReserve == true] | order(time asc) {
     _id,
     name,
     location,

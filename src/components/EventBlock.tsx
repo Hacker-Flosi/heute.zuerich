@@ -13,7 +13,7 @@ export default function EventBlock({ event, index }: EventBlockProps) {
   const textColor = getTextColor(bgColor)
 
   return (
-    <li className={styles.item}>
+    <li className={styles.item} style={{ '--i': index } as React.CSSProperties}>
       <a
         href={event.url}
         target="_blank"

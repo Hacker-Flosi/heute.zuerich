@@ -1,0 +1,60 @@
+.toggle {
+  position: fixed;
+  bottom: 24px;
+  right: 72px; /* next to ThemeToggle (24px right + 40px width + 8px gap) */
+  z-index: 200;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 1.05rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.toggle:hover {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* Active: filter is on — inverted like hover state */
+.active {
+  background: var(--fg);
+  border-color: var(--fg);
+  color: var(--bg);
+}
+
+.active:hover {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* Suggested: weather API says it's rainy, but user hasn't toggled yet */
+.suggested {
+  border-color: var(--fg);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(128, 128, 128, 0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(128, 128, 128, 0); }
+}
+
+/* Rain mode: button follows the rain palette */
+[data-rain="true"] .toggle {
+  background: #0D1A2D;
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+[data-rain="true"] .toggle:hover,
+[data-rain="true"] .active {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #0D1A2D;
+}

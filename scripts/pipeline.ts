@@ -9,10 +9,11 @@ import { scrapeHellozurich } from './scrapers/hellozurich'
 import { scrapeGangus } from './scrapers/gangus'
 import { scrapeResidentAdvisor } from './scrapers/residentadvisor'
 import { deduplicateEvents } from './deduplicate'
-import { curateEvents, curateDiscovery } from './curate'
+import { curateEvents, curateDiscovery, curateRainReserve } from './curate'
 import { getSanityClient, getSanityWriteClient } from '../src/lib/sanity'
 import { lookupVenueUrl, isAggregatorUrl } from './venues'
 import * as cheerio from 'cheerio'
+import { fetchWeather } from '../src/lib/weather'
 import { inferEventTypeFromTitle, eventTypeFromVenueCategory, isNightlife } from './eventtype'
 import type { RawEvent, SanityVenue } from './types'
 
@@ -226,7 +227,13 @@ async function loadActiveVenues(city: string): Promise<SanityVenue[]> {
   )
 }
 
-async function writeToSanity(events: RawEvent[], date: string, city: string, curatedIds: Set<string>) {
+async function writeToSanity(
+  events: RawEvent[],
+  date: string,
+  city: string,
+  curatedIds: Set<string>,
+  rainReserveIds: Set<string> = new Set(),
+) {
   const client = getSanityWriteClient()
 
   // Delete stale docs for this city+date
@@ -244,6 +251,7 @@ async function writeToSanity(events: RawEvent[], date: string, city: string, cur
   for (let i = 0; i < events.length; i++) {
     const e = events[i]
     const isCurated = curatedIds.has(e.name)
+    const isRainReserve = rainReserveIds.has(e.name)
     const slug = `${e.name}-${e.location}-${e.time}`
       .toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 80)
     const docId = `event-${city}-${date}-${slug}`
@@ -262,6 +270,7 @@ async function writeToSanity(events: RawEvent[], date: string, city: string, cur
       eventType: e.eventType ?? null,
       layer: e.layer ?? 'discovery',
       curated: isCurated,
+      rainReserve: isRainReserve,
       sponsored: false,
       colorIndex: i % 12,
     })
@@ -395,9 +404,36 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]) {
     const nightlifeCount = final.filter((e) => isNightlife(e.eventType ?? 'special')).length
     console.log(`  [5/5] ${final.length} Events total (${nightlifeCount} Nightlife, ${final.length - nightlifeCount} Kultur/Sonstige)`)
 
-    // Mark all as curated
+    // ── Rain Reserve (if rainy today)
     const curatedIds = new Set(final.map((e) => e.name))
-    await writeToSanity(final, date, city, curatedIds)
+    let rainReserveIds = new Set<string>()
+
+    const weather = await fetchWeather(city)
+    if (weather?.isRainy) {
+      console.log(`  [Rain] ${weather.description} — kuratiere Rain Reserve...`)
+      const unusedPool = geoFiltered.filter((e) => !curatedIds.has(e.name))
+      try {
+        const rainPicks = await curateRainReserve(unusedPool, city)
+        for (const pick of rainPicks) {
+          const match = unusedPool.find((e) =>
+            e.name.toLowerCase().includes(pick.name.toLowerCase()) ||
+            pick.name.toLowerCase().includes(e.name.toLowerCase())
+          )
+          if (match) {
+            match.name = pick.name
+            match.location = pick.location
+            if (pick.eventType) match.eventType = pick.eventType as import('./types').EventType
+            rainReserveIds.add(match.name)
+            final.push(match)
+          }
+        }
+        console.log(`  [Rain] ${rainReserveIds.size} Rain-Reserve Events hinzugefügt`)
+      } catch (err) {
+        console.error('  [Rain] Kuratierung fehlgeschlagen:', err)
+      }
+    }
+
+    await writeToSanity(final, date, city, curatedIds, rainReserveIds)
   }
 }
 
@@ -462,7 +498,34 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]) {
       }
 
       const curatedNames = new Set(curated.map((c) => c.name))
-      await writeToSanity(unique, date, city, curatedNames)
+      let rainReserveIds = new Set<string>()
+
+      const weather = await fetchWeather(city)
+      if (weather?.isRainy) {
+        console.log(`  [Rain] ${weather.description} — kuratiere Rain Reserve...`)
+        const unusedPool = unique.filter((e) => !curatedNames.has(e.name))
+        try {
+          const rainPicks = await curateRainReserve(unusedPool, city)
+          for (const pick of rainPicks) {
+            const match = unusedPool.find((e) =>
+              e.name.toLowerCase().includes(pick.name.toLowerCase()) ||
+              pick.name.toLowerCase().includes(e.name.toLowerCase())
+            )
+            if (match) {
+              match.name = pick.name
+              match.location = pick.location
+              if (pick.eventType) match.eventType = pick.eventType as import('./types').EventType
+              rainReserveIds.add(match.name)
+              unique.push(match)
+            }
+          }
+          console.log(`  [Rain] ${rainReserveIds.size} Rain-Reserve Events hinzugefügt`)
+        } catch (err) {
+          console.error('  [Rain] Kuratierung fehlgeschlagen:', err)
+        }
+      }
+
+      await writeToSanity(unique, date, city, curatedNames, rainReserveIds)
     } catch (err) {
       console.error('  [FEHLER] Kuratierung fehlgeschlagen:', err)
       await writeToSanity(unique, date, city, new Set())

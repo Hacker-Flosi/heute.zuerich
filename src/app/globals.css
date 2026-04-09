@@ -30,6 +30,18 @@
   --hover-bg: #111111;
 }
 
+[data-rain="true"] {
+  --bg: #0D1A2D;
+  --fg: #ffffff;
+  --border: #ffffff;
+  --border-muted: #2A4A6B;
+  --muted: #aaa;
+  --tab-bg: #0D1A2D;
+  --tab-active-bg: #ffffff;
+  --tab-active-fg: #0D1A2D;
+  --hover-bg: #152236;
+}
+
 * {
   margin: 0;
   padding: 0;
