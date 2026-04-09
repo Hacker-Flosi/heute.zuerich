@@ -7,6 +7,7 @@ import { postInstagram } from './post-instagram'
 import { scrapeEventfrog } from './scrapers/eventfrog'
 import { scrapeHellozurich } from './scrapers/hellozurich'
 import { scrapeGangus } from './scrapers/gangus'
+import { scrapeSaiten } from './scrapers/saiten'
 import { scrapeResidentAdvisor } from './scrapers/residentadvisor'
 import { deduplicateEvents } from './deduplicate'
 import { curateEvents, curateDiscovery, curateRainReserve } from './curate'
@@ -22,7 +23,7 @@ type ScraperFn = (date: string) => Promise<RawEvent[]>
 
 const CITY_CONFIG: Record<string, { twoLayer: boolean; scrapers: ScraperFn[] }> = {
   zuerich:  { twoLayer: true, scrapers: [scrapeEventfrog, scrapeHellozurich, scrapeResidentAdvisor] },
-  stgallen: { twoLayer: true, scrapers: [scrapeEventfrog] },
+  stgallen: { twoLayer: true, scrapers: [scrapeEventfrog, scrapeSaiten] },
   luzern:   { twoLayer: true, scrapers: [scrapeGangus, scrapeEventfrog] },
   // Basel + Bern: Coming Soon — not scraped until active
 }
