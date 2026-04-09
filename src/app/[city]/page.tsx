@@ -36,8 +36,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const label = CITY_LABELS[city]
   if (!label) return {}
   return {
-    title: `waslauft.in/${city} — Was läuft heute in ${label}?`,
-    description: `Kuratierte Events in ${label}. Täglich die besten Veranstaltungen.`,
+    title: `Was läuft heute in ${label}?`,
+    description: `Die besten Events heute in ${label} — Konzerte, Clubs, Kultur und mehr. Täglich kuratiert, ohne Werbung.`,
+    alternates: { canonical: `/${city}` },
+    openGraph: {
+      title: `Was läuft heute in ${label}? — waslauft.in`,
+      description: `Die besten Events heute in ${label} — Konzerte, Clubs, Kultur und mehr.`,
+      url: `https://waslauft.in/${city}`,
+      images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
+    },
   }
 }
 
@@ -66,9 +73,24 @@ export default async function CityPage({ params }: PageProps) {
   if (!CITY_LABELS[city]) notFound()
 
   const { today, tomorrow, dayAfter, rainToday, rainTomorrow, rainDayAfter, logoUrl, weather } = await getPageData(city)
+  const label = CITY_LABELS[city]
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'EventSeries',
+    name: `Was läuft heute in ${label}?`,
+    url: `https://waslauft.in/${city}`,
+    location: { '@type': 'City', name: label, addressCountry: 'CH' },
+    organizer: { '@type': 'Organization', name: 'waslauft.in', url: 'https://waslauft.in' },
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+  }
 
   return (
     <main>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <EventList
         city={city}
         cityLabel={CITY_LABELS[city]}

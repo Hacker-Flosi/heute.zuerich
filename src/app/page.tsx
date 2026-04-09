@@ -16,12 +16,32 @@ const CITIES = [
   { slug: 'luzern', label: 'Luzern', active: true },
 ]
 
+export const metadata = {
+  alternates: { canonical: '/' },
+}
+
 export default async function Home() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'waslauft.in',
+    url: 'https://waslauft.in',
+    description: 'Jeden Tag die besten Events in Zürich, St.Gallen und Luzern — kuratiert, ohne Noise.',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: 'https://waslauft.in/{city}',
+      'query-input': 'required name=city',
+    },
+  }
   const settings = await getSanityClient().fetch<Record<string, { asset: { url: string } } | null>>(SITE_SETTINGS_QUERY)
   const logoUrl = settings?.homeLogo?.asset?.url ?? null
 
   return (
     <main className={styles.main}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <header className={styles.header}>
         <span className={styles.logo}>
           <LogoAnimated />

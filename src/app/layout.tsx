@@ -7,12 +7,40 @@ import ThemeToggle from '@/components/ThemeToggle'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'waslauft.in — Was läuft heute?',
-  description: 'Kuratierte Events in deiner Stadt. Täglich die besten 10–15 Veranstaltungen. Kein Noise.',
+  title: {
+    default: 'waslauft.in — Was läuft heute in deiner Stadt?',
+    template: '%s | waslauft.in',
+  },
+  description: 'Jeden Tag die besten Events in Zürich, St.Gallen und Luzern — kuratiert, ohne Werbung, ohne Noise.',
+  metadataBase: new URL('https://waslauft.in'),
+  alternates: {
+    canonical: '/',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   openGraph: {
-    title: 'waslauft.in',
-    description: 'Was läuft heute? Kuratiert, täglich.',
+    title: 'waslauft.in — Was läuft heute?',
+    description: 'Jeden Tag die besten Events in Zürich, St.Gallen und Luzern. Kuratiert, ohne Noise.',
+    url: 'https://waslauft.in',
+    siteName: 'waslauft.in',
     type: 'website',
+    locale: 'de_CH',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'waslauft.in — Was läuft heute?',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'waslauft.in — Was läuft heute?',
+    description: 'Jeden Tag die besten Events in Zürich, St.Gallen und Luzern. Kuratiert, ohne Noise.',
+    images: ['/opengraph-image'],
   },
 }
 
