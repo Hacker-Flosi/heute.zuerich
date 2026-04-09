@@ -3,6 +3,7 @@
 
 import { EventfrogService, EventfrogEventRequest } from 'eventfrog-api'
 import type { RawEvent } from '../types'
+import { isAggregatorUrl } from '../venues'
 
 const MAX_PAGES = 5
 
@@ -82,10 +83,11 @@ export async function scrapeEventfrog(date: string): Promise<RawEvent[]> {
       const locationCity: string = event.location?.city ?? ''
       const locationName: string = locationFullName || locationCity || 'Zürich'
 
+      const rawLink: string = event.link ?? ''
       const url: string =
         event.organizer?.website?.trim() ||
-        event.link ||
-        `https://eventfrog.ch/de/veranstaltungen/${event.id}`
+        (!isAggregatorUrl(rawLink) ? rawLink : '') ||
+        `https://eventfrog.ch/de/p/e/${event.id}`
 
       events.push({
         name: event.title ?? 'Unbekanntes Event',

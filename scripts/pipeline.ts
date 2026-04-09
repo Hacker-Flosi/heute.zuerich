@@ -12,39 +12,9 @@ import { deduplicateEvents } from './deduplicate'
 import { curateEvents, curateDiscovery, curateRainReserve } from './curate'
 import { getSanityClient, getSanityWriteClient } from '../src/lib/sanity'
 import { lookupVenueUrl, isAggregatorUrl } from './venues'
-import * as cheerio from 'cheerio'
 import { fetchWeather } from '../src/lib/weather'
 import { inferEventTypeFromTitle, eventTypeFromVenueCategory, isNightlife } from './eventtype'
 import type { RawEvent, SanityVenue } from './types'
-
-// ─── Saiten.ch Organizer URL Resolver ────────────────────────────────────────
-
-async function resolveSaitenUrl(saitenUrl: string): Promise<string | null> {
-  try {
-    const res = await fetch(saitenUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-      signal: AbortSignal.timeout(8000),
-    })
-    if (!res.ok) return null
-    const html = await res.text()
-    const $ = cheerio.load(html)
-    let found: string | null = null
-    $('a[href]').each((_, el) => {
-      if (found) return
-      const href = $(el).attr('href') ?? ''
-      const text = $(el).text().trim()
-      if (!href.startsWith('http')) return
-      if (isAggregatorUrl(href)) return
-      // saiten.ch displays the organizer link as plain domain text (e.g. "www.venue.ch")
-      if (/^www\./i.test(text) || /^https?:\/\//i.test(text)) {
-        found = href
-      }
-    })
-    return found
-  } catch {
-    return null
-  }
-}
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -315,10 +285,6 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]) {
 
     // ── Venue URL enrichment
     for (const e of geoFiltered) {
-      if (e.url?.includes('saiten.ch')) {
-        const resolved = await resolveSaitenUrl(e.url)
-        if (resolved) { e.url = resolved; continue }
-      }
       if (!e.url || isAggregatorUrl(e.url)) {
         const v = lookupVenueUrl(e.location, city)
         if (v) e.url = v
@@ -459,10 +425,6 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]) {
 
     // Venue URL enrichment
     for (const e of raw) {
-      if (e.url?.includes('saiten.ch')) {
-        const resolved = await resolveSaitenUrl(e.url)
-        if (resolved) { e.url = resolved; continue }
-      }
       if (!e.url || isAggregatorUrl(e.url)) {
         const v = lookupVenueUrl(e.location, city)
         if (v) e.url = v

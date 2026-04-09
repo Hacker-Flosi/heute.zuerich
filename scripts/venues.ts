@@ -59,10 +59,30 @@ const VENUE_MAP: Record<string, VenueEntry[]> = {
   ],
 
   stgallen: [
+    // Clubs / Nightlife
     { patterns: ['grabenhalle'], url: 'https://grabenhalle.ch' },
     { patterns: ['kugl'], url: 'https://kugl.ch' },
     { patterns: ['palace'], url: 'https://palace.sg' },
     { patterns: ['øya', 'oya sg', 'oyasg'], url: 'https://oyasg.ch' },
+    { patterns: ['tankstell', 'tankstelle'], url: 'https://tankstelle-sg.ch' },
+    { patterns: ['trischli'], url: 'https://trischli.ch' },
+    { patterns: ['propaganda'], url: 'https://propaganda.sg' },
+    { patterns: ['club einstein', 'einstein'], url: 'https://clubeinstein.ch' },
+    // Kultur / Theater
+    { patterns: ['theaterhaus', 'theaterhaus'], url: 'https://theaterhaus.ch' },
+    { patterns: ['stadttheater'], url: 'https://stadttheater.ch' },
+    { patterns: ['tonhalle'], url: 'https://tonhalle.ch' },
+    { patterns: ['kinok'], url: 'https://kinok.ch' },
+    { patterns: ['lokremise'], url: 'https://lokremise.ch' },
+    { patterns: ['kunst halle', 'kunsthalle'], url: 'https://k9000.ch' },
+    { patterns: ['kunstmuseum'], url: 'https://kunstmuseumsg.ch' },
+    { patterns: ['figurentheater'], url: 'https://figurentheater.ch' },
+    { patterns: ['kellerbühne', 'kellerbuehne'], url: 'https://kellerbuehne.ch' },
+    { patterns: ['spiegelhalle'], url: 'https://spiegelhalle.ch' },
+    // Bars / Konzerte
+    { patterns: ['mariaberg'], url: 'https://mariaberg.ch' },
+    { patterns: ['horst'], url: 'https://horst.sg' },
+    { patterns: ['walter'], url: 'https://walter.sg' },
   ],
 }
 
