@@ -1,0 +1,27 @@
+# waslauft.in
+
+> Täglich kuratierte Events in Schweizer Städten — Zürich, St.Gallen, Luzern.
+
+waslauft.in beantwortet die Frage: "Was läuft heute in meiner Stadt?" Kein Noise, keine Werbung, keine Filter. Eine chronologische Liste der besten Veranstaltungen des Tages — kuratiert mit Hilfe von KI.
+
+## Städte
+
+- [Zürich](https://waslauft.in/zuerich): Täglich 25–30 kuratierte Events — Konzerte, Clubs, Kultur, Kunst
+- [St.Gallen](https://waslauft.in/stgallen): Täglich 15–20 kuratierte Events
+- [Luzern](https://waslauft.in/luzern): Täglich 15–20 kuratierte Events
+
+## Wie es funktioniert
+
+Events werden täglich aus mehreren Quellen gescrapt (Eventfrog, Saiten.ch, Gangus, Resident Advisor, HelloZurich) und durch KI kuratiert. Jede Stadtseite zeigt Events für Heute, Morgen und Übermorgen.
+
+## Über die Seite
+
+- Keine Registrierung, kein Login
+- Kein Algorithmus, keine personalisierten Feeds
+- Direkte Verlinkung zum Veranstalter
+- Täglich aktualisiert um 05:00 Uhr
+
+## Weitere Seiten
+
+- [About](https://waslauft.in/about)
+- [Datenschutz](https://waslauft.in/datenschutz)

@@ -80,7 +80,7 @@ export default function EventList({ city, cityLabel, logoUrl, today, tomorrow, d
         <Link href="/" className={styles.logo}>
           <LogoAnimated />
         </Link>
-        <span className={styles.city}>{cityLabel}</span>
+        <h1 className={styles.city}>{cityLabel}</h1>
       </header>
 
       {/* Sticky: only the pills, transparent background */}

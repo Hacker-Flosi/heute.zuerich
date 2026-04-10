@@ -46,6 +46,7 @@ export default async function Home() {
         <span className={styles.logo}>
           <LogoAnimated />
         </span>
+        <h1 className={styles.srOnly}>waslauft.in — Was läuft heute in deiner Stadt?</h1>
       </header>
 
       <section className={styles.cities}>
