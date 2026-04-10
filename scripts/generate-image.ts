@@ -157,7 +157,7 @@ function buildEventBlock(event: ImageEvent, i: number, totalInSlide: number) {
                 },
               },
               // Time
-              ...(event.time && event.time !== '00:00' ? [{
+              [{
                 type: 'div',
                 props: {
                   style: {
@@ -169,9 +169,9 @@ function buildEventBlock(event: ImageEvent, i: number, totalInSlide: number) {
                     textTransform: 'uppercase',
                     flexShrink: 0,
                   },
-                  children: event.time,
+                  children: (event.time && event.time !== '00:00') ? event.time : 'Ganztägig',
                 },
-              }] : [{ type: 'div', props: { style: {}, children: '' } }]),
+              }],
             ],
           },
         },
