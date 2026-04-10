@@ -38,7 +38,7 @@ export default defineType({
           { title: 'Basel', value: 'basel' },
           { title: 'Bern', value: 'bern' },
           { title: 'Luzern', value: 'luzern' },
-          { title: 'St. Gallen', value: 'stgallen' },
+          { title: 'St.Gallen', value: 'stgallen' },
         ],
       },
       validation: (Rule) => Rule.required(),

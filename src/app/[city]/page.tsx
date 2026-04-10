@@ -15,7 +15,7 @@ const CITY_LABELS: Record<string, string> = {
   zuerich:  'Zürich',
   basel:    'Basel',
   bern:     'Bern',
-  stgallen: 'St. Gallen',
+  stgallen: 'St.Gallen',
   luzern:   'Luzern',
 }
 

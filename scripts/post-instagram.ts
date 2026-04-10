@@ -35,9 +35,9 @@ const CITIES: CityConfig[] = [
   },
   {
     slug: 'stgallen',
-    label: 'St. Gallen',
+    label: 'St.Gallen',
     caption: (dateLabel) => [
-      `Du suchst Events in St. Gallen für heute? Wir zeigen dir, was läuft — von Konzerten bis Kultur-Events. ${dateLabel}`,
+      `Du suchst Events in St.Gallen für heute? Wir zeigen dir, was läuft — von Konzerten bis Kultur-Events. ${dateLabel}`,
       '',
       '→ Alle Veranstaltungen auf waslauft.in/stgallen',
       '',
