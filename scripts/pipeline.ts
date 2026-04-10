@@ -4,6 +4,8 @@
 // Other cities: Single-layer (AI curation of all events)
 
 import { postInstagram } from './post-instagram'
+import { sendTelegramNotification } from './notify'
+import type { CityResult } from './notify'
 import { scrapeEventfrog } from './scrapers/eventfrog'
 import { scrapeHellozurich } from './scrapers/hellozurich'
 import { scrapeGangus } from './scrapers/gangus'
@@ -253,7 +255,8 @@ async function writeToSanity(
 
 // ─── Two-Layer Pipeline (Zürich) ──────────────────────────────────────────────
 
-async function runTwoLayer(city: string, scrapers: ScraperFn[]) {
+async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityResult> {
+  const result: CityResult = { city, counts: [0, 0, 0], skipped: [false, false, false], errors: [] }
   const venues = await loadActiveVenues(city)
   console.log(`  [Venues] ${venues.length} aktive Venues geladen`)
   const summer = isSummerSeason()
@@ -266,6 +269,7 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]) {
 
     if (await hasEventsForDate(city, date)) {
       console.log('  [Skip] Bereits kuratiert — übersprungen')
+      result.skipped[offset] = true
       continue
     }
 
@@ -401,12 +405,15 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]) {
     }
 
     await writeToSanity(final, date, city, curatedIds, rainReserveIds)
+    result.counts[offset] = final.length
   }
+  return result
 }
 
 // ─── Single-Layer Pipeline (Luzern, St. Gallen, …) ───────────────────────────
 
-async function runSingleLayer(city: string, scrapers: ScraperFn[]) {
+async function runSingleLayer(city: string, scrapers: ScraperFn[]): Promise<CityResult> {
+  const result: CityResult = { city, counts: [0, 0, 0], skipped: [false, false, false], errors: [] }
   for (const offset of [0, 1, 2]) {
     const date = getDate(offset)
     const label = ['Heute', 'Morgen', 'Übermorgen'][offset]
@@ -414,6 +421,7 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]) {
 
     if (await hasEventsForDate(city, date)) {
       console.log('  [Skip] Bereits kuratiert — übersprungen')
+      result.skipped[offset] = true
       continue
     }
 
@@ -489,11 +497,14 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]) {
       }
 
       await writeToSanity(unique, date, city, curatedNames, rainReserveIds)
+      result.counts[offset] = unique.length
     } catch (err) {
       console.error('  [FEHLER] Kuratierung fehlgeschlagen:', err)
+      result.errors.push(`${['Heute','Morgen','Übermorgen'][offset]}: Kuratierung fehlgeschlagen`)
       await writeToSanity(unique, date, city, new Set())
     }
   }
+  return result
 }
 
 // ─── Orchestrator ─────────────────────────────────────────────────────────────
@@ -523,18 +534,22 @@ export async function runPipeline() {
   console.log('\n── Cleanup abgelaufene Events ──')
   await deleteExpiredEvents()
 
+  const cityResults: CityResult[] = []
+  const pipelineErrors: string[] = []
+
   const cities = Object.entries(CITY_CONFIG)
   for (let i = 0; i < cities.length; i++) {
     const [city, config] = cities[i]
     console.log(`\n══ Stadt: ${city.toUpperCase()} ══`)
     try {
-      if (config.twoLayer) {
-        await runTwoLayer(city, config.scrapers)
-      } else {
-        await runSingleLayer(city, config.scrapers)
-      }
+      const result = config.twoLayer
+        ? await runTwoLayer(city, config.scrapers)
+        : await runSingleLayer(city, config.scrapers)
+      cityResults.push(result)
     } catch (err) {
       console.error(`[FEHLER] Pipeline für ${city} abgebrochen:`, err)
+      pipelineErrors.push(`${city}: ${err instanceof Error ? err.message : String(err)}`)
+      cityResults.push({ city, counts: [0, 0, 0], skipped: [false, false, false], errors: ['Pipeline abgebrochen'] })
     }
     // Pause between cities to avoid Eventfrog rate-limiting (429)
     if (i < cities.length - 1) {
@@ -543,17 +558,26 @@ export async function runPipeline() {
     }
   }
 
-  console.log(`\n=== Pipeline abgeschlossen in ${((Date.now() - start) / 1000).toFixed(1)}s ===`)
+  const durationSeconds = (Date.now() - start) / 1000
+  console.log(`\n=== Pipeline abgeschlossen in ${durationSeconds.toFixed(1)}s ===`)
 
   // Instagram Post für Zürich (nur wenn INSTAGRAM_ACCOUNT_ID gesetzt)
+  let instagramPosted = false
+  let instagramError: string | undefined
   if (process.env.INSTAGRAM_ACCOUNT_ID && process.env.META_ACCESS_TOKEN) {
     console.log('\n── Instagram Post ──')
     try {
       await postInstagram()
+      instagramPosted = true
     } catch (err) {
+      instagramError = err instanceof Error ? err.message : String(err)
       console.error('[instagram] Post fehlgeschlagen:', err)
     }
   }
+
+  // Telegram Notification
+  console.log('\n── Telegram Notification ──')
+  await sendTelegramNotification({ cityResults, instagramPosted, instagramError, durationSeconds, errors: pipelineErrors })
 }
 
 if (process.argv[1]?.endsWith('pipeline.ts') || process.argv[1]?.endsWith('pipeline.js')) {
