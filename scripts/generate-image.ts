@@ -231,36 +231,12 @@ export async function generateTitleImage(
               padding: '60px 80px',
             },
             children: [
-              // Top row — logo left, date right
+              // Top row — logo only
               {
-                type: 'div',
+                type: 'img',
                 props: {
-                  style: {
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  },
-                  children: [
-                    {
-                      type: 'img',
-                      props: {
-                        src: logoDataUrl,
-                        style: { width: 260, height: 52, objectFit: 'contain', objectPosition: 'left center' },
-                      },
-                    },
-                    {
-                      type: 'div',
-                      props: {
-                        style: {
-                          fontSize: 40,
-                          fontWeight: 700,
-                          color: '#ffffff',
-                          letterSpacing: '0.02em',
-                        },
-                        children: dateLabel,
-                      },
-                    },
-                  ],
+                  src: logoDataUrl,
+                  style: { width: 260, height: 52, objectFit: 'contain', objectPosition: 'left center' },
                 },
               },
               // Spacer
@@ -277,6 +253,21 @@ export async function generateTitleImage(
                     lineHeight: 0.88,
                   },
                   children: cityLabel,
+                },
+              },
+              // Date below city
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    fontSize: 40,
+                    fontWeight: 700,
+                    color: '#ffffff',
+                    letterSpacing: '0.02em',
+                    opacity: 0.6,
+                    marginTop: 12,
+                  },
+                  children: dateLabel,
                 },
               },
             ],
