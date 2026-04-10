@@ -180,14 +180,14 @@ function buildEventBlock(event: ImageEvent, i: number, totalInSlide: number) {
           type: 'div',
           props: {
             style: {
-              fontSize: 44,
+              fontSize: event.name.length > 50 ? 28 : event.name.length > 35 ? 36 : 44,
               fontWeight: 700,
               color: fg,
               letterSpacing: '-0.02em',
               lineHeight: 1.05,
               textTransform: 'uppercase',
             },
-            children: event.name.length > 40 ? event.name.slice(0, 38) + '…' : event.name,
+            children: event.name,
           },
         },
       ],
