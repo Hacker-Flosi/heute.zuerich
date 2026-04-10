@@ -228,7 +228,7 @@ export async function generateTitleImage(
               background: '#000000',
               display: 'flex',
               flexDirection: 'column',
-              padding: '60px 80px',
+              padding: '60px 60px',
             },
             children: [
               // Top row — logo only

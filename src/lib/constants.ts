@@ -49,6 +49,17 @@ export const formatDateLabel = (offset: number): string => {
   return `${days[d.getDay()]}, ${d.getDate()}. ${months[d.getMonth()]} ${d.getFullYear()}`
 }
 
+export const formatDateShort = (offset: number): string => {
+  const d = new Date()
+  d.setDate(d.getDate() + offset)
+  const days = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
+  const months = [
+    'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+    'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+  ]
+  return `${days[d.getDay()]} ${d.getDate()}.${months[d.getMonth()]}`
+}
+
 export type EventType =
   | 'konzert' | 'dj_club' | 'party' | 'kultur'
   | 'kunst' | 'markt' | 'open_air' | 'special'

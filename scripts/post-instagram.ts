@@ -4,7 +4,7 @@
 
 import { getSanityClient } from '../src/lib/sanity'
 import { CURATED_EVENTS_QUERY } from '../src/lib/queries'
-import { formatDateLabel, getDateString } from '../src/lib/constants'
+import { formatDateLabel, formatDateShort, getDateString } from '../src/lib/constants'
 import { put, del } from '@vercel/blob'
 import { generatePostImage, generateTitleImage } from './generate-image'
 import type { ImageEvent } from './generate-image'
@@ -165,7 +165,7 @@ async function postInstagramForCity(city: CityConfig, date: string, dateLabel: s
   const ts = Date.now()
 
   console.log(`[instagram] ${city.label}: Generiere Titel-Slide...`)
-  const titleBuf = await generateTitleImage(city.label, dateLabel, pages[0])
+  const titleBuf = await generateTitleImage(city.label, formatDateShort(0), pages[0])
   console.log(`[instagram] ${city.label}: Titel-Slide generiert (${(titleBuf.length / 1024).toFixed(0)} KB)`)
   const titleUrl = await uploadToBlob(titleBuf, `title-${city.slug}-${date}-${ts}.png`)
   imageUrls.push(titleUrl)
