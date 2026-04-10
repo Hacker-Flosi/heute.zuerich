@@ -3,7 +3,6 @@
 // Zürich: Two-Layer (venue-first + AI discovery)
 // Other cities: Single-layer (AI curation of all events)
 
-import { postInstagram } from './post-instagram'
 import { sendTelegramNotification } from './notify'
 import type { CityResult } from './notify'
 import { scrapeEventfrog } from './scrapers/eventfrog'
@@ -561,23 +560,9 @@ export async function runPipeline() {
   const durationSeconds = (Date.now() - start) / 1000
   console.log(`\n=== Pipeline abgeschlossen in ${durationSeconds.toFixed(1)}s ===`)
 
-  // Instagram Post für Zürich (nur wenn INSTAGRAM_ACCOUNT_ID gesetzt)
-  let instagramPosted = false
-  let instagramError: string | undefined
-  if (process.env.INSTAGRAM_ACCOUNT_ID && process.env.META_ACCESS_TOKEN) {
-    console.log('\n── Instagram Post ──')
-    try {
-      await postInstagram()
-      instagramPosted = true
-    } catch (err) {
-      instagramError = err instanceof Error ? err.message : String(err)
-      console.error('[instagram] Post fehlgeschlagen:', err)
-    }
-  }
-
-  // Telegram Notification
+  // Telegram Notification (Instagram wird separat via /api/cron/instagram um 05:15 gepostet)
   console.log('\n── Telegram Notification ──')
-  await sendTelegramNotification({ cityResults, instagramPosted, instagramError, durationSeconds, errors: pipelineErrors })
+  await sendTelegramNotification({ cityResults, instagramPosted: false, durationSeconds, errors: pipelineErrors })
 }
 
 if (process.argv[1]?.endsWith('pipeline.ts') || process.argv[1]?.endsWith('pipeline.js')) {
