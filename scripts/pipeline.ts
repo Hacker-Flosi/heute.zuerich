@@ -150,6 +150,17 @@ function matchVenue(event: RawEvent, venues: SanityVenue[], summer: boolean): Sa
 }
 
 const TARGET_EVENTS = 30
+const MAX_EVENTS_PER_LOCATION = 3
+
+/** Limit events per location to avoid one venue dominating the list. */
+function enforceLocationLimit(events: RawEvent[]): RawEvent[] {
+  const counts: Record<string, number> = {}
+  return events.filter((e) => {
+    const loc = e.location.toLowerCase()
+    counts[loc] = (counts[loc] || 0) + 1
+    return counts[loc] <= MAX_EVENTS_PER_LOCATION
+  })
+}
 
 /** Enforce ≥60% nightlife ratio — only for Zürich AND only when pool > 30 events. */
 function enforceNightlifeRatio(events: RawEvent[], city: string): RawEvent[] {
@@ -368,7 +379,8 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
     // ── Post-processing: fill to 30, then apply nightlife ratio
     const aiChosen = [...dedupL1, ...chosenDiscovery]
     const filled = fillToTarget(aiChosen, discoveryPool)
-    const final = enforceNightlifeRatio(filled, city)
+    const ratioEnforced = enforceNightlifeRatio(filled, city)
+    const final = enforceLocationLimit(ratioEnforced)
     final.sort((a, b) => a.time.localeCompare(b.time))
 
     const nightlifeCount = final.filter((e) => isNightlife(e.eventType ?? 'special')).length
@@ -495,8 +507,9 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]): Promise<City
         }
       }
 
-      await writeToSanity(unique, date, city, curatedNames, rainReserveIds)
-      result.counts[offset] = unique.length
+      const locationLimited = enforceLocationLimit(unique)
+      await writeToSanity(locationLimited, date, city, curatedNames, rainReserveIds)
+      result.counts[offset] = locationLimited.length
     } catch (err) {
       console.error('  [FEHLER] Kuratierung fehlgeschlagen:', err)
       result.errors.push(`${['Heute','Morgen','Übermorgen'][offset]}: Kuratierung fehlgeschlagen`)
