@@ -157,7 +157,7 @@ function buildEventRow(event: ImageEvent, i: number, total: number, compact = fa
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        gap: compact ? 4 : 6,
+        gap: compact ? 8 : 10,
       },
       children: [
         {
@@ -176,9 +176,9 @@ function buildEventRow(event: ImageEvent, i: number, total: number, compact = fa
                         style: {
                           background: badWeather ? NAVY_FG : '#000',
                           color: badWeather ? NAVY : '#fff',
-                          fontSize: compact ? 13 : 18, fontWeight: 700,
+                          fontSize: compact ? 22 : 22, fontWeight: 700,
                           letterSpacing: '0.06em', textTransform: 'uppercase',
-                          padding: compact ? '2px 8px' : '4px 14px', borderRadius: 4,
+                          padding: compact ? '4px 14px' : '4px 14px', borderRadius: 4,
                         },
                         children: label,
                       },
@@ -187,7 +187,7 @@ function buildEventRow(event: ImageEvent, i: number, total: number, compact = fa
                       type: 'div',
                       props: {
                         style: {
-                          fontSize: compact ? 20 : 20, fontWeight: 400,
+                          fontSize: compact ? 28 : 28, fontWeight: 400,
                           color: fg, opacity: 0.7,
                           letterSpacing: '0.04em', textTransform: 'uppercase',
                         },
@@ -201,7 +201,7 @@ function buildEventRow(event: ImageEvent, i: number, total: number, compact = fa
                 type: 'div',
                 props: {
                   style: {
-                    fontSize: compact ? 20 : 20, fontWeight: 700,
+                    fontSize: compact ? 28 : 28, fontWeight: 700,
                     color: fg, opacity: 0.7,
                     letterSpacing: '0.04em', textTransform: 'uppercase', flexShrink: 0,
                   },
