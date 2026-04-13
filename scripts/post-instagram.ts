@@ -1,61 +1,35 @@
 // scripts/post-instagram.ts
-// Publiziert täglich Instagram Karussell-Posts für alle aktiven Städte
-// Ablauf: Sanity Events holen → Bilder generieren → Vercel Blob → Meta Graph API
+// Publiziert täglich Instagram-Inhalte für alle aktiven Städte
+// Feed: 1 kombinierter Karussell-Post (Title + je ein City-Slide)
+// Stories: Pro Stadt — Title-Slide + Event-Slides (→ manuell zu Highlights)
 
 import { getSanityClient } from '../src/lib/sanity'
 import { CURATED_EVENTS_QUERY } from '../src/lib/queries'
 import { formatDateLabel, formatDateShort, getDateString } from '../src/lib/constants'
 import { put, del } from '@vercel/blob'
-import { generatePostImage, generateTitleImage } from './generate-image'
-import type { ImageEvent } from './generate-image'
+import { fetchCityWeather } from './weather'
+import type { WeatherResult } from './weather'
+import type { ImageEvent, CityEvents } from './generate-image-v2'
+import {
+  generateCombinedTitleSlide,
+  generateCombinedCitySlide,
+  generateStoryTitleSlide,
+  generateStoryEventSlides,
+  generateBadWeatherCitySlide,
+  generateBadWeatherStoryTitleSlide,
+  generateBadWeatherStoryEventSlides,
+} from './generate-image-v2'
 
-const GRAPH_BASE      = 'https://graph.instagram.com/v21.0'
-const EVENTS_PER_PAGE = 8
-const MAX_CAROUSEL    = 10
+const GRAPH_BASE = 'https://graph.instagram.com/v21.0'
 
-// ─── City Config ─────────────────────────────────────────────────────────────
+const CITY_SLUGS = ['zuerich', 'stgallen', 'luzern'] as const
+type CitySlug = typeof CITY_SLUGS[number]
 
-interface CityConfig {
-  slug: string
-  label: string
-  caption: (dateLabel: string) => string
+const CITY_LABELS: Record<CitySlug, string> = {
+  zuerich:  'Zürich',
+  stgallen: 'St.Gallen',
+  luzern:   'Luzern',
 }
-
-const CITIES: CityConfig[] = [
-  {
-    slug: 'zuerich',
-    label: 'Zürich',
-    caption: (dateLabel) => [
-      `Du suchst Events in Zürich für heute? Wir zeigen dir, was im Zürcher Ausgang läuft — von Techno Partys bis Kultur-Events. ${dateLabel}`,
-      '',
-      '→ Alle Veranstaltungen auf waslauft.in/zuerich',
-      '',
-      '#zürichgehtaus #ausgangzürich #zürichbynight #waslauft #waslauftzh',
-    ].join('\n'),
-  },
-  {
-    slug: 'stgallen',
-    label: 'St.Gallen',
-    caption: (dateLabel) => [
-      `Du suchst Events in St.Gallen für heute? Wir zeigen dir, was läuft — von Konzerten bis Kultur-Events. ${dateLabel}`,
-      '',
-      '→ Alle Veranstaltungen auf waslauft.in/stgallen',
-      '',
-      '#stgallen #stgallengehtaus #waslauft #waslauftstgallen #ostschweiz',
-    ].join('\n'),
-  },
-  {
-    slug: 'luzern',
-    label: 'Luzern',
-    caption: (dateLabel) => [
-      `Du suchst Events in Luzern für heute? Wir zeigen dir, was läuft — von Konzerten bis Kultur-Events. ${dateLabel}`,
-      '',
-      '→ Alle Veranstaltungen auf waslauft.in/luzern',
-      '',
-      '#luzern #luzerngehtaus #waslauft #waslauftluzern #zentralschweiz',
-    ].join('\n'),
-  },
-]
 
 // ─── Meta Graph API Helpers ───────────────────────────────────────────────────
 
@@ -66,9 +40,7 @@ async function createCarouselItem(imageUrl: string, igId: string, token: string)
     media_type: 'IMAGE',
     access_token: token,
   })
-  const res = await fetch(`${GRAPH_BASE}/${igId}/media?${params.toString()}`, {
-    method: 'POST',
-  })
+  const res = await fetch(`${GRAPH_BASE}/${igId}/media?${params.toString()}`, { method: 'POST' })
   const data = await res.json()
   if (!res.ok || !data.id) throw new Error(`Carousel-Item-Fehler: ${JSON.stringify(data)}`)
   return data.id
@@ -96,6 +68,17 @@ async function createCarouselContainer(childIds: string[], caption: string, igId
   return data.id
 }
 
+async function createStoryContainer(imageUrl: string, igId: string, token: string): Promise<string> {
+  const res = await fetch(`${GRAPH_BASE}/${igId}/media`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image_url: imageUrl, media_type: 'STORIES', access_token: token }),
+  })
+  const data = await res.json()
+  if (!res.ok || !data.id) throw new Error(`Story-Container-Fehler: ${JSON.stringify(data)}`)
+  return data.id
+}
+
 async function waitForContainer(containerId: string, token: string): Promise<void> {
   for (let i = 0; i < 12; i++) {
     await new Promise((r) => setTimeout(r, 5000))
@@ -120,10 +103,10 @@ async function publishContainer(containerId: string, igId: string, token: string
   return data.id
 }
 
-// ─── Image Upload via Vercel Blob ─────────────────────────────────────────────
+// ─── Blob Helpers ─────────────────────────────────────────────────────────────
 
-async function uploadToBlob(imageBuffer: Buffer, filename: string): Promise<string> {
-  const blob = await put(`instagram/${filename}`, imageBuffer, {
+async function uploadToBlob(buf: Buffer, filename: string): Promise<string> {
+  const blob = await put(`instagram/${filename}`, buf, {
     access: 'public',
     contentType: 'image/png',
     allowOverwrite: true,
@@ -132,78 +115,52 @@ async function uploadToBlob(imageBuffer: Buffer, filename: string): Promise<stri
 }
 
 async function deleteBlob(url: string): Promise<void> {
-  try {
-    await del(url)
-  } catch {
-    // Non-critical — blob will expire anyway
-  }
+  try { await del(url) } catch { /* non-critical */ }
 }
 
-// ─── Post für eine Stadt ──────────────────────────────────────────────────────
+// ─── Karussell posten ─────────────────────────────────────────────────────────
 
-async function postInstagramForCity(city: CityConfig, date: string, dateLabel: string, igId: string, token: string): Promise<void> {
-  console.log(`[instagram] Post für ${city.label} / ${date}`)
+async function postCarousel(slides: Buffer[], caption: string, prefix: string, ts: number, igId: string, token: string): Promise<void> {
+  const urls: string[] = []
 
-  const client = getSanityClient()
-  const events = await client.fetch<ImageEvent[]>(CURATED_EVENTS_QUERY, { date, city: city.slug })
-
-  if (events.length === 0) {
-    console.warn(`[instagram] ${city.label}: Keine Events — Post übersprungen`)
-    return
+  for (let i = 0; i < slides.length; i++) {
+    const url = await uploadToBlob(slides[i], `${prefix}-${i + 1}-${ts}.png`)
+    urls.push(url)
+    console.log(`[instagram] Bild ${i + 1}/${slides.length} hochgeladen`)
   }
 
-  // Events in Seiten aufteilen
-  const chunks: ImageEvent[][] = []
-  for (let i = 0; i < events.length; i += EVENTS_PER_PAGE) {
-    chunks.push(events.slice(i, i + EVENTS_PER_PAGE))
-  }
-  const pages = chunks.slice(0, MAX_CAROUSEL - 1)
-  console.log(`[instagram] ${city.label}: ${events.length} Events → 1 Titel + ${pages.length} Event-Slide(s)`)
-
-  // Bilder generieren + hochladen
-  const imageUrls: string[] = []
-  const ts = Date.now()
-
-  console.log(`[instagram] ${city.label}: Generiere Titel-Slide...`)
-  const titleBuf = await generateTitleImage(city.label, formatDateShort(0), pages[0])
-  console.log(`[instagram] ${city.label}: Titel-Slide generiert (${(titleBuf.length / 1024).toFixed(0)} KB)`)
-  const titleUrl = await uploadToBlob(titleBuf, `title-${city.slug}-${date}-${ts}.png`)
-  imageUrls.push(titleUrl)
-
-  for (let i = 0; i < pages.length; i++) {
-    console.log(`[instagram] ${city.label}: Generiere Event-Slide ${i + 1}/${pages.length}...`)
-    const buf = await generatePostImage(city.label, dateLabel, pages[i])
-    const url = await uploadToBlob(buf, `events-${city.slug}-${date}-${i + 1}-${ts}.png`)
-    imageUrls.push(url)
+  if (urls.length === 1) {
+    const id = await createSingleContainer(urls[0], caption, igId, token)
+    const postId = await publishContainer(id, igId, token)
+    console.log(`[instagram] ✅ Einzelbild publiziert: ${postId}`)
+  } else {
+    const childIds: string[] = []
+    for (const url of urls) {
+      const itemId = await createCarouselItem(url, igId, token)
+      await waitForContainer(itemId, token)
+      childIds.push(itemId)
+    }
+    const carouselId = await createCarouselContainer(childIds, caption, igId, token)
+    const postId = await publishContainer(carouselId, igId, token)
+    console.log(`[instagram] ✅ Karussell publiziert: ${postId}`)
   }
 
-  const caption = city.caption(dateLabel)
+  for (const url of urls) await deleteBlob(url)
+}
 
-  // Einzelbild-Post
-  if (imageUrls.length === 1) {
-    const containerId = await createSingleContainer(imageUrls[0], caption, igId, token)
+// ─── Stories posten ───────────────────────────────────────────────────────────
+
+async function postStories(slides: Buffer[], prefix: string, ts: number, igId: string, token: string): Promise<void> {
+  for (let i = 0; i < slides.length; i++) {
+    const url = await uploadToBlob(slides[i], `${prefix}-story-${i + 1}-${ts}.png`)
+    console.log(`[instagram] Story-Slide ${i + 1}/${slides.length} hochgeladen`)
+    const containerId = await createStoryContainer(url, igId, token)
     const postId = await publishContainer(containerId, igId, token)
-    console.log(`[instagram] ✅ ${city.label}: Post publiziert: ${postId}`)
-    for (const url of imageUrls) await deleteBlob(url)
-    return
+    console.log(`[instagram] ✅ Story ${i + 1} publiziert: ${postId}`)
+    await deleteBlob(url)
+    // Kurze Pause zwischen Story-Slides
+    if (i < slides.length - 1) await new Promise((r) => setTimeout(r, 2000))
   }
-
-  // Karussell-Post
-  console.log(`[instagram] ${city.label}: Erstelle Karussell-Items...`)
-  const childIds: string[] = []
-  for (const url of imageUrls) {
-    const itemId = await createCarouselItem(url, igId, token)
-    await waitForContainer(itemId, token)
-    childIds.push(itemId)
-    console.log(`[instagram] ${city.label}: Carousel-Item bereit: ${itemId}`)
-  }
-
-  const carouselId = await createCarouselContainer(childIds, caption, igId, token)
-  const postId = await publishContainer(carouselId, igId, token)
-  console.log(`[instagram] ✅ ${city.label}: Karussell-Post publiziert: ${postId}`)
-
-  for (const url of imageUrls) await deleteBlob(url)
-  console.log(`[instagram] ${city.label}: Blobs gelöscht`)
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -212,21 +169,116 @@ export async function postInstagram(): Promise<void> {
   const igId  = process.env.INSTAGRAM_ACCOUNT_ID
   const token = process.env.META_ACCESS_TOKEN
   if (!igId || !token) {
-    console.error('INSTAGRAM_ACCOUNT_ID oder META_ACCESS_TOKEN fehlt')
+    console.error('[instagram] INSTAGRAM_ACCOUNT_ID oder META_ACCESS_TOKEN fehlt')
     process.exit(1)
   }
 
-  const date = getDateString(0)
+  const date      = getDateString(0)
   const dateLabel = formatDateLabel(0)
+  const dateShort = formatDateShort(0)
+  const ts        = Date.now()
+  const client    = getSanityClient()
 
-  for (const city of CITIES) {
+  // ── Events aus Sanity laden
+  console.log('[instagram] Lade Events aus Sanity...')
+  const eventsByCity: Record<CitySlug, ImageEvent[]> = {
+    zuerich:  [],
+    stgallen: [],
+    luzern:   [],
+  }
+  for (const slug of CITY_SLUGS) {
+    const events = await client.fetch<ImageEvent[]>(CURATED_EVENTS_QUERY, { date, city: slug })
+    eventsByCity[slug] = events
+    console.log(`[instagram] ${CITY_LABELS[slug]}: ${events.length} Events`)
+  }
+
+  const totalEvents = Object.values(eventsByCity).reduce((s, e) => s + e.length, 0)
+  if (totalEvents === 0) {
+    console.warn('[instagram] Keine Events für heute — abgebrochen')
+    return
+  }
+
+  // ── Wetter abrufen
+  console.log('[instagram] Prüfe Wetter...')
+  const weather = await fetchCityWeather()
+  for (const slug of CITY_SLUGS) {
+    const w = weather[slug]
+    console.log(`[instagram] Wetter ${CITY_LABELS[slug]}: ${w.isRain ? `☔ ${w.description}` : '☀️ kein Regen'}`)
+  }
+
+  // ── Kombinierter Feed-Post ─────────────────────────────────────────────────
+  console.log('\n[instagram] ── Kombinierter Feed-Post ──')
+
+  const firstColorIndex = eventsByCity.zuerich[0]?.colorIndex ?? 0
+  const feedSlides: Buffer[] = []
+
+  // Slide 1: Titel
+  console.log('[instagram] Generiere Titel-Slide...')
+  feedSlides.push(await generateCombinedTitleSlide(dateShort, firstColorIndex))
+
+  // Slides 2-4: Je eine Stadt
+  for (const slug of CITY_SLUGS) {
+    const cityData: CityEvents = { label: CITY_LABELS[slug], events: eventsByCity[slug] }
+    const w: WeatherResult = weather[slug]
+
+    if (eventsByCity[slug].length === 0) {
+      console.log(`[instagram] ${CITY_LABELS[slug]}: keine Events — City-Slide übersprungen`)
+      continue
+    }
+
+    console.log(`[instagram] Generiere City-Slide für ${CITY_LABELS[slug]}${w.isRain ? ` (${w.description})` : ''}...`)
+    const slide = w.isRain
+      ? await generateBadWeatherCitySlide(cityData, w.description)
+      : await generateCombinedCitySlide(cityData)
+    feedSlides.push(slide)
+  }
+
+  const feedCaption = [
+    `Was läuft heute? ${dateShort}`,
+    '',
+    'Zürich · St.Gallen · Luzern',
+    '',
+    '→ waslauft.in',
+    '',
+    '#zürich #stgallen #luzern #waslauft #schweiz #ausgehen #events #wasläuft',
+  ].join('\n')
+
+  await postCarousel(feedSlides, feedCaption, `feed-${date}`, ts, igId, token)
+
+  // ── Stories pro Stadt ──────────────────────────────────────────────────────
+  for (const slug of CITY_SLUGS) {
+    if (eventsByCity[slug].length === 0) {
+      console.log(`\n[instagram] ${CITY_LABELS[slug]}: keine Events — Stories übersprungen`)
+      continue
+    }
+
+    console.log(`\n[instagram] ── Stories ${CITY_LABELS[slug]} ──`)
+    const cityData: CityEvents = { label: CITY_LABELS[slug], events: eventsByCity[slug] }
+    const w: WeatherResult = weather[slug]
+    const storySlides: Buffer[] = []
+
+    if (w.isRain) {
+      console.log(`[instagram] ${CITY_LABELS[slug]}: Bad-Weather Stories (${w.description})`)
+      storySlides.push(await generateBadWeatherStoryTitleSlide(cityData, dateShort, w.description))
+      const eventSlides = await generateBadWeatherStoryEventSlides(cityData)
+      storySlides.push(...eventSlides)
+    } else {
+      storySlides.push(await generateStoryTitleSlide(cityData, dateShort))
+      const eventSlides = await generateStoryEventSlides(cityData)
+      storySlides.push(...eventSlides)
+    }
+
+    console.log(`[instagram] ${CITY_LABELS[slug]}: ${storySlides.length} Story-Slides`)
+
     try {
-      await postInstagramForCity(city, date, dateLabel, igId, token)
+      await postStories(storySlides, `${slug}-${date}`, ts, igId, token)
     } catch (err) {
-      console.error(`[instagram] ❌ ${city.label} fehlgeschlagen:`, err)
+      console.error(`[instagram] ❌ Stories ${CITY_LABELS[slug]} fehlgeschlagen:`, err)
       // Weiter mit nächster Stadt
     }
   }
+
+  console.log('\n[instagram] ✅ Fertig')
 }
 
 // Direkt ausführbar
