@@ -9,6 +9,7 @@ import LogoAnimated from './LogoAnimated'
 import BadWeatherToggle from './BadWeatherToggle'
 import RainIntro from './RainIntro'
 import RainEffect from './RainEffect'
+import SiteFooter from './SiteFooter'
 import styles from './EventList.module.css'
 
 const INDOOR_TYPES = new Set(['konzert', 'dj_club', 'party', 'kultur', 'kunst', 'special'])
@@ -123,12 +124,7 @@ export default function EventList({ city, cityLabel, logoUrl, today, tomorrow, d
         />
       )}
 
-      <footer className={styles.footer}>
-        <a href="https://instagram.com/waslauft.in" target="_blank" rel="noopener">Instagram</a>
-        <Link href="/about">About</Link>
-        <Link href="/datenschutz">Datenschutz</Link>
-        <Link href="/impressum">Impressum</Link>
-      </footer>
+      <SiteFooter />
     </>
   )
 }

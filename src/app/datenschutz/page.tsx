@@ -3,15 +3,14 @@
 // src/app/datenschutz/page.tsx
 
 import Link from 'next/link'
+import SiteHeader from '@/components/SiteHeader'
+import SiteFooter from '@/components/SiteFooter'
 import styles from '../about/about.module.css'
 
 export default function DatenschutzPage() {
   return (
     <main className={styles.main}>
-      <header className={styles.header}>
-        <Link href="/" className={styles.logo}>waslauft.in</Link>
-        <span className={styles.current}>Datenschutz</span>
-      </header>
+      <SiteHeader current="Datenschutz" />
 
       <section className={styles.content}>
         <h1 className={styles.headline}>Datenschutz&shy;erklärung</h1>
@@ -75,12 +74,7 @@ export default function DatenschutzPage() {
         </p>
       </section>
 
-      <footer className={styles.footer}>
-        <a href="https://instagram.com/waslauft.in" target="_blank" rel="noopener">Instagram</a>
-        <Link href="/about">About</Link>
-        <Link href="/datenschutz">Datenschutz</Link>
-        <Link href="/impressum">Impressum</Link>
-      </footer>
+      <SiteFooter />
     </main>
   )
 }

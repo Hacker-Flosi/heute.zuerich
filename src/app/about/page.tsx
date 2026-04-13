@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { getSanityClient } from '@/lib/sanity'
 import { SITE_SETTINGS_QUERY } from '@/lib/queries'
-import LogoAnimated from '@/components/LogoAnimated'
+import SiteHeader from '@/components/SiteHeader'
+import SiteFooter from '@/components/SiteFooter'
 import styles from './about.module.css'
 import type { Metadata } from 'next'
 
@@ -20,12 +21,7 @@ export default async function AboutPage() {
 
   return (
     <main className={styles.main}>
-      <header className={styles.header}>
-        <Link href="/" className={styles.logo}>
-          <LogoAnimated />
-        </Link>
-        <span className={styles.current}>About</span>
-      </header>
+      <SiteHeader current="About" />
 
       <section className={styles.content}>
         <h1 className={styles.headline}>Weniger Noise,<br />mehr Ausgang.</h1>
@@ -51,12 +47,7 @@ export default async function AboutPage() {
         </a>
       </section>
 
-      <footer className={styles.footer}>
-        <a href="https://instagram.com/waslauft.in" target="_blank" rel="noopener">Instagram</a>
-        <Link href="/about">About</Link>
-        <Link href="/datenschutz">Datenschutz</Link>
-        <Link href="/impressum">Impressum</Link>
-      </footer>
+      <SiteFooter />
     </main>
   )
 }

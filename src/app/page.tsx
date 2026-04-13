@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { getSanityClient } from '@/lib/sanity'
 import { SITE_SETTINGS_QUERY } from '@/lib/queries'
 import LogoAnimated from '@/components/LogoAnimated'
+import SiteFooter from '@/components/SiteFooter'
 import styles from './page.module.css'
 
 export const revalidate = 3600
@@ -64,10 +65,7 @@ export default async function Home() {
         )}
       </section>
 
-      <footer className={styles.footer}>
-        <Link href="/about">About</Link>
-        <Link href="/datenschutz">Datenschutz</Link>
-      </footer>
+      <SiteFooter />
     </main>
   )
 }
