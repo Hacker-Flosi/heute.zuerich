@@ -144,9 +144,7 @@ function buildEventRow(event: ImageEvent, i: number, total: number, compact = fa
   const label = event.eventType ? EVENT_TYPE_LABELS[event.eventType] ?? null : null
   const isLast = i === total - 1
   const padding = compact ? '0 40px' : '0 60px'
-  const nameFontSize = compact
-    ? (event.name.length > 40 ? 20 : event.name.length > 28 ? 24 : 28)
-    : (event.name.length > 50 ? 28 : event.name.length > 35 ? 36 : 44)
+  const nameFontSize = compact ? 38 : 44
 
   return {
     type: 'div',
@@ -160,7 +158,6 @@ function buildEventRow(event: ImageEvent, i: number, total: number, compact = fa
         flexDirection: 'column',
         justifyContent: 'center',
         gap: compact ? 4 : 6,
-        overflow: 'hidden',
       },
       children: [
         {
@@ -190,7 +187,7 @@ function buildEventRow(event: ImageEvent, i: number, total: number, compact = fa
                       type: 'div',
                       props: {
                         style: {
-                          fontSize: compact ? 14 : 20, fontWeight: 400,
+                          fontSize: compact ? 20 : 20, fontWeight: 400,
                           color: fg, opacity: 0.7,
                           letterSpacing: '0.04em', textTransform: 'uppercase',
                         },
@@ -204,7 +201,7 @@ function buildEventRow(event: ImageEvent, i: number, total: number, compact = fa
                 type: 'div',
                 props: {
                   style: {
-                    fontSize: compact ? 14 : 20, fontWeight: 700,
+                    fontSize: compact ? 20 : 20, fontWeight: 700,
                     color: fg, opacity: 0.7,
                     letterSpacing: '0.04em', textTransform: 'uppercase', flexShrink: 0,
                   },
