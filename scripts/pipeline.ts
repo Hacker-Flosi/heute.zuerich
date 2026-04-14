@@ -3,7 +3,7 @@
 // Zürich: Two-Layer (venue-first + AI discovery)
 // Other cities: Single-layer (AI curation of all events)
 
-import { sendTelegramNotification } from './notify'
+import { sendTelegramNotification, sendCrashAlert } from './notify'
 import { savePipelineSnapshot, updateVenueStats } from './stats'
 import type { CityResult } from './notify'
 import { scrapeEventfrog } from './scrapers/eventfrog'
@@ -660,6 +660,16 @@ export async function runPipeline() {
   console.log('=== waslauft.in Pipeline gestartet ===')
   console.log(`Zeitpunkt: ${new Date().toISOString()}`)
 
+  try {
+    await _runPipeline(start)
+  } catch (err) {
+    console.error('[FATAL] Pipeline abgebrochen:', err)
+    await sendCrashAlert('Pipeline (fatal)', err)
+    throw err
+  }
+}
+
+async function _runPipeline(start: number) {
   console.log('\n── Cleanup abgelaufene Events ──')
   await deleteExpiredEvents()
 

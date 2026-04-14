@@ -65,6 +65,23 @@ function buildMessage(report: PipelineReport, date: string): string {
   return lines.join('\n')
 }
 
+export async function sendCrashAlert(context: string, err: unknown): Promise<void> {
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  const chatId = process.env.TELEGRAM_CHAT_ID
+  if (!token || !chatId) return
+
+  const msg = err instanceof Error ? err.message : String(err)
+  const text = `🔴 <b>waslauft.in — Fataler Fehler</b>\n\n<b>${context}</b>\n<code>${msg}</code>`
+
+  try {
+    await fetch(`${TELEGRAM_API}/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+    })
+  } catch { /* noop — nichts mehr zu tun */ }
+}
+
 export async function sendTelegramNotification(report: PipelineReport): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN
   const chatId = process.env.TELEGRAM_CHAT_ID

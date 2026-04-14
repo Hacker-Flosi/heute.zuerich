@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { postInstagram } from '../../../../../scripts/post-instagram'
+import { sendCrashAlert } from '../../../../../scripts/notify'
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Instagram Cron error:', error)
+    await sendCrashAlert('Instagram Cron', error)
 
     return NextResponse.json(
       {
