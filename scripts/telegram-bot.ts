@@ -12,6 +12,19 @@ const API_EXPIRY = {
   Eventfrog: '01.04.2027',
 }
 
+// Nächste Cron-Ausführung berechnen (UTC-Zeit → Schweizer Zeit)
+function nextCron(hourUTC: number, minuteUTC: number): string {
+  const now = new Date()
+  const next = new Date()
+  next.setUTCHours(hourUTC, minuteUTC, 0, 0)
+  if (next <= now) next.setUTCDate(next.getUTCDate() + 1)
+  return next.toLocaleString('de-CH', {
+    timeZone: 'Europe/Zurich',
+    weekday: 'short', day: '2-digit', month: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  }) + ' Uhr'
+}
+
 function getDate(offset: number): string {
   const d = new Date()
   d.setDate(d.getDate() + offset)
@@ -98,6 +111,10 @@ async function getStatus(): Promise<string> {
     ``,
     `📸 <b>Letzter Instagram-Post</b>`,
     lastPost,
+    ``,
+    `⏰ <b>Nächste Ausführungen</b>`,
+    `<code>Pipeline    ${nextCron(5, 0)}</code>`,
+    `<code>Instagram   ${nextCron(5, 45)}</code>`,
     ``,
     `🔑 <b>API-Ablauf</b>`,
     `<code>Eventfrog   ${API_EXPIRY.Eventfrog}</code>`,
