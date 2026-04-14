@@ -288,16 +288,18 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
     console.log('  [1/5] Scraping...')
     const results = await Promise.allSettled(scrapers.map((fn) => fn(date)))
     const raw: RawEvent[] = []
+    let scraperErrors = 0
     for (const r of results) {
       if (r.status === 'fulfilled') raw.push(...r.value)
-      else console.error('  Scraper Fehler:', r.reason)
+      else { console.error('  Scraper Fehler:', r.reason); scraperErrors++ }
     }
 
     // ── Geo-filter (Zürich uses blacklist; all other cities use whitelist)
     const geoFilter = city === 'zuerich' ? geoFilterZuerich : (e: RawEvent) => geoFilterCity(e, city)
     const geoFiltered = raw.filter(geoFilter)
-    if (raw.length - geoFiltered.length > 0)
-      console.log(`  [Geo] ${raw.length - geoFiltered.length} Events ausgeschlossen`)
+    const geoExcluded = raw.length - geoFiltered.length
+    if (geoExcluded > 0)
+      console.log(`  [Geo] ${geoExcluded} Events ausgeschlossen`)
 
     // ── Venue URL enrichment
     for (const e of geoFiltered) {
@@ -332,6 +334,7 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
 
     // ── Deduplicate Layer 1 itself (same event at same venue from multiple scrapers)
     const dedupL1 = deduplicateEvents(layer1)
+    const dedupL1Removed = layer1.length - dedupL1.length
 
     // ── Layer 2: infer types, filter, deduplicate against Layer 1
     console.log('  [3/5] Layer 2 — Discovery...')
@@ -341,6 +344,8 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
     }
 
     const combined = deduplicateEvents([...dedupL1, ...remainder])
+    const combinedDedupRemoved = (dedupL1.length + remainder.length) - combined.length
+    const duplicatesRemoved = dedupL1Removed + combinedDedupRemoved
     const discoveryPool = combined.filter((e) => e.layer === 'discovery')
     console.log(`  [Layer 2] ${discoveryPool.length} Discovery-Events im Pool`)
 
@@ -363,7 +368,6 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
             p.name.toLowerCase().includes(e.name.toLowerCase())
           )
         )
-        // Apply AI-provided eventType
         for (const e of chosenDiscovery) {
           const pick = picks.find((p) =>
             e.name.toLowerCase().includes(p.name.toLowerCase()) ||
@@ -436,13 +440,33 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
       .sort((a, b) => b[1] - a[1]).slice(0, 10)
       .map(([name, count]) => ({ name, count }))
 
+    const eveningEvents = final.filter((e) => e.time >= '18:00' && e.time !== '00:00').length
+    const allDayEvents  = final.filter((e) => e.time === '00:00').length
+    const daytimeEvents = final.length - eveningEvents - allDayEvents
+
     try {
       await savePipelineSnapshot({
         date, city,
         totalEvents: final.length,
         layer1Events: final.filter((e) => e.layer === 'venue').length,
         layer2Events: final.filter((e) => e.layer === 'discovery').length,
+        scraperHealth: {
+          rawTotal: raw.length,
+          geoExcluded,
+          duplicatesRemoved,
+          scraperErrors,
+        },
         sources: sourceCounts,
+        curationQuality: {
+          discoveryPoolSize: discoveryPool.length,
+          discoverySelected: chosenDiscovery.length,
+          discoverySelectionPct: discoveryPool.length > 0
+            ? Math.round((chosenDiscovery.length / discoveryPool.length) * 100) : 0,
+          rainReserveAdded: rainReserveIds.size,
+          nightlifeCount,
+          nightlifePct: final.length > 0 ? Math.round((nightlifeCount / final.length) * 100) : 0,
+        },
+        timing: { eveningEvents, daytimeEvents, allDayEvents },
         eventTypes: typeCounts,
         topVenues,
         weatherRain: weather?.isRainy ?? false,
@@ -472,9 +496,10 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]): Promise<City
 
     const results = await Promise.allSettled(scrapers.map((fn) => fn(date)))
     const raw: RawEvent[] = []
+    let scraperErrors = 0
     for (const r of results) {
       if (r.status === 'fulfilled') raw.push(...r.value)
-      else console.error('  Scraper Fehler:', r.reason)
+      else { console.error('  Scraper Fehler:', r.reason); scraperErrors++ }
     }
 
     // Venue URL enrichment
@@ -486,15 +511,18 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]): Promise<City
     }
 
     const geoFiltered = raw.filter((e) => geoFilterCity(e, city))
-    if (raw.length - geoFiltered.length > 0)
-      console.log(`  [Geo] ${raw.length - geoFiltered.length} Events ausgeschlossen`)
+    const geoExcluded = raw.length - geoFiltered.length
+    if (geoExcluded > 0)
+      console.log(`  [Geo] ${geoExcluded} Events ausgeschlossen`)
 
     if (geoFiltered.length === 0) {
       console.warn(`  [WARNUNG] Keine Events für ${city}/${date}`)
       continue
     }
 
+    const uniqueBefore = geoFiltered.length
     const unique = deduplicateEvents(geoFiltered)
+    const duplicatesRemoved = uniqueBefore - unique.length
 
     console.log(`  [AI] Kuratierung (${unique.length} Events)...`)
     try {
@@ -562,13 +590,35 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]): Promise<City
         .sort((a, b) => b[1] - a[1]).slice(0, 10)
         .map(([name, count]) => ({ name, count }))
 
+      const nightlifeCount = locationLimited.filter((e) => isNightlife(e.eventType ?? 'special')).length
+      const eveningEvents  = locationLimited.filter((e) => e.time >= '18:00' && e.time !== '00:00').length
+      const allDayEvents   = locationLimited.filter((e) => e.time === '00:00').length
+      const daytimeEvents  = locationLimited.length - eveningEvents - allDayEvents
+
       try {
         await savePipelineSnapshot({
           date, city,
           totalEvents: locationLimited.length,
           layer1Events: 0,
           layer2Events: locationLimited.length,
+          scraperHealth: {
+            rawTotal: raw.length,
+            geoExcluded,
+            duplicatesRemoved,
+            scraperErrors,
+          },
           sources: sourceCounts,
+          curationQuality: {
+            discoveryPoolSize: unique.length,
+            discoverySelected: curated.length,
+            discoverySelectionPct: unique.length > 0
+              ? Math.round((curated.length / unique.length) * 100) : 0,
+            rainReserveAdded: rainReserveIds.size,
+            nightlifeCount,
+            nightlifePct: locationLimited.length > 0
+              ? Math.round((nightlifeCount / locationLimited.length) * 100) : 0,
+          },
+          timing: { eveningEvents, daytimeEvents, allDayEvents },
           eventTypes: typeCounts,
           topVenues,
           weatherRain: weather?.isRainy ?? false,
