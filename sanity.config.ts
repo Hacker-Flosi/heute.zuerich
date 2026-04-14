@@ -7,6 +7,8 @@ import { visionTool } from '@sanity/vision'
 import venueSchema from './sanity/schemas/venue'
 import eventSchema from './sanity/schemas/event'
 import siteSettingsSchema from './sanity/schemas/siteSettings'
+import pipelineSnapshotSchema from './sanity/schemas/pipelineSnapshot'
+import venueStatsSchema from './sanity/schemas/venueStats'
 
 export default defineConfig({
   name: 'waslauft-in',
@@ -122,6 +124,21 @@ export default defineConfig({
               ),
             S.divider(),
             S.listItem()
+              .title('Pipeline Snapshots')
+              .child(
+                S.documentTypeList('pipelineSnapshot')
+                  .title('Pipeline Snapshots')
+                  .defaultOrdering([{ field: 'date', direction: 'desc' }])
+              ),
+            S.listItem()
+              .title('Venue Stats')
+              .child(
+                S.documentTypeList('venueStats')
+                  .title('Venue Stats')
+                  .defaultOrdering([{ field: 'totalAppearances', direction: 'desc' }])
+              ),
+            S.divider(),
+            S.listItem()
               .title('Site-Einstellungen')
               .child(
                 S.document()
@@ -134,6 +151,6 @@ export default defineConfig({
   ],
 
   schema: {
-    types: [venueSchema, eventSchema, siteSettingsSchema],
+    types: [venueSchema, eventSchema, siteSettingsSchema, pipelineSnapshotSchema, venueStatsSchema],
   },
 })

@@ -4,6 +4,7 @@
 // Other cities: Single-layer (AI curation of all events)
 
 import { sendTelegramNotification } from './notify'
+import { savePipelineSnapshot, updateVenueStats } from './stats'
 import type { CityResult } from './notify'
 import { scrapeEventfrog } from './scrapers/eventfrog'
 import { scrapeHellozurich } from './scrapers/hellozurich'
@@ -417,6 +418,39 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
 
     await writeToSanity(final, date, city, curatedIds, rainReserveIds)
     result.counts[offset] = final.length
+
+    // ── Stats
+    const venueCounts: Record<string, number> = {}
+    for (const e of final) {
+      if (e.location) venueCounts[e.location] = (venueCounts[e.location] || 0) + 1
+    }
+    const sourceCounts = { eventfrog: 0, hellozurich: 0, gangus: 0, ra: 0 }
+    for (const e of raw) {
+      if (e.source && e.source in sourceCounts) sourceCounts[e.source as keyof typeof sourceCounts]++
+    }
+    const typeCounts: Record<string, number> = {}
+    for (const e of final) {
+      if (e.eventType) typeCounts[e.eventType] = (typeCounts[e.eventType] || 0) + 1
+    }
+    const topVenues = Object.entries(venueCounts)
+      .sort((a, b) => b[1] - a[1]).slice(0, 10)
+      .map(([name, count]) => ({ name, count }))
+
+    try {
+      await savePipelineSnapshot({
+        date, city,
+        totalEvents: final.length,
+        layer1Events: final.filter((e) => e.layer === 'venue').length,
+        layer2Events: final.filter((e) => e.layer === 'discovery').length,
+        sources: sourceCounts,
+        eventTypes: typeCounts,
+        topVenues,
+        weatherRain: weather?.isRainy ?? false,
+      })
+      await updateVenueStats(city, date, venueCounts)
+    } catch (err) {
+      console.error('  [Stats] Fehler:', err)
+    }
   }
   return result
 }
@@ -510,6 +544,39 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]): Promise<City
       const locationLimited = enforceLocationLimit(unique)
       await writeToSanity(locationLimited, date, city, curatedNames, rainReserveIds)
       result.counts[offset] = locationLimited.length
+
+      // ── Stats
+      const venueCounts: Record<string, number> = {}
+      for (const e of locationLimited) {
+        if (e.location) venueCounts[e.location] = (venueCounts[e.location] || 0) + 1
+      }
+      const sourceCounts = { eventfrog: 0, hellozurich: 0, gangus: 0, ra: 0 }
+      for (const e of raw) {
+        if (e.source && e.source in sourceCounts) sourceCounts[e.source as keyof typeof sourceCounts]++
+      }
+      const typeCounts: Record<string, number> = {}
+      for (const e of locationLimited) {
+        if (e.eventType) typeCounts[e.eventType] = (typeCounts[e.eventType] || 0) + 1
+      }
+      const topVenues = Object.entries(venueCounts)
+        .sort((a, b) => b[1] - a[1]).slice(0, 10)
+        .map(([name, count]) => ({ name, count }))
+
+      try {
+        await savePipelineSnapshot({
+          date, city,
+          totalEvents: locationLimited.length,
+          layer1Events: 0,
+          layer2Events: locationLimited.length,
+          sources: sourceCounts,
+          eventTypes: typeCounts,
+          topVenues,
+          weatherRain: weather?.isRainy ?? false,
+        })
+        await updateVenueStats(city, date, venueCounts)
+      } catch (err) {
+        console.error('  [Stats] Fehler:', err)
+      }
     } catch (err) {
       console.error('  [FEHLER] Kuratierung fehlgeschlagen:', err)
       result.errors.push(`${['Heute','Morgen','Übermorgen'][offset]}: Kuratierung fehlgeschlagen`)

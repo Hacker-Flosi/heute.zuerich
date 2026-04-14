@@ -9,6 +9,7 @@ import { formatDateLabel, formatDateShort, getDateString } from '../src/lib/cons
 import { put, del } from '@vercel/blob'
 import { fetchCityWeather } from './weather'
 import { pickInstagramEvents } from './curate'
+import { savePipelineSnapshot, updateVenueStats } from './stats'
 import type { WeatherResult } from './weather'
 import type { ImageEvent, CityEvents } from './generate-image-v2'
 import {
@@ -239,6 +240,22 @@ export async function postInstagram(): Promise<void> {
     console.log(`[instagram] ${CITY_LABELS[slug]}: ${postEvents.map((e) => e.name).join(' · ')}`)
 
     const cityData: CityEvents = { label: CITY_LABELS[slug], events: postEvents }
+
+    // Stats: Instagram-Events im Snapshot vermerken
+    try {
+      await savePipelineSnapshot({
+        date, city: slug,
+        totalEvents: allEvents.length,
+        layer1Events: 0, layer2Events: 0,
+        sources: { eventfrog: 0, hellozurich: 0, gangus: 0, ra: 0 },
+        eventTypes: {},
+        topVenues: [],
+        weatherRain: w.isRain,
+        instagramPosted: true,
+        instagramEvents: postEvents.map((e) => e.name),
+      })
+      await updateVenueStats(slug, date, Object.fromEntries(postEvents.map((e) => [e.location, 1])), postEvents.map((e) => e.location))
+    } catch { /* non-critical */ }
 
     console.log(`[instagram] Generiere City-Slide für ${CITY_LABELS[slug]}${w.isRain ? ` (${w.description})` : ''}...`)
     const slide = w.isRain
