@@ -8,6 +8,7 @@ import { CURATED_EVENTS_QUERY } from '../src/lib/queries'
 import { formatDateLabel, formatDateShort, getDateString } from '../src/lib/constants'
 import { put, del } from '@vercel/blob'
 import { fetchCityWeather } from './weather'
+import { pickInstagramEvents } from './curate'
 import type { WeatherResult } from './weather'
 import type { ImageEvent, CityEvents } from './generate-image-v2'
 import {
@@ -218,15 +219,26 @@ export async function postInstagram(): Promise<void> {
   console.log('[instagram] Generiere Titel-Slide...')
   feedSlides.push(await generateCombinedTitleSlide(dateShort, firstColorIndex))
 
-  // Slides 2-4: Je eine Stadt
+  // Slides 2-4: Je eine Stadt — AI wählt die 5 besten Events
   for (const slug of CITY_SLUGS) {
-    const cityData: CityEvents = { label: CITY_LABELS[slug], events: eventsByCity[slug] }
+    const allEvents = eventsByCity[slug]
     const w: WeatherResult = weather[slug]
 
-    if (eventsByCity[slug].length === 0) {
+    if (allEvents.length === 0) {
       console.log(`[instagram] ${CITY_LABELS[slug]}: keine Events — City-Slide übersprungen`)
       continue
     }
+
+    console.log(`[instagram] ${CITY_LABELS[slug]}: AI wählt beste 5 aus ${allEvents.length} Events...`)
+    const pickedNames = await pickInstagramEvents(allEvents, CITY_LABELS[slug])
+    const pickedEvents = pickedNames
+      .map((name) => allEvents.find((e) => e.name === name))
+      .filter((e): e is ImageEvent => e !== undefined)
+    // Fallback: falls AI-Namen nicht matchen, erste 5 nehmen
+    const postEvents = pickedEvents.length >= 3 ? pickedEvents : allEvents.slice(0, 5)
+    console.log(`[instagram] ${CITY_LABELS[slug]}: ${postEvents.map((e) => e.name).join(' · ')}`)
+
+    const cityData: CityEvents = { label: CITY_LABELS[slug], events: postEvents }
 
     console.log(`[instagram] Generiere City-Slide für ${CITY_LABELS[slug]}${w.isRain ? ` (${w.description})` : ''}...`)
     const slide = w.isRain

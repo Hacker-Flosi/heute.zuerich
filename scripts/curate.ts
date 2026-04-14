@@ -164,6 +164,56 @@ Antworte AUSSCHLIESSLICH in JSON:
   return parsed.curated_events || []
 }
 
+// ─── Instagram Post Selection ─────────────────────────────────────────────────
+
+export async function pickInstagramEvents(
+  events: { name: string; location: string; time: string; eventType?: string }[],
+  cityLabel: string
+): Promise<string[]> {
+  if (events.length <= 5) return events.map((e) => e.name)
+
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+  const systemPrompt = `Du wählst 5 Events für einen Instagram-Post von waslauft.in — einer kuratierten Event-Seite für ${cityLabel}.
+
+Der Post soll Menschen ansprechen die heute Abend spontan ausgehen wollen. Die 5 Events müssen zusammen das Beste von ${cityLabel} repräsentieren.
+
+Priorisiere:
+- Bekannte Künstler / Artists / Bands (einmalige Konzerte > generische Club-Nächte)
+- Einmalige Events: Premieren, Openings, Releases, Special Nights
+- Top-Venues: Hive, X-TRA, Kaufleuten, Volkshaus, Supermarket, Moods, Rote Fabrik etc.
+- Abendliche Events (ab 18:00) > Tagesveranstaltungen
+- Gute Mischung: nicht 5× dasselbe Genre
+
+Vermeide:
+- Märkte, Yoga, Kinderveranstaltungen, Networking
+- Wiederkehrende generische Bar-Nights ohne besonderen Anlass
+
+Antworte AUSSCHLIESSLICH in JSON:
+{"selected": ["exakter event name 1", "exakter event name 2", "exakter event name 3", "exakter event name 4", "exakter event name 5"]}`
+
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 500,
+    system: systemPrompt,
+    messages: [{
+      role: 'user',
+      content: `Events in ${cityLabel} heute:\n\n${JSON.stringify(events, null, 2)}\n\nWähle die 5 besten für den Instagram-Post.`,
+    }],
+  })
+
+  const text = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('')
+  const clean = text.replace(/```json|```/g, '').trim()
+  const jsonMatch = clean.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) return events.slice(0, 5).map((e) => e.name)
+  try {
+    const parsed = JSON.parse(jsonMatch[0])
+    return parsed.selected || events.slice(0, 5).map((e) => e.name)
+  } catch {
+    return events.slice(0, 5).map((e) => e.name)
+  }
+}
+
 export async function curateEvents(rawEvents: RawEvent[], city: string): Promise<CuratedResult[]> {
   const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
