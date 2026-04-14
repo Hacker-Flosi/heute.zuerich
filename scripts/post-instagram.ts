@@ -209,7 +209,9 @@ export async function postInstagram(): Promise<void> {
   // ── Kombinierter Feed-Post ─────────────────────────────────────────────────
   console.log('\n[instagram] ── Kombinierter Feed-Post ──')
 
-  const firstColorIndex = eventsByCity.zuerich[0]?.colorIndex ?? 0
+  // Tägliche Farbe: Datum → gleichmässige Rotation durch alle 12 Farben
+  const dayOfYear = Math.floor((new Date(date).getTime() - new Date(new Date(date).getFullYear(), 0, 0).getTime()) / 86400000)
+  const firstColorIndex = dayOfYear % 12
   const feedSlides: Buffer[] = []
 
   // Slide 1: Titel
