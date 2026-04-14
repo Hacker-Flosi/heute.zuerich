@@ -158,7 +158,9 @@ Antworte AUSSCHLIESSLICH in JSON:
 
   const text = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('')
   const clean = text.replace(/```json|```/g, '').trim()
-  const parsed = JSON.parse(clean)
+  const jsonMatch = clean.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) return []
+  const parsed = JSON.parse(jsonMatch[0])
   return parsed.curated_events || []
 }
 
@@ -234,6 +236,8 @@ Antworte AUSSCHLIESSLICH in JSON:
 
   const text = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('')
   const clean = text.replace(/```json|```/g, '').trim()
-  const parsed = JSON.parse(clean)
+  const jsonMatch = clean.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) return []
+  const parsed = JSON.parse(jsonMatch[0])
   return parsed.curated_events || []
 }

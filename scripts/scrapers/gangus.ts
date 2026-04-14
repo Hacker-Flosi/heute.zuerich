@@ -111,9 +111,12 @@ export async function scrapeGangus(date: string): Promise<RawEvent[]> {
         ? (locality ? `${locTitle}, ${locality}` : locTitle)
         : (locality || 'Luzern')
 
+      const ticketLink = typeof attrs.field_ticket_link === 'string'
+        ? attrs.field_ticket_link
+        : (attrs.field_ticket_link as { uri?: string } | null)?.uri ?? ''
       const url =
         attrs.field_website?.uri?.trim() ||
-        attrs.field_ticket_link?.trim() ||
+        ticketLink.trim() ||
         locNode?.attributes.field_website?.uri?.trim() ||
         'https://gangus.ch'
 
