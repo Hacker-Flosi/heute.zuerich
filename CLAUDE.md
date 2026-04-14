@@ -36,8 +36,12 @@ Basel + Bern sind im Frontend deaktiviert (`active: false` in `src/app/page.tsx`
 | CMS | Sanity v5 (Free Tier) |
 | Hosting | Vercel |
 | AI | Anthropic API — Claude Sonnet 4.6 |
-| Scheduling | Vercel Cron Jobs (täglich 05:00 UTC) |
-| Scraping | eventfrog-api npm + Cheerio + RA GraphQL |
+| Scheduling | Vercel Cron Jobs (Pipeline 05:00 UTC, Instagram 09:00 UTC) |
+| Scraping | eventfrog-api npm + Cheerio + RA GraphQL + Drupal JSON:API |
+| Image Gen | Satori (JSX→SVG) + sharp (SVG→PNG) |
+| Instagram | Meta Graph API v21.0 (Feed Karussell + Stories) |
+| Weather | Open-Meteo API (kostenlos, kein Key) |
+| Monitoring | Telegram Bot (Webhook) |
 | Studio | Sanity Studio eingebettet unter `/studio` |
 
 ---
@@ -48,8 +52,12 @@ Basel + Bern sind im Frontend deaktiviert (`active: false` in `src/app/page.tsx`
 /                          → Landing page (Stadtauswahl)
 /[city]                    → Stadtseite (zuerich / stgallen / luzern)
 /about                     → About-Seite
+/impressum                 → Impressum
+/datenschutz               → Datenschutz
 /studio/[[...tool]]        → Sanity Studio (embedded, ssr: false)
-/api/cron/pipeline         → Vercel Cron Endpoint (gesichert mit CRON_SECRET)
+/api/cron/pipeline         → Vercel Cron Endpoint (05:00 UTC)
+/api/cron/instagram        → Vercel Cron Endpoint (09:00 UTC)
+/api/telegram/webhook      → Telegram Bot Webhook (/status Command)
 ```
 
 ---
@@ -60,10 +68,17 @@ Basel + Bern sind im Frontend deaktiviert (`active: false` in `src/app/page.tsx`
 ├── scripts/
 │   ├── pipeline.ts              # Haupt-Orchestrator (täglich via Cron)
 │   ├── types.ts                 # RawEvent, CuratedEvent, SanityVenue
-│   ├── curate.ts                # Claude AI Kuration
+│   ├── curate.ts                # Claude AI Kuration + pickInstagramEvents()
 │   ├── deduplicate.ts           # Levenshtein Fuzzy Dedup
 │   ├── eventtype.ts             # Event-Typ Inferenz
 │   ├── venues.ts                # Venue-URL Registry (Fallback-URLs)
+│   ├── notify.ts                # Telegram Notifications (Pipeline-Report + Crash-Alert)
+│   ├── stats.ts                 # Langzeit-Statistiken (savePipelineSnapshot, updateVenueStats)
+│   ├── weather.ts               # Open-Meteo Wetter pro Stadt (fetchCityWeather)
+│   ├── post-instagram.ts        # Instagram Feed + Stories (täglich via Cron)
+│   ├── generate-image-v2.ts     # Satori Image Generation (Feed + Story Slides)
+│   ├── telegram-bot.ts          # /status Command Handler
+│   ├── check-status.ts          # Manueller Status-Check (CLI)
 │   ├── seed-venues.ts           # Einmalig: Venues in Sanity seeden
 │   └── scrapers/
 │       ├── eventfrog.ts         # Eventfrog API (alle aktiven Städte)
@@ -76,13 +91,20 @@ Basel + Bern sind im Frontend deaktiviert (`active: false` in `src/app/page.tsx`
 │   │   ├── page.tsx             # Landing page (Stadtauswahl)
 │   │   ├── [city]/page.tsx      # Stadtseite (dynamische Route)
 │   │   ├── about/page.tsx       # About-Seite
+│   │   ├── impressum/page.tsx   # Impressum
+│   │   ├── datenschutz/page.tsx # Datenschutz
 │   │   ├── studio/[[...tool]]/
 │   │   │   ├── page.tsx         # Thin wrapper (dynamic import, ssr: false)
 │   │   │   └── Studio.tsx       # NextStudio Komponente
-│   │   └── api/cron/pipeline/route.ts
+│   │   └── api/
+│   │       ├── cron/pipeline/route.ts
+│   │       ├── cron/instagram/route.ts
+│   │       └── telegram/webhook/route.ts
 │   ├── components/
 │   │   ├── EventBlock.tsx        # Einzelner farbiger Event-Block
-│   │   └── EventList.tsx         # Liste + Header + Tabs + Footer
+│   │   ├── EventList.tsx         # Liste + Header + Tabs + Footer
+│   │   ├── SiteHeader.tsx        # Gemeinsamer Header (Logo + Seitenname)
+│   │   └── SiteFooter.tsx        # Gemeinsamer Footer (Instagram, About, Datenschutz, Impressum)
 │   └── lib/
 │       ├── constants.ts          # 12 Farben, Event-Typ, Datums-Helpers
 │       ├── queries.ts            # GROQ-Queries
@@ -90,9 +112,11 @@ Basel + Bern sind im Frontend deaktiviert (`active: false` in `src/app/page.tsx`
 │
 ├── sanity/schemas/
 │   ├── event.ts
-│   └── venue.ts
-├── sanity.config.ts              # Studio: Venues + Events pro Stadt
-├── vercel.json                   # Cron: täglich 05:00 UTC
+│   ├── venue.ts
+│   ├── pipelineSnapshot.ts      # Tägliche Pipeline-Statistiken
+│   └── venueStats.ts            # Kumulierte Venue-Auftritts-Stats
+├── sanity.config.ts              # Studio: Venues + Events + Stats pro Stadt
+├── vercel.json                   # Cron: Pipeline 05:00 UTC, Instagram 09:00 UTC
 └── CLAUDE.md                     # Diese Datei
 ```
 
@@ -124,6 +148,18 @@ npm run seed-venues   # Venues in Sanity seeden (einmalig)
    f. Fill         → Auf 30 Events auffüllen aus Discovery-Pool
    g. Nightlife    → ≥60% Nightlife-Ratio (nur Zürich, nur wenn >30 Events)
    h. Sanity Write → Events schreiben
+   i. Stats        → savePipelineSnapshot + updateVenueStats
+3. Telegram        → Pipeline-Report mit Event-Counts pro Stadt
+```
+
+### Instagram täglich 09:00 UTC (= 11:00 Schweizer Zeit)
+
+```
+1. Events aus Sanity laden (alle 3 Städte)
+2. Wetter pro Stadt (Open-Meteo)
+3. Feed-Post: Titel-Slide + je ein City-Slide (AI wählt 5 beste Events)
+4. Stories: Pro Stadt — Titel-Slide + Event-Slides
+5. Wetter-Switch: isRain → Navy-Design mit Regentropfen
 ```
 
 ### Skip-Logik (Ressourcen-Optimierung)
@@ -167,6 +203,7 @@ Pass 2: Token-Overlap — min. 4 Zeichen, VENUE_STOPWORDS ausgeschlossen
 ### Gangus (`scripts/scrapers/gangus.ts`)
 - Drupal JSON:API: `https://null41.nodehive.app/jsonapi/node/event`
 - Deckt Zentralschweiz ab — `locationCity` defaults zu `luzern` wenn leer
+- `field_ticket_link` kann String oder Objekt `{ uri: string }` sein — Type Guard nötig
 
 ### hellozurich (`scripts/scrapers/hellozurich.ts`)
 - HTML-Scraper mit Cheerio
@@ -190,6 +227,12 @@ Felder: `name`, `eventfrogName`, `city`, `tier` (S/A/B/C), `category`, `active`,
 
 ~120 Venues über alle 5 Städte. Seed: `npm run seed-venues`.
 
+### PipelineSnapshot
+Täglich pro Stadt gespeichert. Felder: `date`, `city`, `totalEvents`, `layer1Events`, `layer2Events`, `scraperHealth` (rawTotal, geoExcluded, duplicatesRemoved, scraperErrors), `sources` (eventfrog, hellozurich, gangus, ra), `curationQuality` (discoveryPoolSize, discoverySelected, discoverySelectionPct, rainReserveAdded, nightlifeCount, nightlifePct), `timing` (eveningEvents, daytimeEvents, allDayEvents), `eventTypes`, `topVenues`, `instagramPosted`, `instagramEvents`, `weatherRain`
+
+### VenueStats
+Kumuliert über alle Tage. Felder: `venueName`, `city`, `totalAppearances`, `instagramAppearances`, `firstSeen`, `lastSeen`, `recentDates` (letzte 30 Daten)
+
 ---
 
 ## Sanity Studio
@@ -201,6 +244,27 @@ Grund: `useEffectEvent` fehlt in Next.js canary React — SSR muss deaktiviert s
 
 ---
 
+## Instagram Image Generation
+
+### Slides (`scripts/generate-image-v2.ts`)
+- Satori rendert JSX → SVG, sharp konvertiert → PNG
+- Schriften: Instrument Sans (700) + JetBrains Mono (400/700) lokal geladen
+- **Feed**: 1080×1080px — `generateCombinedTitleSlide` + `generateCombinedCitySlide`
+- **Stories**: 1080×1920px — `generateStoryTitleSlide` + `generateStoryEventSlides`
+- **Bad Weather**: Navy-Design (#0D1A2D bg, #ffffff fg) + Regentropfen-Overlay
+  - `generateBadWeatherCitySlide`, `generateBadWeatherStoryTitleSlide`, `generateBadWeatherStoryEventSlides`
+
+### Titel-Farb-Rotation
+Jeden Tag andere Farbe: `dayOfYear % 12` → Index in 12er Farb-Array
+
+### AI Event-Selektion (`curate.ts → pickInstagramEvents`)
+Claude wählt die 5 besten Events pro Stadt für den Instagram-Post. Kriterien: bekannte Artists, Einmalevents, Top-Venues, Abend-Präferenz, Genre-Mix.
+
+### Wetter (`scripts/weather.ts`)
+Open-Meteo WMO-Codes — `isRain: true` bei Codes 51–99 (Niederschlag). Pro Stadt unabhängig.
+
+---
+
 ## Design System
 
 ### Farben (12er Rotation für Event-Blocks)
@@ -209,7 +273,12 @@ Grund: `useEffectEvent` fehlt in Next.js canary React — SSR muss deaktiviert s
 #5B5BFF  #FF4D94  #C864FF  #FFE500  #FF6B35  #00FF94
 ```
 
-### Typografie
+### Instagram Bad-Weather Palette
+```
+NAVY=#0D1A2D  NAVY_FG=#ffffff  NAVY_BORDER=#1E3A58  NAVY_LEGEND=#152236
+```
+
+### Typografie (Web)
 - Event-Name: Instrument Sans, 700, uppercase, 1.4–1.9rem
 - Location/Zeit: JetBrains Mono, 0.62rem, uppercase
 - Logo/Nav: Instrument Sans / JetBrains Mono
@@ -221,7 +290,20 @@ Grund: `useEffectEvent` fehlt in Next.js canary React — SSR muss deaktiviert s
 - Ganzer Block klickbar → externe URL
 
 ### Footer
-Nur: **Instagram** + **About** — kein AI-Branding, kein "Event melden"
+Links: **Instagram**, **About**, **Datenschutz**, **Impressum** — kein AI-Branding, kein "Event melden"
+Mobile: vertikal gestapelt, kein border-top, `padding-bottom: 3rem`
+
+---
+
+## Monitoring
+
+### Telegram Bot
+- Webhook unter `/api/telegram/webhook`
+- `/status` Command: Wetter pro Stadt, Event-Counts (heute/morgen/übermorgen), letzter IG-Post, API-Ablaufdaten, nächste Cron-Zeiten (Schweizer Zeit)
+
+### Error Alerting
+- **Crash-Alert** (`notify.ts → sendCrashAlert`): bei fatalen Fehlern in Pipeline oder Instagram Cron → sofortiger Telegram-Alert mit Kontext + Fehlermeldung
+- **Pipeline-Report** (`notify.ts → sendTelegramNotification`): nach jedem erfolgreichen Lauf mit Event-Counts pro Stadt
 
 ---
 
@@ -232,6 +314,7 @@ Nur: **Instagram** + **About** — kein AI-Branding, kein "Event melden"
 3. **GROQ immer mit city filtern** — `*[_type == "event" && city == $city && ...]`
 4. **Basel + Bern nicht in CITY_CONFIG** bis sie aktiv gehen
 5. **saiten.ch nicht verwenden** — Dauerausstellungen, tagesunspezifisch
+6. **curate.ts JSON-Parse** — immer via Regex `match(/\{[\s\S]*\}/)` extrahieren, nie direkt `JSON.parse()` auf Claude-Output
 
 ---
 
@@ -244,9 +327,11 @@ SANITY_API_TOKEN=                # Write-Token
 EVENTFROG_API_KEY=               # ✅ gesetzt, gültig bis 1.4.2027
 ANTHROPIC_API_KEY=               # console.anthropic.com
 CRON_SECRET=                     # Vercel Dashboard
-# Phase 2 (noch nicht gebaut):
-META_ACCESS_TOKEN=
-INSTAGRAM_ACCOUNT_ID=
+META_ACCESS_TOKEN=               # Meta Graph API (Instagram)
+INSTAGRAM_ACCOUNT_ID=            # Instagram Business Account ID
+TELEGRAM_BOT_TOKEN=              # BotFather
+TELEGRAM_CHAT_ID=                # Chat-ID für Pipeline-Notifications
+BLOB_READ_WRITE_TOKEN=           # Vercel Blob (temporäre Instagram-Bilder)
 ```
 
 ---
@@ -270,12 +355,12 @@ Schiffbau, Papiersaal, Folium, Kosmos, Gessnerallee, Kirche Neumünster
 
 ---
 
-## Nächste Schritte
+## Nächste Schritte (optional)
 
-- [ ] Vercel Deploy (Domain + CRON_SECRET bereits konfiguriert — nur deployen)
-- [ ] Instagram-Automation (Satori Image Gen + Meta Graph API)
 - [ ] Basel + Bern aktivieren (Scraper evaluieren)
-- [ ] Error-Monitoring für Pipeline (Alert bei Fehler)
+- [ ] Venue-Frequenz in Kuration nutzen (überrepräsentierte Venues dämpfen)
+- [ ] Event-Dedup über Tage (gleiches Mehrtages-Event nicht täglich neu zeigen)
+- [ ] Meta Access Token Rotation automatisieren
 
 ---
 
