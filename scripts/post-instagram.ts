@@ -25,6 +25,19 @@ import {
 const GRAPH_BASE = 'https://graph.instagram.com/v21.0'
 
 const CITY_SLUGS = ['zuerich', 'stgallen', 'luzern'] as const
+
+// ─── Filter: ausverkaufte / abgesagte Events ──────────────────────────────────
+
+const UNAVAILABLE_KEYWORDS = [
+  'ausverkauft', 'sold out', 'soldout', 'sold-out',
+  'abgesagt', 'cancelled', 'canceled', 'abgebrochen',
+  'verschoben', 'postponed',
+]
+
+function isUnavailable(event: ImageEvent): boolean {
+  const name = event.name.toLowerCase()
+  return UNAVAILABLE_KEYWORDS.some((kw) => name.includes(kw))
+}
 type CitySlug = typeof CITY_SLUGS[number]
 
 const CITY_LABELS: Record<CitySlug, string> = {
@@ -190,8 +203,11 @@ export async function postInstagram(): Promise<void> {
   }
   for (const slug of CITY_SLUGS) {
     const events = await client.fetch<ImageEvent[]>(CURATED_EVENTS_QUERY, { date, city: slug })
-    eventsByCity[slug] = events
-    console.log(`[instagram] ${CITY_LABELS[slug]}: ${events.length} Events`)
+    const filtered = events.filter((e) => !isUnavailable(e))
+    const removed = events.length - filtered.length
+    eventsByCity[slug] = filtered
+    if (removed > 0) console.log(`[instagram] ${CITY_LABELS[slug]}: ${removed} ausverkauft/abgesagt gefiltert`)
+    console.log(`[instagram] ${CITY_LABELS[slug]}: ${filtered.length} Events`)
   }
 
   const totalEvents = Object.values(eventsByCity).reduce((s, e) => s + e.length, 0)
