@@ -3,7 +3,8 @@
 // Zürich: Two-Layer (venue-first + AI discovery)
 // Other cities: Single-layer (AI curation of all events)
 
-import { sendTelegramNotification, sendCrashAlert } from './notify'
+import { sendTelegramNotification, sendCrashAlert, sendFeaturedEventReminders } from './notify'
+import type { FeaturedEventAlert } from './notify'
 import { savePipelineSnapshot, updateVenueStats } from './stats'
 import type { CityResult } from './notify'
 import { scrapeEventfrog } from './scrapers/eventfrog'
@@ -23,11 +24,15 @@ import type { RawEvent, SanityVenue } from './types'
 
 type ScraperFn = (date: string) => Promise<RawEvent[]>
 
+// Basel events appear on Eventfrog pages 10-11 — needs higher page limit + delays to avoid 429
+const scrapeEventfrogBasel: ScraperFn = (date) => scrapeEventfrog(date, 20, 1500)
+
 const CITY_CONFIG: Record<string, { twoLayer: boolean; scrapers: ScraperFn[] }> = {
   zuerich:  { twoLayer: true, scrapers: [scrapeEventfrog, scrapeHellozurich, scrapeResidentAdvisor] },
   stgallen: { twoLayer: true, scrapers: [scrapeEventfrog, scrapeSaiten] },
   luzern:   { twoLayer: true, scrapers: [scrapeGangus, scrapeEventfrog] },
-  // Basel + Bern: Coming Soon — not scraped until active
+  basel:    { twoLayer: true, scrapers: [scrapeEventfrogBasel] },
+  // Bern: Coming Soon — not scraped until active
 }
 
 // Zürich: blacklist approach (exclude surrounding cities)
@@ -699,6 +704,35 @@ async function _runPipeline(start: number) {
 
   const durationSeconds = (Date.now() - start) / 1000
   console.log(`\n=== Pipeline abgeschlossen in ${durationSeconds.toFixed(1)}s ===`)
+
+  // Featured Event Reminders (3 Tage vor Start / 14 Tage für inaktive)
+  console.log('\n── Featured Event Reminders ──')
+  try {
+    const client = getSanityClient()
+    const today = getDate(0)
+    const in14 = getDate(14)
+    const upcoming: Array<{ name: string; city: string; dateFrom: string; dateTo: string; active: boolean }> =
+      await client.fetch(
+        `*[_type == "featuredEvent" && dateFrom >= $today && dateFrom <= $in14] | order(dateFrom asc) { name, city, dateFrom, dateTo, active }`,
+        { today, in14 }
+      )
+    const alerts: FeaturedEventAlert[] = upcoming
+      .filter((e) => {
+        const days = Math.round((new Date(e.dateFrom + 'T12:00:00').getTime() - new Date(today + 'T12:00:00').getTime()) / 86_400_000)
+        return e.active ? days <= 3 : days <= 14
+      })
+      .map((e) => ({
+        ...e,
+        daysUntilStart: Math.round((new Date(e.dateFrom + 'T12:00:00').getTime() - new Date(today + 'T12:00:00').getTime()) / 86_400_000),
+      }))
+    if (alerts.length > 0) {
+      await sendFeaturedEventReminders(alerts)
+    } else {
+      console.log('  Keine anstehenden Featured Events')
+    }
+  } catch (err) {
+    console.error('  [Featured] Fehler beim Check:', err)
+  }
 
   // Telegram Notification (Instagram wird separat via /api/cron/instagram um 05:15 gepostet)
   console.log('\n── Telegram Notification ──')

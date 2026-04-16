@@ -1,0 +1,162 @@
+/* src/components/FeaturedEventCallout.module.css */
+
+.item {
+  list-style: none;
+  border-bottom: 1px solid #222;
+}
+
+[data-theme="dark"] .item {
+  border-bottom-color: #997000;
+}
+
+[data-rain="true"] .item {
+  border-bottom-color: #997000;
+}
+
+/* Dark mode: gelb mit schwarzer Typo */
+[data-theme="dark"] .link {
+  background-color: #FFB800 !important;
+  color: #000 !important;
+}
+
+[data-theme="dark"] .cityBadge {
+  background: #000;
+  color: #FFB800;
+}
+
+[data-theme="dark"] .dates {
+  opacity: 0.55;
+}
+
+/* Rain mode: ebenfalls gelb mit schwarzer Typo */
+[data-rain="true"] .link {
+  background-color: #FFB800 !important;
+  color: #000 !important;
+  filter: none !important;
+}
+
+[data-rain="true"] .link:hover {
+  background-color: #FFB800 !important;
+  filter: brightness(0.92) !important;
+}
+
+[data-rain="true"] .cityBadge {
+  background: #000;
+  color: #FFB800;
+}
+
+[data-rain="true"] .dates {
+  opacity: 0.55;
+}
+
+.link {
+  display: block;
+  padding: 1rem 1rem 1.1rem;
+  background-color: #000;
+  color: #fff;
+  text-decoration: none;
+  border-left: none;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.link:hover {
+  filter: brightness(1.15);
+}
+
+/* Spiegelt EventBlock .metaTop */
+.metaTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.2rem;
+}
+
+/* Spiegelt EventBlock .categoryPill — bleibt Kategorie */
+.cityBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  background: #FFB800;
+  color: #000;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2em 0.6em;
+  border-radius: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badgeGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  flex-shrink: 0;
+}
+
+.walkIcon {
+  width: 1.6rem;
+  height: 1.6rem;
+  flex-shrink: 0;
+  color: #FFB800;
+}
+
+[data-theme="dark"] .walkIcon,
+[data-rain="true"] .walkIcon {
+  color: #000;
+}
+
+/* Spiegelt EventBlock .time */
+.dates {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Gleiche Grösse wie EventBlock .name */
+.name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  word-wrap: break-word;
+  margin-top: 0.15rem;
+}
+
+.teaser {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  opacity: 0.6;
+  margin-top: 0.4rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 380px) {
+  .name {
+    font-size: 1.2rem;
+  }
+  .link {
+    padding: 0.8rem 0.8rem 0.9rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .link {
+    padding: 1.2rem 2rem 1.4rem;
+  }
+  .name {
+    font-size: 1.9rem;
+  }
+}

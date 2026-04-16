@@ -5,8 +5,6 @@ import { EventfrogService, EventfrogEventRequest } from 'eventfrog-api'
 import type { RawEvent } from '../types'
 import { isAggregatorUrl } from '../venues'
 
-const MAX_PAGES = 5
-
 function patchEventfrogService() {
   const proto = EventfrogService.prototype as any
   if (proto.__patched) return
@@ -26,9 +24,19 @@ function patchEventfrogService() {
     }
     params.append('apiKey', this._key)
     const url = `https://api.eventfrog.net/api/v1${edge}?${params.toString()}`
-    const response = await fetch(url, { method: 'GET' })
-    if (!response.ok) return Promise.reject('Request returned ' + response.status)
-    return response.json()
+    // Retry up to 3× on 429 with exponential backoff (30s, 60s, 120s)
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const response = await fetch(url, { method: 'GET' })
+      if (response.status === 429) {
+        const waitMs = 30_000 * Math.pow(2, attempt)
+        console.warn(`[Eventfrog] 429 — warte ${waitMs / 1000}s (Versuch ${attempt + 1}/3)`)
+        await new Promise((r) => setTimeout(r, waitMs))
+        continue
+      }
+      if (!response.ok) return Promise.reject('Request returned ' + response.status)
+      return response.json()
+    }
+    return Promise.reject('Request returned 429 (nach 3 Versuchen)')
   }
 
   const origMapLocations = proto.mapLocations
@@ -55,7 +63,7 @@ function toZurichDate(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
-export async function scrapeEventfrog(date: string): Promise<RawEvent[]> {
+export async function scrapeEventfrog(date: string, maxPages = 5, pageDelayMs = 0): Promise<RawEvent[]> {
   patchEventfrogService()
 
   const apiKey = process.env.EVENTFROG_API_KEY
@@ -65,7 +73,7 @@ export async function scrapeEventfrog(date: string): Promise<RawEvent[]> {
   const events: RawEvent[] = []
   let page = 1
 
-  while (page <= MAX_PAGES) {
+  while (page <= maxPages) {
     const request = new EventfrogEventRequest({ perPage: 100, page })
     const batch = await service.loadEvents(request) as any[]
 
@@ -102,6 +110,7 @@ export async function scrapeEventfrog(date: string): Promise<RawEvent[]> {
     }
 
     if (batch.length < 100) break
+    if (pageDelayMs > 0) await new Promise((r) => setTimeout(r, pageDelayMs))
     page++
   }
 

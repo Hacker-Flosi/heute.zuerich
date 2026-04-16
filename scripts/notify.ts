@@ -18,7 +18,7 @@ export interface PipelineReport {
 }
 
 function cityLabel(slug: string): string {
-  return { zuerich: 'Zürich', stgallen: 'St.Gallen', luzern: 'Luzern' }[slug] ?? slug
+  return { zuerich: 'Zürich', stgallen: 'St.Gallen', luzern: 'Luzern', basel: 'Basel' }[slug] ?? slug
 }
 
 function buildMessage(report: PipelineReport, date: string): string {
@@ -63,6 +63,55 @@ function buildMessage(report: PipelineReport, date: string): string {
   lines.push(`\n⏱ ${report.durationSeconds.toFixed(1)}s`)
 
   return lines.join('\n')
+}
+
+export interface FeaturedEventAlert {
+  name: string
+  city: string
+  dateFrom: string
+  dateTo: string
+  daysUntilStart: number
+  active: boolean
+}
+
+export async function sendFeaturedEventReminders(alerts: FeaturedEventAlert[]): Promise<void> {
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  const chatId = process.env.TELEGRAM_CHAT_ID
+  if (!token || !chatId || alerts.length === 0) return
+
+  const months = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
+  function fmtDate(d: string) {
+    const dt = new Date(d + 'T12:00:00')
+    return `${dt.getDate()}. ${months[dt.getMonth()]}`
+  }
+
+  const lines: string[] = ['📅 <b>Featured Events — Reminder</b>', '']
+  for (const a of alerts) {
+    const dateRange = a.dateFrom === a.dateTo
+      ? fmtDate(a.dateFrom)
+      : `${fmtDate(a.dateFrom)} – ${fmtDate(a.dateTo)}`
+    const when = a.daysUntilStart === 0 ? 'startet heute'
+      : a.daysUntilStart === 1 ? 'startet morgen'
+      : `startet in ${a.daysUntilStart} Tagen`
+    if (!a.active) {
+      lines.push(`⚠️ <b>INAKTIV</b> — ${when}: <b>${a.name}</b> (${a.city}, ${dateRange})`)
+      lines.push(`   → Bitte Datum prüfen &amp; in Sanity aktivieren`)
+    } else {
+      lines.push(`🔔 ${when}: <b>${a.name}</b> (${a.city}, ${dateRange})`)
+    }
+  }
+
+  const text = lines.join('\n')
+  try {
+    await fetch(`${TELEGRAM_API}/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+    })
+    console.log(`  [Telegram] Featured Event Reminders gesendet (${alerts.length})`)
+  } catch (err) {
+    console.error('  [Telegram] Fehler beim Senden der Reminders:', err)
+  }
 }
 
 export async function sendCrashAlert(context: string, err: unknown): Promise<void> {

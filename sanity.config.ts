@@ -9,6 +9,7 @@ import eventSchema from './sanity/schemas/event'
 import siteSettingsSchema from './sanity/schemas/siteSettings'
 import pipelineSnapshotSchema from './sanity/schemas/pipelineSnapshot'
 import venueStatsSchema from './sanity/schemas/venueStats'
+import featuredEventSchema from './sanity/schemas/featuredEvent'
 
 export default defineConfig({
   name: 'waslauft-in',
@@ -124,6 +125,14 @@ export default defineConfig({
               ),
             S.divider(),
             S.listItem()
+              .title('Featured Events (stadtübergreifend)')
+              .child(
+                S.documentTypeList('featuredEvent')
+                  .title('Featured Events')
+                  .defaultOrdering([{ field: 'dateFrom', direction: 'desc' }])
+              ),
+            S.divider(),
+            S.listItem()
               .title('Pipeline Snapshots')
               .child(
                 S.documentTypeList('pipelineSnapshot')
@@ -151,6 +160,6 @@ export default defineConfig({
   ],
 
   schema: {
-    types: [venueSchema, eventSchema, siteSettingsSchema, pipelineSnapshotSchema, venueStatsSchema],
+    types: [venueSchema, eventSchema, siteSettingsSchema, pipelineSnapshotSchema, venueStatsSchema, featuredEventSchema],
   },
 })

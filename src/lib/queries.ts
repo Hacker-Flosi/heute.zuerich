@@ -42,6 +42,24 @@ export const SITE_SETTINGS_QUERY = `
   }
 `
 
+export const FEATURED_EVENTS_QUERY = `
+  *[
+    _type == "featuredEvent"
+    && active == true
+    && city != $city
+    && dateFrom <= $windowEnd
+    && dateTo >= $windowStart
+  ] | order(dateFrom asc) {
+    _id,
+    name,
+    city,
+    dateFrom,
+    dateTo,
+    url,
+    teaser
+  }
+`
+
 export const ALL_EVENTS_QUERY = `
   *[_type == "event" && date == $date && city == $city] | order(time asc) {
     _id,

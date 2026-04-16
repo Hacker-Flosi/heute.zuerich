@@ -75,6 +75,34 @@ export const EVENT_TYPE_LABELS: Record<EventType, string> = {
   special:  'Special',
 }
 
+export const CITY_LABELS: Record<string, string> = {
+  zuerich:     'Zürich',
+  stgallen:    'St.Gallen',
+  luzern:      'Luzern',
+  basel:       'Basel',
+  bern:        'Bern',
+  davos:       'Davos',
+  wengen:      'Wengen',
+  genf:        'Genf',
+  biel:        'Biel',
+  chur:        'Chur',
+  frauenfeld:  'Frauenfeld',
+  montreux:    'Montreux',
+  nyon:        'Nyon',
+  locarno:     'Locarno',
+  stmoritz:    'St. Moritz',
+}
+
+export interface FeaturedEvent {
+  _id: string
+  name: string
+  city: string      // host city slug
+  dateFrom: string  // YYYY-MM-DD
+  dateTo: string    // YYYY-MM-DD
+  url: string
+  teaser?: string
+}
+
 export interface Event {
   _id: string
   name: string
