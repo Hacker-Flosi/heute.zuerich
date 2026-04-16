@@ -202,7 +202,8 @@ function fillToTarget(chosen: RawEvent[], pool: RawEvent[]): RawEvent[] {
 }
 
 async function hasEventsForDate(city: string, date: string): Promise<boolean> {
-  const client = getSanityClient()
+  // Use write client (no CDN) so deletions are immediately visible
+  const client = getSanityWriteClient()
   const count = await client.fetch<number>(
     `count(*[_type == "event" && city == $city && date == $date])`,
     { city, date }
