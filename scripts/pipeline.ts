@@ -326,6 +326,8 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
       if (venue) {
         e.layer = 'venue'
         e.venueId = `venue-${city}-${venue.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+        // Venue website always wins — overrides any scraper URL
+        if (venue.website) e.url = venue.website
         // Title inference takes priority for specific types (workshop, markt, kunst, open_air)
         // Venue category is used as fallback for generic titles
         const titleType = inferEventTypeFromTitle(e.name)
