@@ -28,15 +28,17 @@ const PARTY: string[] = [
 const KONZERT: string[] = [
   // Explizit
   'konzert', 'concert', 'live concert', 'live-konzert', 'gig',
-  'live musik', 'live music',
+  'live musik', 'live music', ' live ', '- live',
   // Genres mit Live-Kontext
   'jazz', 'blues', 'folk', 'singer-songwriter', 'acoustic',
   'metal', 'punk', 'indie', 'pop concert', 'rock concert',
-  'classical', 'klassik', 'orchester', 'ensemble', 'sinfonie',
+  'classical', 'klassik', 'orchester', 'orchestra', 'ensemble', 'sinfonie',
   'philharmonic', 'kammermusik', 'chor',
+  // Musik-Festivals / Reihen
+  'musiktage', 'musikfestival', 'musikfest', 'jazzfestival',
   // Formate
   'solo show', 'release show', 'album release', 'album launch',
-  'headliner', 'support act',
+  'headliner', 'support act', 'concert tour', 'world tour', 'europe tour',
 ]
 
 const KUNST: string[] = [
