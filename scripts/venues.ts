@@ -38,10 +38,31 @@ const VENUE_MAP: Record<string, VenueEntry[]> = {
   ],
 
   basel: [
+    // Clubs / Nightlife
     { patterns: ['nordstern'], url: 'https://nordstern.com' },
     { patterns: ['elysia'], url: 'https://elysia.ch' },
-    { patterns: ['kaserne'], url: 'https://kaserne-basel.ch' },
     { patterns: ['viertel klub', 'das viertel', 'dasviertel'], url: 'https://dasviertel.ch' },
+    { patterns: ['sommercasino'], url: 'https://sommercasino.ch' },
+    { patterns: ['union'], url: 'https://clubunion.ch' },
+    // Konzerte / Musik
+    { patterns: ['kaserne'], url: 'https://kaserne-basel.ch' },
+    { patterns: ['stadtcasino'], url: 'https://stadtcasinobasel.com' },
+    { patterns: ["bird's eye", 'birdseye', 'birds eye'], url: 'https://birdseye.ch' },
+    { patterns: ['jazzcampus'], url: 'https://jazzcampus.ch' },
+    { patterns: ['atlantis'], url: 'https://atlantis-basel.ch' },
+    { patterns: ['parterre'], url: 'https://parterre.net' },
+    { patterns: ['gare du nord'], url: 'https://gare-du-nord.ch' },
+    { patterns: ['roxy'], url: 'https://roxy.ch' },
+    { patterns: ['musical theater', 'musicaltheater'], url: 'https://musicaltheater.ch' },
+    // Kultur / Theater
+    { patterns: ['theater basel', 'theaterbasel'], url: 'https://theater-basel.ch' },
+    { patterns: ['volkshaus basel', 'volkshaus'], url: 'https://volkshaus-basel.ch' },
+    { patterns: ['kunsthalle basel', 'kunsthalle'], url: 'https://kunsthallebasel.ch' },
+    { patterns: ['fondation beyeler', 'beyeler'], url: 'https://fondationbeyeler.ch' },
+    { patterns: ['kunstmuseum basel', 'kunstmuseum'], url: 'https://kunstmuseumbasel.ch' },
+    { patterns: ['museum tinguely', 'tinguely'], url: 'https://tinguely.ch' },
+    { patterns: ['theater fauteuil', 'fauteuil'], url: 'https://theater-fauteuil.ch' },
+    { patterns: ['basler freilichtspiele', 'freilichtspiele'], url: 'https://freilichtspiele.ch' },
   ],
 
   bern: [
