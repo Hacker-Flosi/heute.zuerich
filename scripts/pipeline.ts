@@ -24,14 +24,13 @@ import type { RawEvent, SanityVenue } from './types'
 
 type ScraperFn = (date: string) => Promise<RawEvent[]>
 
-// Basel events appear on Eventfrog pages 10-11 — needs higher page limit + delays to avoid 429
-const scrapeEventfrogBasel: ScraperFn = (date) => scrapeEventfrog(date, 20, 1500)
 
 const CITY_CONFIG: Record<string, { twoLayer: boolean; scrapers: ScraperFn[] }> = {
   zuerich:  { twoLayer: true, scrapers: [scrapeEventfrog, scrapeHellozurich, scrapeResidentAdvisor] },
   stgallen: { twoLayer: true, scrapers: [scrapeEventfrog, scrapeSaiten] },
   luzern:   { twoLayer: true, scrapers: [scrapeGangus, scrapeEventfrog] },
-  basel:    { twoLayer: true, scrapers: [scrapeEventfrogBasel] },
+  // Basel: Coming Soon — kein guter Scraper verfügbar, vorerst deaktiviert
+  // basel: { twoLayer: true, scrapers: [scrapeEventfrogBasel] },
   // Bern: Coming Soon — not scraped until active
 }
 
