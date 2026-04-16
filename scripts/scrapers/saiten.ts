@@ -88,8 +88,8 @@ async function resolveOrganizerUrl(saitenUrl: string, location: string): Promise
   const venueUrl = lookupVenueUrl(location, 'stgallen')
   if (venueUrl) return venueUrl
 
-  // Last resort: saiten.ch event page
-  return saitenUrl
+  // Kein Link besser als saiten.ch
+  return ''
 }
 
 function parseItems(html: string, date: string, seenSlugs: Set<string>): {
