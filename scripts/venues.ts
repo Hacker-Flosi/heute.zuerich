@@ -82,10 +82,24 @@ const VENUE_MAP: Record<string, VenueEntry[]> = {
   ],
 
   bern: [
+    // Clubs / Konzerte
     { patterns: ['dachstock'], url: 'https://dachstock.is' },
-    { patterns: ['bierhübeli', 'bierhuebeli'], url: 'https://bierhuebeli.ch' },
     { patterns: ['gaskessel'], url: 'https://gaskessel.ch' },
+    { patterns: ['isc bern', 'isc club', 'isc -', 'isc'], url: 'https://isc-club.ch' },
+    { patterns: ['kuppel'], url: 'https://kuppel.ch' },
+    { patterns: ['rössli bar', 'rossli bar', 'rösslibar'], url: 'https://rosslibern.ch' },
+    { patterns: ['dampfzentrale'], url: 'https://dampfzentrale.ch' },
+    { patterns: ['turnhalle bern', 'turnhalle'], url: 'https://turnhalle.ch' },
+    { patterns: ['bierhübeli', 'bierhuebeli'], url: 'https://bierhuebeli.ch' },
+    { patterns: ['heitere fahne'], url: 'https://heiterefahne.ch' },
+    // Kultur / Theater
     { patterns: ['kapitel bollwerk', 'kapitel'], url: 'https://kapitel.ch' },
+    { patterns: ['theater bern', 'konzert theater bern', 'konzerttheater'], url: 'https://konzerttheaterbern.ch' },
+    { patterns: ['reitschule'], url: 'https://reitschule.ch' },
+    { patterns: ['schlachthaus'], url: 'https://schlachthaus.ch' },
+    { patterns: ['kunsthalle bern'], url: 'https://kunsthalle-bern.ch' },
+    { patterns: ['zentrum paul klee', 'paul klee'], url: 'https://zpk.org' },
+    { patterns: ['kultur casino', 'kulturcasino'], url: 'https://konzerttheaterbern.ch' },
   ],
 
   luzern: [

@@ -3,6 +3,7 @@
 // API: https://ra.co/graphql — eventListings query, area 390 = Zürich
 
 import type { RawEvent } from '../types'
+import { lookupVenueUrl } from '../venues'
 
 const RA_GRAPHQL = 'https://ra.co/graphql'
 const ZURICH_AREA_ID = 390
@@ -99,9 +100,8 @@ export async function scrapeResidentAdvisor(date: string): Promise<RawEvent[]> {
       // Extract city from address (last comma-separated part often has city)
       const location = venueName || venueAddress.split(',')[0] || 'Zürich'
 
-      const url = event.contentUrl
-        ? `https://ra.co${event.contentUrl.startsWith('/') ? '' : '/'}${event.contentUrl}`
-        : 'https://ra.co/events/ch/zurich'
+      // Venue-URL aus Registry — kein Match = kein Link (ra.co ist Aggregator)
+      const url = lookupVenueUrl(venueName, 'zuerich') ?? ''
 
       events.push({
         name: event.title,
