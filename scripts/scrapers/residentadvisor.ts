@@ -100,8 +100,9 @@ export async function scrapeResidentAdvisor(date: string): Promise<RawEvent[]> {
       // Extract city from address (last comma-separated part often has city)
       const location = venueName || venueAddress.split(',')[0] || 'Zürich'
 
-      // Venue-URL aus Registry — kein Match = kein Link (ra.co ist Aggregator)
-      const url = lookupVenueUrl(venueName, 'zuerich') ?? ''
+      // Venue-URL aus Registry bevorzugt, sonst RA-Event-URL als Fallback
+      const raUrl = event.contentUrl ? `https://ra.co${event.contentUrl}` : ''
+      const url = lookupVenueUrl(venueName, 'zuerich') ?? raUrl
 
       events.push({
         name: event.title,
