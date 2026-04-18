@@ -48,6 +48,26 @@ const CITY_LABELS: Record<CitySlug, string> = {
 
 // ─── Meta Graph API Helpers ───────────────────────────────────────────────────
 
+async function getLatestFeedPostId(igId: string, token: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${GRAPH_BASE}/${igId}/media?fields=id,media_type&limit=1&access_token=${token}`)
+    const data = await res.json()
+    return data.data?.[0]?.id ?? null
+  } catch {
+    return null
+  }
+}
+
+async function archivePost(mediaId: string, token: string): Promise<void> {
+  const res = await fetch(`${GRAPH_BASE}/${mediaId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ is_hidden: true, comment_enabled: true, access_token: token }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(`Archivieren fehlgeschlagen: ${JSON.stringify(data)}`)
+}
+
 async function createCarouselItem(imageUrl: string, igId: string, token: string): Promise<string> {
   const params = new URLSearchParams({
     image_url: imageUrl,
@@ -120,13 +140,18 @@ async function publishContainer(containerId: string, igId: string, token: string
 
 // ─── Blob Helpers ─────────────────────────────────────────────────────────────
 
-async function uploadToBlob(buf: Buffer, filename: string): Promise<string> {
+async function uploadToBlob(buf: Buffer, filename: string): Promise<{ proxyUrl: string; blobUrl: string }> {
   const blob = await put(`instagram/${filename}`, buf, {
     access: 'public',
     contentType: 'image/png',
     allowOverwrite: true,
   })
-  return blob.url
+  // Meta Graph API kann blob.vercel-storage.com nicht zuverlässig fetchen.
+  // Wir proxyen über unsere eigene Domain damit Meta ein stabiles Ziel hat.
+  return {
+    blobUrl: blob.url,
+    proxyUrl: `https://waslauft.in/api/ig-image?url=${encodeURIComponent(blob.url)}`,
+  }
 }
 
 async function deleteBlob(url: string): Promise<void> {
@@ -136,21 +161,27 @@ async function deleteBlob(url: string): Promise<void> {
 // ─── Karussell posten ─────────────────────────────────────────────────────────
 
 async function postCarousel(slides: Buffer[], caption: string, prefix: string, ts: number, igId: string, token: string): Promise<void> {
-  const urls: string[] = []
+  // Letzten Feed-Post merken — wird nach Publish archiviert
+  const previousPostId = await getLatestFeedPostId(igId, token)
+  if (previousPostId) console.log(`[instagram] Vorheriger Post: ${previousPostId} → wird nach Publish archiviert`)
+
+  const proxyUrls: string[] = []
+  const blobUrls: string[] = []
 
   for (let i = 0; i < slides.length; i++) {
-    const url = await uploadToBlob(slides[i], `${prefix}-${i + 1}-${ts}.png`)
-    urls.push(url)
+    const { proxyUrl, blobUrl } = await uploadToBlob(slides[i], `${prefix}-${i + 1}-${ts}.png`)
+    proxyUrls.push(proxyUrl)
+    blobUrls.push(blobUrl)
     console.log(`[instagram] Bild ${i + 1}/${slides.length} hochgeladen`)
   }
 
-  if (urls.length === 1) {
-    const id = await createSingleContainer(urls[0], caption, igId, token)
+  if (proxyUrls.length === 1) {
+    const id = await createSingleContainer(proxyUrls[0], caption, igId, token)
     const postId = await publishContainer(id, igId, token)
     console.log(`[instagram] ✅ Einzelbild publiziert: ${postId}`)
   } else {
     const childIds: string[] = []
-    for (const url of urls) {
+    for (const url of proxyUrls) {
       const itemId = await createCarouselItem(url, igId, token)
       await waitForContainer(itemId, token)
       childIds.push(itemId)
@@ -160,19 +191,29 @@ async function postCarousel(slides: Buffer[], caption: string, prefix: string, t
     console.log(`[instagram] ✅ Karussell publiziert: ${postId}`)
   }
 
-  for (const url of urls) await deleteBlob(url)
+  // Vorherigen Post archivieren
+  if (previousPostId) {
+    try {
+      await archivePost(previousPostId, token)
+      console.log(`[instagram] 📦 Vorheriger Post archiviert: ${previousPostId}`)
+    } catch (err) {
+      console.warn(`[instagram] Archivieren fehlgeschlagen (non-critical):`, err)
+    }
+  }
+
+  for (const url of blobUrls) await deleteBlob(url)
 }
 
 // ─── Stories posten ───────────────────────────────────────────────────────────
 
 async function postStories(slides: Buffer[], prefix: string, ts: number, igId: string, token: string): Promise<void> {
   for (let i = 0; i < slides.length; i++) {
-    const url = await uploadToBlob(slides[i], `${prefix}-story-${i + 1}-${ts}.png`)
+    const { proxyUrl, blobUrl } = await uploadToBlob(slides[i], `${prefix}-story-${i + 1}-${ts}.png`)
     console.log(`[instagram] Story-Slide ${i + 1}/${slides.length} hochgeladen`)
-    const containerId = await createStoryContainer(url, igId, token)
+    const containerId = await createStoryContainer(proxyUrl, igId, token)
     const postId = await publishContainer(containerId, igId, token)
     console.log(`[instagram] ✅ Story ${i + 1} publiziert: ${postId}`)
-    await deleteBlob(url)
+    await deleteBlob(blobUrl)
     // Kurze Pause zwischen Story-Slides
     if (i < slides.length - 1) await new Promise((r) => setTimeout(r, 2000))
   }
@@ -293,6 +334,12 @@ export async function postInstagram(): Promise<void> {
   await postCarousel(feedSlides, feedCaption, `feed-${date}`, ts, igId, token)
 
   // ── Stories pro Stadt ──────────────────────────────────────────────────────
+  if (process.env.SKIP_STORIES === '1') {
+    console.log('[instagram] SKIP_STORIES=1 — Stories übersprungen')
+    console.log('\n[instagram] ✅ Fertig')
+    return
+  }
+
   for (const slug of CITY_SLUGS) {
     if (eventsByCity[slug].length === 0) {
       console.log(`\n[instagram] ${CITY_LABELS[slug]}: keine Events — Stories übersprungen`)
