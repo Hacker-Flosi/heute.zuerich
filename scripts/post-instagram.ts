@@ -6,7 +6,7 @@
 import { getSanityClient } from '../src/lib/sanity'
 import { CURATED_EVENTS_QUERY } from '../src/lib/queries'
 import { formatDateLabel, formatDateShort, getDateString } from '../src/lib/constants'
-import { put, del } from '@vercel/blob'
+import { getSanityWriteClient } from '../src/lib/sanity'
 import { fetchCityWeather } from './weather'
 import { pickInstagramEvents } from './curate'
 import { savePipelineSnapshot, updateVenueStats } from './stats'
@@ -140,23 +140,26 @@ async function publishContainer(containerId: string, igId: string, token: string
 
 // ─── Blob Helpers ─────────────────────────────────────────────────────────────
 
-async function uploadToBlob(buf: Buffer, filename: string): Promise<{ proxyUrl: string; blobUrl: string }> {
-  const blob = await put(`instagram/${filename}`, buf, {
-    access: 'public',
+async function uploadToSanity(buf: Buffer, filename: string): Promise<{ sanityUrl: string; sanityId: string }> {
+  // Bilder über Sanity CDN hosten — Meta kann cdn.sanity.io zuverlässig fetchen
+  const client = getSanityWriteClient()
+  const asset = await client.assets.upload('image', buf, {
+    filename,
     contentType: 'image/png',
-    allowOverwrite: true,
   })
-  // Meta Graph API kann blob.vercel-storage.com nicht zuverlässig fetchen.
-  // Wir proxyen über unsere eigene Domain mit einer sauberen .png-URL.
   return {
-    blobUrl: blob.url,
-    proxyUrl: `https://waslauft.in/api/ig-image/${filename}`,
+    sanityUrl: asset.url,
+    sanityId: asset._id,
   }
 }
 
-async function deleteBlob(url: string): Promise<void> {
-  try { await del(url) } catch { /* non-critical */ }
+async function deleteSanityAsset(assetId: string): Promise<void> {
+  try {
+    const client = getSanityWriteClient()
+    await client.delete(assetId)
+  } catch { /* non-critical */ }
 }
+
 
 // ─── Karussell posten ─────────────────────────────────────────────────────────
 
@@ -165,27 +168,23 @@ async function postCarousel(slides: Buffer[], caption: string, prefix: string, t
   const previousPostId = await getLatestFeedPostId(igId, token)
   if (previousPostId) console.log(`[instagram] Vorheriger Post: ${previousPostId} → wird nach Publish archiviert`)
 
-  const proxyUrls: string[] = []
-  const blobUrls: string[] = []
+  const imageUrls: string[] = []
+  const assetIds: string[] = []
 
   for (let i = 0; i < slides.length; i++) {
-    const { proxyUrl, blobUrl } = await uploadToBlob(slides[i], `${prefix}-${i + 1}-${ts}.png`)
-    proxyUrls.push(proxyUrl)
-    blobUrls.push(blobUrl)
+    const { sanityUrl, sanityId } = await uploadToSanity(slides[i], `${prefix}-${i + 1}-${ts}.png`)
+    imageUrls.push(sanityUrl)
+    assetIds.push(sanityId)
     console.log(`[instagram] Bild ${i + 1}/${slides.length} hochgeladen`)
   }
 
-  // Kurz warten damit Vercel Blob global propagiert ist
-  console.log(`[instagram] Warte 5s bis Blob-URLs erreichbar sind...`)
-  await new Promise((r) => setTimeout(r, 5000))
-
-  if (proxyUrls.length === 1) {
-    const id = await createSingleContainer(proxyUrls[0], caption, igId, token)
+  if (imageUrls.length === 1) {
+    const id = await createSingleContainer(imageUrls[0], caption, igId, token)
     const postId = await publishContainer(id, igId, token)
     console.log(`[instagram] ✅ Einzelbild publiziert: ${postId}`)
   } else {
     const childIds: string[] = []
-    for (const url of proxyUrls) {
+    for (const url of imageUrls) {
       const itemId = await createCarouselItem(url, igId, token)
       await waitForContainer(itemId, token)
       childIds.push(itemId)
@@ -205,19 +204,19 @@ async function postCarousel(slides: Buffer[], caption: string, prefix: string, t
     }
   }
 
-  for (const url of blobUrls) await deleteBlob(url)
+  for (const id of assetIds) await deleteSanityAsset(id)
 }
 
 // ─── Stories posten ───────────────────────────────────────────────────────────
 
 async function postStories(slides: Buffer[], prefix: string, ts: number, igId: string, token: string): Promise<void> {
   for (let i = 0; i < slides.length; i++) {
-    const { proxyUrl, blobUrl } = await uploadToBlob(slides[i], `${prefix}-story-${i + 1}-${ts}.png`)
+    const { sanityUrl, sanityId } = await uploadToSanity(slides[i], `${prefix}-story-${i + 1}-${ts}.png`)
     console.log(`[instagram] Story-Slide ${i + 1}/${slides.length} hochgeladen`)
-    const containerId = await createStoryContainer(proxyUrl, igId, token)
+    const containerId = await createStoryContainer(sanityUrl, igId, token)
     const postId = await publishContainer(containerId, igId, token)
     console.log(`[instagram] ✅ Story ${i + 1} publiziert: ${postId}`)
-    await deleteBlob(blobUrl)
+    await deleteSanityAsset(sanityId)
     // Kurze Pause zwischen Story-Slides
     if (i < slides.length - 1) await new Promise((r) => setTimeout(r, 2000))
   }
