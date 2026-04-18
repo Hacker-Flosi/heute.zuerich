@@ -12,7 +12,8 @@ export const CURATED_EVENTS_QUERY = `
     sponsored,
     colorIndex,
     eventType,
-    layer
+    layer,
+    spotifyUrl
   }
 `
 
@@ -27,7 +28,8 @@ export const RAIN_RESERVE_QUERY = `
     sponsored,
     colorIndex,
     eventType,
-    layer
+    layer,
+    spotifyUrl
   }
 `
 

@@ -114,4 +114,5 @@ export interface Event {
   colorIndex: number
   eventType?: EventType
   layer?: 'venue' | 'discovery'
+  spotifyUrl?: string
 }

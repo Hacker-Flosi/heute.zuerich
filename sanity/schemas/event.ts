@@ -131,6 +131,12 @@ export default defineType({
       type: 'number',
       description: '0–11',
     }),
+    defineField({
+      name: 'spotifyUrl',
+      title: 'Spotify URL',
+      type: 'url',
+      description: 'Spotify Artist-Profil (automatisch befüllt)',
+    }),
   ],
   preview: {
     select: {

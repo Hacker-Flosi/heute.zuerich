@@ -18,6 +18,7 @@ import { deduplicateEvents } from './deduplicate'
 import { curateEvents, curateDiscovery, curateRainReserve } from './curate'
 import { getSanityClient, getSanityWriteClient } from '../src/lib/sanity'
 import { lookupVenueUrl, isAggregatorUrl } from './venues'
+import { lookupSpotifyUrl } from './spotify'
 import { fetchWeather } from '../src/lib/weather'
 import { inferEventTypeFromTitle, eventTypeFromVenueCategory, isNightlife } from './eventtype'
 import type { RawEvent, SanityVenue } from './types'
@@ -270,6 +271,23 @@ async function writeToSanity(
 
   await tx.commit()
   console.log(`  [Sanity] ${events.length} Events geschrieben für ${city}/${date}`)
+
+  // Spotify-URLs für Music-Events nachträglich einpflegen
+  if (process.env.SPOTIFY_CLIENT_ID) {
+    const musicEvents = events.filter(e => ['konzert', 'dj_club', 'party'].includes(e.eventType ?? ''))
+    let spotifyCount = 0
+    for (const e of musicEvents) {
+      const slug = `${e.name}-${e.location}-${e.time}`
+        .toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 80)
+      const docId = `event-${city}-${date}-${slug}`
+      const spotifyUrl = await lookupSpotifyUrl(e.name, e.eventType)
+      if (spotifyUrl) {
+        await client.patch(docId).set({ spotifyUrl }).commit()
+        spotifyCount++
+      }
+    }
+    if (spotifyCount > 0) console.log(`  [Spotify] ${spotifyCount} Artist-Links eingetragen`)
+  }
 }
 
 // ─── Two-Layer Pipeline (Zürich) ──────────────────────────────────────────────

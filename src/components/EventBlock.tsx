@@ -37,7 +37,18 @@ export default function EventBlock({ event, index }: EventBlockProps) {
           </div>
           <span className={styles.location}>{event.location}</span>
         </div>
-        <div className={styles.name}>{event.name}</div>
+        <div className={styles.nameRow}>
+          <div className={styles.name}>{event.name}</div>
+          {event.spotifyUrl && (
+            <button
+              className={styles.spotifyLink}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(event.spotifyUrl, '_blank', 'noopener,noreferrer') }}
+              aria-label="Auf Spotify anhören"
+            >
+              ▶ Play
+            </button>
+          )}
+        </div>
       </a>
     </li>
   )
