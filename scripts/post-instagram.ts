@@ -147,10 +147,10 @@ async function uploadToBlob(buf: Buffer, filename: string): Promise<{ proxyUrl: 
     allowOverwrite: true,
   })
   // Meta Graph API kann blob.vercel-storage.com nicht zuverlässig fetchen.
-  // Wir proxyen über unsere eigene Domain damit Meta ein stabiles Ziel hat.
+  // Wir proxyen über unsere eigene Domain mit einer sauberen .png-URL.
   return {
     blobUrl: blob.url,
-    proxyUrl: `https://waslauft.in/api/ig-image?url=${encodeURIComponent(blob.url)}`,
+    proxyUrl: `https://waslauft.in/api/ig-image/${filename}`,
   }
 }
 
@@ -174,6 +174,10 @@ async function postCarousel(slides: Buffer[], caption: string, prefix: string, t
     blobUrls.push(blobUrl)
     console.log(`[instagram] Bild ${i + 1}/${slides.length} hochgeladen`)
   }
+
+  // Kurz warten damit Vercel Blob global propagiert ist
+  console.log(`[instagram] Warte 5s bis Blob-URLs erreichbar sind...`)
+  await new Promise((r) => setTimeout(r, 5000))
 
   if (proxyUrls.length === 1) {
     const id = await createSingleContainer(proxyUrls[0], caption, igId, token)
