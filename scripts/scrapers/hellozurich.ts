@@ -7,10 +7,15 @@ import type { RawEvent } from '../types'
 
 const BASE_URL = 'https://www.hellozurich.ch'
 
-// Known aggregator/social domains — not organizer URLs
-const NON_ORGANIZER_DOMAINS = [
-  'hellozurich.ch', 'facebook.com', 'instagram.com', 'twitter.com',
-  'youtube.com', 'google.', 'ticketcorner.ch', 'ticketmaster.', 'starticket.ch',
+// Domains that are not useful as event links
+const SKIP_DOMAINS = [
+  'hellozurich.ch', 'facebook.com', 'instagram.com', 'twitter.com', 'x.com',
+  'youtube.com', 'google.', 'maps.google', 'apple.com/maps',
+]
+
+// Ticket platforms — accepted as fallback if no venue/organizer URL found
+const TICKET_DOMAINS = [
+  'ticketcorner.ch', 'ticketmaster.', 'starticket.ch',
   'eventfrog.ch', 'eventbrite.', 'reservix.de', 'petzi.ch',
 ]
 
@@ -30,8 +35,8 @@ interface HellozurichResponse {
 }
 
 /**
- * Scrapes the hellozurich event detail page to find the organizer website.
- * Only called for events without a `website` field in the API response.
+ * Scrapes the hellozurich event detail page to find the best external URL.
+ * Priority: organizer/venue website > ticket platform > null (skip event)
  */
 async function fetchOrganizerUrl(detailLink: string): Promise<string | null> {
   const url = detailLink.startsWith('http') ? detailLink : `${BASE_URL}${detailLink}`
@@ -44,17 +49,24 @@ async function fetchOrganizerUrl(detailLink: string): Promise<string | null> {
     const $ = cheerio.load(html)
 
     let organizerUrl: string | null = null
+    let ticketUrl: string | null = null
+
     $('a[href]').each((_, el) => {
-      if (organizerUrl) return
       const href = $(el).attr('href') || ''
-      if (
-        href.startsWith('http') &&
-        !NON_ORGANIZER_DOMAINS.some((d) => href.includes(d))
-      ) {
+      if (!href.startsWith('http')) return
+      if (SKIP_DOMAINS.some((d) => href.includes(d))) return
+
+      if (!ticketUrl && TICKET_DOMAINS.some((d) => href.includes(d))) {
+        ticketUrl = href
+        return
+      }
+      if (!organizerUrl) {
         organizerUrl = href
       }
     })
-    return organizerUrl
+
+    // Prefer real organizer URL, fall back to ticket platform, never hellozurich
+    return organizerUrl ?? ticketUrl
   } catch {
     return null
   }
@@ -106,10 +118,10 @@ export async function scrapeHellozurich(date: string): Promise<RawEvent[]> {
       )
     }
 
+    let skipped = 0
     for (const { event, time } of raw) {
-      // Final URL: organizer website > hellozurich detail page (last resort)
       const url = event.website
-        || (event.link.startsWith('http') ? event.link : `${BASE_URL}${event.link}`)
+      if (!url) { skipped++; continue }  // skip events without a real URL
 
       events.push({
         name: event.headline,
@@ -121,6 +133,7 @@ export async function scrapeHellozurich(date: string): Promise<RawEvent[]> {
         source: 'hellozurich',
       })
     }
+    if (skipped > 0) console.log(`[hellozurich] ${skipped} Events ohne externe URL übersprungen`)
   } catch (error) {
     console.error('hellozurich scraping error:', error)
   }
