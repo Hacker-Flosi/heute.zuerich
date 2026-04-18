@@ -118,22 +118,17 @@ export async function scrapeHellozurich(date: string): Promise<RawEvent[]> {
       )
     }
 
-    let skipped = 0
     for (const { event, time } of raw) {
-      const url = event.website
-      if (!url) { skipped++; continue }  // skip events without a real URL
-
       events.push({
         name: event.headline,
         rawName: event.headline,
         location: event.place,
         date,
         time,
-        url,
+        url: event.website ?? '',  // kein hellozurich-Fallback — lieber leer
         source: 'hellozurich',
       })
     }
-    if (skipped > 0) console.log(`[hellozurich] ${skipped} Events ohne externe URL übersprungen`)
   } catch (error) {
     console.error('hellozurich scraping error:', error)
   }

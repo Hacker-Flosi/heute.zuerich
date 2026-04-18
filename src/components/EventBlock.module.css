@@ -48,6 +48,14 @@
   filter: brightness(0.92);
 }
 
+.noLink {
+  cursor: default;
+}
+
+.noLink:hover {
+  filter: none;
+}
+
 .meta {
   display: flex;
   flex-direction: column;
