@@ -37,7 +37,7 @@ export default function EventBlock({ event, index }: EventBlockProps) {
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(event.spotifyUrl, '_blank', 'noopener,noreferrer') }}
             aria-label="Auf Spotify anhören"
           >
-            ▶ Play
+            ▶ Spotify
           </button>
         )}
       </div>

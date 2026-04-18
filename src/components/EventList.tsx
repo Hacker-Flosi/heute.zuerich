@@ -166,7 +166,7 @@ export default function EventList({ cityLabel, today, tomorrow, dayAfter, rainTo
 
       {[...today, ...tomorrow, ...dayAfter].some(e => e.spotifyUrl) && (
         <div className={styles.spotifyDisclaimer}>
-          <span className={styles.spotifyDisclaimerLabel}>▶ Play</span>
+          <span className={styles.spotifyDisclaimerLabel}>▶ Spotify</span>
           Experimentelles Feature — nicht alle Artists werden angezeigt und es kann unter Umständen zu falschen Angaben führen. Es wird daran gearbeitet.
         </div>
       )}
