@@ -15,7 +15,7 @@ const CITIES = [
   { slug: 'bern', label: 'Bern', active: false },
   { slug: 'stgallen', label: 'St.Gallen', active: true },
   { slug: 'luzern', label: 'Luzern', active: true },
-  { slug: 'winterthur', label: 'Winterthur', active: false },
+  { slug: 'winterthur', label: 'Winterthur', active: true },
 ]
 
 export const metadata = {
