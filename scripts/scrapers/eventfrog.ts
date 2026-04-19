@@ -114,7 +114,7 @@ export async function scrapeEventfrog(
       const url: string =
         event.organizer?.website?.trim() ||
         (!isAggregatorUrl(rawLink) ? rawLink : '') ||
-        `https://eventfrog.ch/de/p/e/${event.id}`
+        ''
 
       events.push({
         name: event.title ?? 'Unbekanntes Event',
