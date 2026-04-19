@@ -59,11 +59,8 @@ async function getLatestFeedPostId(igId: string, token: string): Promise<string 
 }
 
 async function archivePost(mediaId: string, token: string): Promise<void> {
-  const res = await fetch(`${GRAPH_BASE}/${mediaId}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ is_hidden: true, comment_enabled: true, access_token: token }),
-  })
+  const params = new URLSearchParams({ is_hidden: 'true', access_token: token })
+  const res = await fetch(`${GRAPH_BASE}/${mediaId}?${params.toString()}`, { method: 'POST' })
   const data = await res.json()
   if (!res.ok) throw new Error(`Archivieren fehlgeschlagen: ${JSON.stringify(data)}`)
 }
@@ -269,6 +266,9 @@ export async function postInstagram(): Promise<void> {
   }
 
   // ── Kombinierter Feed-Post ─────────────────────────────────────────────────
+  if (process.env.SKIP_FEED === '1') {
+    console.log('[instagram] SKIP_FEED=1 — Feed-Post übersprungen')
+  } else {
   console.log('\n[instagram] ── Kombinierter Feed-Post ──')
 
   // Tägliche Farbe: Datum → gleichmässige Rotation durch alle 12 Farben
@@ -335,6 +335,7 @@ export async function postInstagram(): Promise<void> {
   ].join('\n')
 
   await postCarousel(feedSlides, feedCaption, `feed-${date}`, ts, igId, token)
+  } // end SKIP_FEED
 
   // ── Stories pro Stadt ──────────────────────────────────────────────────────
   if (process.env.SKIP_STORIES === '1') {
