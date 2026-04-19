@@ -59,6 +59,12 @@ const VENUE_MAP: Record<string, VenueEntry[]> = {
     { patterns: ['gessnerallee'], url: 'https://gessnerallee.ch' },
     { patterns: ['kosmos'], url: 'https://kosmos.ch' },
     { patterns: ['papiersaal'], url: 'https://papiersaal.ch' },
+    { patterns: ['kongresshaus'], url: 'https://kongresshaus.ch' },
+    { patterns: ['halle 622', 'halle622'], url: 'https://www.halle622.ch' },
+    { patterns: ['stadtgärtnerei', 'stadtgärtnerei zürich'], url: 'https://www.stadt-zuerich.ch/stadtgaertnerei' },
+    { patterns: ['kirche neumünster', 'neumünster'], url: 'https://www.kirche-neumuenster.ch' },
+    { patterns: ['theater neumarkt', 'neumarkt'], url: 'https://theaterneumarkt.ch' },
+    { patterns: ['sogar theater', 'sogar'], url: 'https://sogar.ch' },
   ],
 
   basel: [
@@ -185,6 +191,14 @@ const VENUE_MAP: Record<string, VenueEntry[]> = {
     { patterns: ['mariaberg'], url: 'https://mariaberg.ch' },
     { patterns: ['horst'], url: 'https://horst.sg' },
     { patterns: ['walter'], url: 'https://walter.sg' },
+    // Weitere Kulturorte
+    { patterns: ['square hsg', 'hsg square', 'hsg-square'], url: 'https://www.hsg-square.ch' },
+    { patterns: ['pfalzkeller'], url: 'https://stiftsbezirk.ch' },
+    { patterns: ['stiftsbibliothek'], url: 'https://stiftsbibliothek.ch' },
+    { patterns: ['musikzentrum'], url: 'https://www.musikzentrum-sg.ch' },
+    { patterns: ['universität st.gallen', 'unisg', 'universität st. gallen'], url: 'https://unisg.ch' },
+    { patterns: ['bibliothek hauptpost', 'bibliothek'], url: 'https://www.bibliosg.ch' },
+    { patterns: ['tirumpel'], url: 'https://www.tirumpel.ch' },
   ],
 }
 
@@ -193,6 +207,7 @@ const AGGREGATOR_DOMAINS = [
   'hellozurich.ch', 'saiten.ch', 'gangus.ch', 'null41.nodehive',
   'eventfrog.ch', 'eventbrite.', 'ticketcorner.ch', 'starticket.ch',
   'facebook.com', 'instagram.com', 'petzi.ch', 'ra.co',
+  'thurgaukultur.ch',
 ]
 
 export function isAggregatorUrl(url: string): boolean {
