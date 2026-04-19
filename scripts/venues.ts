@@ -200,6 +200,18 @@ const VENUE_MAP: Record<string, VenueEntry[]> = {
     { patterns: ['bibliothek hauptpost', 'bibliothek'], url: 'https://www.bibliosg.ch' },
     { patterns: ['tirumpel'], url: 'https://www.tirumpel.ch' },
   ],
+
+  winterthur: [
+    { patterns: ['casinotheater'], url: 'https://casinotheater.ch' },
+    { patterns: ['stadthalle winterthur', 'stadthalle'], url: 'https://stadthalle.ch' },
+    { patterns: ['albani'], url: 'https://albani.ch' },
+    { patterns: ['salzhaus'], url: 'https://salzhaus.ch' },
+    { patterns: ['oxyd'], url: 'https://oxyd.ch' },
+    { patterns: ['kraftfeld'], url: 'https://kraftfeld.ch' },
+    { patterns: ['gaswerk'], url: 'https://gaswerk.ch' },
+    { patterns: ['alte kaserne'], url: 'https://altekaserne.ch' },
+    { patterns: ['stadthaus winterthur', 'stadthaus'], url: 'https://stadthaus.winterthur.ch' },
+  ],
 }
 
 // Portal domains that are NOT organizer URLs — replace if matched

@@ -65,18 +65,21 @@ async function getStatus(): Promise<string> {
   // Alle Daten parallel laden
   const [counts, weather, lastPost] = await Promise.all([
     client.fetch<Record<string, number>>(`{
-      'zh_0': count(*[_type=='event' && city=='zuerich'  && date==$d0]),
-      'zh_1': count(*[_type=='event' && city=='zuerich'  && date==$d1]),
-      'zh_2': count(*[_type=='event' && city=='zuerich'  && date==$d2]),
-      'sg_0': count(*[_type=='event' && city=='stgallen' && date==$d0]),
-      'sg_1': count(*[_type=='event' && city=='stgallen' && date==$d1]),
-      'sg_2': count(*[_type=='event' && city=='stgallen' && date==$d2]),
-      'lz_0': count(*[_type=='event' && city=='luzern'   && date==$d0]),
-      'lz_1': count(*[_type=='event' && city=='luzern'   && date==$d1]),
-      'lz_2': count(*[_type=='event' && city=='luzern'   && date==$d2]),
-      'bs_0': count(*[_type=='event' && city=='basel'    && date==$d0]),
-      'bs_1': count(*[_type=='event' && city=='basel'    && date==$d1]),
-      'bs_2': count(*[_type=='event' && city=='basel'    && date==$d2])
+      'zh_0': count(*[_type=='event' && city=='zuerich'    && date==$d0]),
+      'zh_1': count(*[_type=='event' && city=='zuerich'    && date==$d1]),
+      'zh_2': count(*[_type=='event' && city=='zuerich'    && date==$d2]),
+      'sg_0': count(*[_type=='event' && city=='stgallen'   && date==$d0]),
+      'sg_1': count(*[_type=='event' && city=='stgallen'   && date==$d1]),
+      'sg_2': count(*[_type=='event' && city=='stgallen'   && date==$d2]),
+      'lz_0': count(*[_type=='event' && city=='luzern'     && date==$d0]),
+      'lz_1': count(*[_type=='event' && city=='luzern'     && date==$d1]),
+      'lz_2': count(*[_type=='event' && city=='luzern'     && date==$d2]),
+      'wt_0': count(*[_type=='event' && city=='winterthur' && date==$d0]),
+      'wt_1': count(*[_type=='event' && city=='winterthur' && date==$d1]),
+      'wt_2': count(*[_type=='event' && city=='winterthur' && date==$d2]),
+      'bs_0': count(*[_type=='event' && city=='basel'      && date==$d0]),
+      'bs_1': count(*[_type=='event' && city=='basel'      && date==$d1]),
+      'bs_2': count(*[_type=='event' && city=='basel'      && date==$d2])
     }`, { d0: dates[0], d1: dates[1], d2: dates[2] }),
     fetchCityWeather(),
     getLastInstagramPost(),
@@ -89,14 +92,14 @@ async function getStatus(): Promise<string> {
   if (counts.zh_0 === 0) warnings.push('⚠️ Zürich: keine Events heute')
   if (counts.sg_0 === 0) warnings.push('⚠️ St.Gallen: keine Events heute')
   if (counts.lz_0 === 0) warnings.push('⚠️ Luzern: keine Events heute')
-  if (counts.bs_0 === 0) warnings.push('⚠️ Basel: keine Events heute')
+  if (counts.wt_0 === 0) warnings.push('⚠️ Winterthur: keine Events heute')
 
   // Wetter-Zeile
   const weatherLine = [
-    weather.zuerich.isRain  ? '🌧 ZH' : '☀️ ZH',
-    weather.stgallen.isRain ? '🌧 SG' : '☀️ SG',
-    weather.luzern.isRain   ? '🌧 LZ' : '☀️ LZ',
-    weather.basel.isRain    ? '🌧 BS' : '☀️ BS',
+    weather.zuerich.isRain    ? '🌧 ZH' : '☀️ ZH',
+    weather.stgallen.isRain   ? '🌧 SG' : '☀️ SG',
+    weather.luzern.isRain     ? '🌧 LZ' : '☀️ LZ',
+    weather.winterthur.isRain ? '🌧 WT' : '☀️ WT',
   ].join('  ')
 
   const now = new Date().toLocaleTimeString('de-CH', {
@@ -110,7 +113,7 @@ async function getStatus(): Promise<string> {
     `<code>Zürich      ${String(counts.zh_0).padStart(2)}      ${String(counts.zh_1).padStart(2)}      ${String(counts.zh_2).padStart(2)}</code>`,
     `<code>St.Gallen   ${String(counts.sg_0).padStart(2)}      ${String(counts.sg_1).padStart(2)}      ${String(counts.sg_2).padStart(2)}</code>`,
     `<code>Luzern      ${String(counts.lz_0).padStart(2)}      ${String(counts.lz_1).padStart(2)}      ${String(counts.lz_2).padStart(2)}</code>`,
-    `<code>Basel       ${String(counts.bs_0).padStart(2)}      ${String(counts.bs_1).padStart(2)}      ${String(counts.bs_2).padStart(2)}</code>`,
+    `<code>Winterthur  ${String(counts.wt_0).padStart(2)}      ${String(counts.wt_1).padStart(2)}      ${String(counts.wt_2).padStart(2)}</code>`,
     ``,
     `🌤 <b>Wetter heute</b>`,
     weatherLine,

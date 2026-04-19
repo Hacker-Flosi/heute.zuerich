@@ -18,7 +18,7 @@ export interface PipelineReport {
 }
 
 function cityLabel(slug: string): string {
-  return { zuerich: 'Zürich', stgallen: 'St.Gallen', luzern: 'Luzern', basel: 'Basel' }[slug] ?? slug
+  return { zuerich: 'Zürich', stgallen: 'St.Gallen', luzern: 'Luzern', winterthur: 'Winterthur', basel: 'Basel' }[slug] ?? slug
 }
 
 function buildMessage(report: PipelineReport, date: string): string {
