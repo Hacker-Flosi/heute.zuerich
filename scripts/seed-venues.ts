@@ -183,15 +183,28 @@ const WINTERTHUR_VENUES: VenueSeed[] = [
   // Tier S
   { name: 'Casinotheater', eventfrogName: 'Casinotheater Winterthur', city: 'winterthur', tier: 'S', category: 'kultur', active: true, summerBonus: false, website: 'https://casinotheater.ch' },
   { name: 'Stadthalle Winterthur', eventfrogName: 'Stadthalle Winterthur', city: 'winterthur', tier: 'S', category: 'kultur', active: true, summerBonus: false, website: 'https://stadthalle.ch' },
-  // Tier A — Alternative/Konzerte
+  // Tier A — Konzerte / Musik
   { name: 'Albani', eventfrogName: 'Albani Winterthur', city: 'winterthur', tier: 'A', category: 'alternative', active: true, summerBonus: false, website: 'https://albani.ch' },
   { name: 'Salzhaus', eventfrogName: 'Salzhaus Winterthur', city: 'winterthur', tier: 'A', category: 'alternative', active: true, summerBonus: false, website: 'https://salzhaus.ch' },
-  { name: 'Oxyd Kunsträume', eventfrogName: 'Oxyd Winterthur', city: 'winterthur', tier: 'A', category: 'kultur', active: true, summerBonus: false, website: 'https://oxyd.ch' },
   { name: 'Kraftfeld', eventfrogName: 'Kraftfeld Winterthur', city: 'winterthur', tier: 'A', category: 'alternative', active: true, summerBonus: false, website: 'https://kraftfeld.ch' },
-  // Tier B
+  { name: 'Portier', eventfrogName: 'Portier Winterthur', city: 'winterthur', tier: 'A', category: 'alternative', active: true, summerBonus: false, website: 'https://portier.ch' },
+  { name: 'TapTab', eventfrogName: 'TapTab Winterthur', city: 'winterthur', tier: 'A', category: 'alternative', active: true, summerBonus: false, website: 'https://taptab.ch' },
+  { name: 'Esse Musicbar', eventfrogName: 'Esse Musicbar Winterthur', city: 'winterthur', tier: 'A', category: 'alternative', active: true, summerBonus: false, website: 'https://essemusicbar.ch' },
+  // Tier A — Kunst / Kultur
+  { name: 'Oxyd Kunsträume', eventfrogName: 'Oxyd Winterthur', city: 'winterthur', tier: 'A', category: 'kultur', active: true, summerBonus: false, website: 'https://oxyd.ch' },
+  { name: 'Coalmine', eventfrogName: 'Coalmine Winterthur', city: 'winterthur', tier: 'A', category: 'kultur', active: true, summerBonus: false, website: 'https://coalmine.ch' },
+  { name: 'Kunst Museum Winterthur', eventfrogName: 'Kunst Museum Winterthur', city: 'winterthur', tier: 'A', category: 'kultur', active: true, summerBonus: false, website: 'https://kmw.ch' },
+  { name: 'Gewerbemuseum Winterthur', eventfrogName: 'Gewerbemuseum Winterthur', city: 'winterthur', tier: 'A', category: 'kultur', active: true, summerBonus: false, website: 'https://gewerbemuseum.ch' },
+  { name: 'Kellertheater Winterthur', eventfrogName: 'Kellertheater Winterthur', city: 'winterthur', tier: 'A', category: 'kultur', active: true, summerBonus: false, website: 'https://kellertheater-winterthur.ch' },
+  // Tier B — Outdoor / Sommer
   { name: 'Gaswerk', eventfrogName: 'Gaswerk Winterthur', city: 'winterthur', tier: 'B', category: 'alternative', active: true, summerBonus: true, website: 'https://gaswerk.ch' },
+  { name: 'Güterschuppen Winterthur', eventfrogName: 'Güterschuppen Winterthur', city: 'winterthur', tier: 'B', category: 'special', active: true, summerBonus: true, website: 'https://gueterschuppen.ch' },
+  // Tier B — Kultur
   { name: 'Alte Kaserne', eventfrogName: 'Alte Kaserne Winterthur', city: 'winterthur', tier: 'B', category: 'kultur', active: true, summerBonus: false, website: 'https://altekaserne.ch' },
   { name: 'Stadthaus Winterthur', eventfrogName: 'Stadthaus Winterthur', city: 'winterthur', tier: 'B', category: 'kultur', active: true, summerBonus: false, website: 'https://stadthaus.winterthur.ch' },
+  { name: 'Naturmuseum Winterthur', eventfrogName: 'Naturmuseum Winterthur', city: 'winterthur', tier: 'B', category: 'kultur', active: true, summerBonus: false, website: 'https://naturmuseum.ch' },
+  { name: 'Kino Cameo', eventfrogName: 'Kino Cameo Winterthur', city: 'winterthur', tier: 'C', category: 'kultur', active: true, summerBonus: false, website: 'https://kinocameo.ch' },
+  { name: 'Kino Nische', eventfrogName: 'Kino Nische Winterthur', city: 'winterthur', tier: 'C', category: 'kultur', active: true, summerBonus: false, website: 'https://kinonische.ch' },
 ]
 
 // ─── Seed ─────────────────────────────────────────────────────────────────────
