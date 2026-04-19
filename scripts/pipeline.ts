@@ -8,6 +8,7 @@ import type { FeaturedEventAlert } from './notify'
 import { savePipelineSnapshot, updateVenueStats } from './stats'
 import type { CityResult } from './notify'
 import { scrapeEventfrog, scrapeEventfrogExtended } from './scrapers/eventfrog'
+import { scrapeCoucou } from './scrapers/coucou'
 import { scrapeHellozurich } from './scrapers/hellozurich'
 import { scrapeGangus } from './scrapers/gangus'
 import { scrapeSaiten } from './scrapers/saiten'
@@ -32,7 +33,7 @@ const CITY_CONFIG: Record<string, { twoLayer: boolean; scrapers: ScraperFn[] }> 
   zuerich:     { twoLayer: true, scrapers: [scrapeEventfrog, scrapeHellozurich, scrapeResidentAdvisor] },
   stgallen:    { twoLayer: true, scrapers: [scrapeEventfrog, scrapeSaiten] },
   luzern:      { twoLayer: true, scrapers: [scrapeGangus, scrapeEventfrog] },
-  winterthur:  { twoLayer: true, scrapers: [scrapeEventfrogExtended] },
+  winterthur:  { twoLayer: true, scrapers: [scrapeEventfrogExtended, scrapeCoucou] },
   // Bern: Coming Soon — Scraper bereit (Petzi + Dampfzentrale), aber Stadt noch nicht aktiv
   // bern: { twoLayer: true, scrapers: [scrapePetzi, scrapeDampfzentrale] },
   // Basel: Coming Soon — kein guter Scraper verfügbar, vorerst deaktiviert
