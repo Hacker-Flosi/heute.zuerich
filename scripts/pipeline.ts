@@ -7,7 +7,7 @@ import { sendTelegramNotification, sendCrashAlert, sendFeaturedEventReminders } 
 import type { FeaturedEventAlert } from './notify'
 import { savePipelineSnapshot, updateVenueStats } from './stats'
 import type { CityResult } from './notify'
-import { scrapeEventfrog } from './scrapers/eventfrog'
+import { scrapeEventfrog, scrapeEventfrogExtended } from './scrapers/eventfrog'
 import { scrapeHellozurich } from './scrapers/hellozurich'
 import { scrapeGangus } from './scrapers/gangus'
 import { scrapeSaiten } from './scrapers/saiten'
@@ -29,9 +29,10 @@ type ScraperFn = (date: string) => Promise<RawEvent[]>
 
 
 const CITY_CONFIG: Record<string, { twoLayer: boolean; scrapers: ScraperFn[] }> = {
-  zuerich:  { twoLayer: true, scrapers: [scrapeEventfrog, scrapeHellozurich, scrapeResidentAdvisor] },
-  stgallen: { twoLayer: true, scrapers: [scrapeEventfrog, scrapeSaiten] },
-  luzern:   { twoLayer: true, scrapers: [scrapeGangus, scrapeEventfrog] },
+  zuerich:     { twoLayer: true, scrapers: [scrapeEventfrog, scrapeHellozurich, scrapeResidentAdvisor] },
+  stgallen:    { twoLayer: true, scrapers: [scrapeEventfrog, scrapeSaiten] },
+  luzern:      { twoLayer: true, scrapers: [scrapeGangus, scrapeEventfrog] },
+  winterthur:  { twoLayer: true, scrapers: [scrapeEventfrogExtended] },
   // Bern: Coming Soon — Scraper bereit (Petzi + Dampfzentrale), aber Stadt noch nicht aktiv
   // bern: { twoLayer: true, scrapers: [scrapePetzi, scrapeDampfzentrale] },
   // Basel: Coming Soon — kein guter Scraper verfügbar, vorerst deaktiviert
@@ -47,18 +48,20 @@ const ZH_EXCLUDED = [
 
 // All other cities: whitelist approach (location must contain at least one term)
 const CITY_INCLUSIONS: Record<string, string[]> = {
-  basel:    ['basel', 'riehen'],
-  bern:     ['bern', 'muri bei bern', 'köniz'],
-  stgallen: ['st. gallen', 'st gallen', 'st.gallen', 'saint-gallen'],
-  luzern:   ['luzern', 'lucerne', 'kriens', 'horw', 'ebikon'],
+  basel:       ['basel', 'riehen'],
+  bern:        ['bern', 'muri bei bern', 'köniz'],
+  stgallen:    ['st. gallen', 'st gallen', 'st.gallen', 'saint-gallen'],
+  luzern:      ['luzern', 'lucerne', 'kriens', 'horw', 'ebikon'],
+  winterthur:  ['winterthur'],
 }
 
 // Cities excluded from whitelist even if they contain a matching term
 const CITY_EXCLUSIONS: Record<string, string[]> = {
-  basel:    ['liestal', 'aesch', 'muttenz', 'lörrach', 'weil am rhein'],
-  bern:     ['thun', 'biel', 'burgdorf', 'langenthal'],
-  stgallen: ['rorschach', 'herisau', 'gossau', 'wil'],
-  luzern:   ['sursee', 'emmen', 'zug'],
+  basel:       ['liestal', 'aesch', 'muttenz', 'lörrach', 'weil am rhein'],
+  bern:        ['thun', 'biel', 'burgdorf', 'langenthal'],
+  stgallen:    ['rorschach', 'herisau', 'gossau', 'wil'],
+  luzern:      ['sursee', 'emmen', 'zug'],
+  winterthur:  [],
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -104,6 +107,8 @@ const VENUE_STOPWORDS = new Set([
   'basel', 'riehen',
   // Bern
   'bern', 'berne',
+  // Winterthur
+  'winterthur',
   // Generic venue-type words
   'club', 'bar', 'the', 'und', 'von', 'der', 'die', 'das', 'für',
   'garten', 'kirche', 'museum', 'theater', 'halle', 'haus',
@@ -118,6 +123,7 @@ function stripCitySuffix(name: string): string {
     .replace(/\s+z[uü]rich$/i, '')
     .replace(/\s+basel$/i, '')
     .replace(/\s+bern$/i, '')
+    .replace(/\s+winterthur$/i, '')
     .trim()
 }
 

@@ -79,6 +79,7 @@ export const CITY_LABELS: Record<string, string> = {
   zuerich:     'Zürich',
   stgallen:    'St.Gallen',
   luzern:      'Luzern',
+  winterthur:  'Winterthur',
   basel:       'Basel',
   bern:        'Bern',
   davos:       'Davos',

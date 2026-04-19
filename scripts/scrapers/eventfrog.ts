@@ -63,7 +63,12 @@ function toZurichDate(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
-export async function scrapeEventfrog(date: string, maxPages = 5, pageDelayMs = 0): Promise<RawEvent[]> {
+export async function scrapeEventfrog(
+  date: string,
+  maxPages = 5,
+  pageDelayMs = 0,
+  earlyExit = false,
+): Promise<RawEvent[]> {
   patchEventfrogService()
 
   const apiKey = process.env.EVENTFROG_API_KEY
@@ -72,14 +77,28 @@ export async function scrapeEventfrog(date: string, maxPages = 5, pageDelayMs = 
   const service = new EventfrogService(apiKey)
   const events: RawEvent[] = []
   let page = 1
+  let seenTargetDate = false
 
   while (page <= maxPages) {
     const request = new EventfrogEventRequest({ perPage: 100, page })
     const batch = await service.loadEvents(request) as any[]
 
+    let batchHasTargetDate = false
+    let batchHasOnlyFutureDates = true
+
     for (const event of batch) {
       const startDate: Date = event.startDate
-      if (toZurichDate(startDate) !== date) continue
+      const eventDate = toZurichDate(startDate)
+
+      if (eventDate === date) {
+        batchHasTargetDate = true
+        batchHasOnlyFutureDates = false
+        seenTargetDate = true
+      } else if (eventDate < date) {
+        batchHasOnlyFutureDates = false
+      }
+
+      if (eventDate !== date) continue
 
       const time = startDate.toLocaleTimeString('de-CH', {
         hour: '2-digit', minute: '2-digit', hour12: false,
@@ -110,10 +129,23 @@ export async function scrapeEventfrog(date: string, maxPages = 5, pageDelayMs = 
     }
 
     if (batch.length < 100) break
+
+    // Early exit: stop once we've found events for our date and subsequent pages have only future dates
+    if (earlyExit && seenTargetDate && !batchHasTargetDate && batchHasOnlyFutureDates) {
+      console.log(`[Eventfrog] Early exit nach Seite ${page} (Datum bereits passiert)`)
+      break
+    }
+
     if (pageDelayMs > 0) await new Promise((r) => setTimeout(r, pageDelayMs))
     page++
   }
 
   console.log(`[Eventfrog] ${events.length} Events gefunden für ${date}`)
   return events
+}
+
+
+/** Wrapper für kleinere Städte (Winterthur etc.) — mehr Seiten, Verzögerung, Early-Exit. */
+export function scrapeEventfrogExtended(date: string): Promise<RawEvent[]> {
+  return scrapeEventfrog(date, 25, 1500, true)
 }

@@ -177,6 +177,23 @@ const LUZERN_VENUES: VenueSeed[] = [
   { name: 'Inseli', eventfrogName: 'Inseli Luzern', city: 'luzern', tier: 'B', category: 'special', active: true, summerBonus: true },
 ]
 
+// ─── WINTERTHUR ───────────────────────────────────────────────────────────────
+
+const WINTERTHUR_VENUES: VenueSeed[] = [
+  // Tier S
+  { name: 'Casinotheater', eventfrogName: 'Casinotheater Winterthur', city: 'winterthur', tier: 'S', category: 'kultur', active: true, summerBonus: false, website: 'https://casinotheater.ch' },
+  { name: 'Stadthalle Winterthur', eventfrogName: 'Stadthalle Winterthur', city: 'winterthur', tier: 'S', category: 'kultur', active: true, summerBonus: false, website: 'https://stadthalle.ch' },
+  // Tier A — Alternative/Konzerte
+  { name: 'Albani', eventfrogName: 'Albani Winterthur', city: 'winterthur', tier: 'A', category: 'alternative', active: true, summerBonus: false, website: 'https://albani.ch' },
+  { name: 'Salzhaus', eventfrogName: 'Salzhaus Winterthur', city: 'winterthur', tier: 'A', category: 'alternative', active: true, summerBonus: false, website: 'https://salzhaus.ch' },
+  { name: 'Oxyd Kunsträume', eventfrogName: 'Oxyd Winterthur', city: 'winterthur', tier: 'A', category: 'kultur', active: true, summerBonus: false, website: 'https://oxyd.ch' },
+  { name: 'Kraftfeld', eventfrogName: 'Kraftfeld Winterthur', city: 'winterthur', tier: 'A', category: 'alternative', active: true, summerBonus: false, website: 'https://kraftfeld.ch' },
+  // Tier B
+  { name: 'Gaswerk', eventfrogName: 'Gaswerk Winterthur', city: 'winterthur', tier: 'B', category: 'alternative', active: true, summerBonus: true, website: 'https://gaswerk.ch' },
+  { name: 'Alte Kaserne', eventfrogName: 'Alte Kaserne Winterthur', city: 'winterthur', tier: 'B', category: 'kultur', active: true, summerBonus: false, website: 'https://altekaserne.ch' },
+  { name: 'Stadthaus Winterthur', eventfrogName: 'Stadthaus Winterthur', city: 'winterthur', tier: 'B', category: 'kultur', active: true, summerBonus: false, website: 'https://stadthaus.winterthur.ch' },
+]
+
 // ─── Seed ─────────────────────────────────────────────────────────────────────
 
 const ALL_VENUES: VenueSeed[] = [
@@ -185,6 +202,7 @@ const ALL_VENUES: VenueSeed[] = [
   ...BERN_VENUES,
   ...STGALLEN_VENUES,
   ...LUZERN_VENUES,
+  ...WINTERTHUR_VENUES,
 ]
 
 async function seedVenues() {
@@ -210,9 +228,9 @@ async function seedVenues() {
   await transaction.commit()
 
   // Summary by city and tier
-  const cities = ['zuerich', 'basel', 'bern', 'stgallen', 'luzern'] as const
+  const cities = ['zuerich', 'basel', 'bern', 'stgallen', 'luzern', 'winterthur'] as const
   const cityLabels: Record<string, string> = {
-    zuerich: 'Zürich', basel: 'Basel', bern: 'Bern', stgallen: 'St. Gallen', luzern: 'Luzern',
+    zuerich: 'Zürich', basel: 'Basel', bern: 'Bern', stgallen: 'St. Gallen', luzern: 'Luzern', winterthur: 'Winterthur',
   }
 
   for (const city of cities) {

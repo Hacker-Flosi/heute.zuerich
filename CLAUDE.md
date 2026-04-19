@@ -7,7 +7,7 @@
 **waslauft.in** — minimale Multi-City Eventplattform. Beantwortet: "Was läuft heute in [Stadt]?"
 
 - Landing page: waslauft.in → Stadtauswahl
-- Stadtseiten: waslauft.in/zuerich, /stgallen, /luzern
+- Stadtseiten: waslauft.in/zuerich, /stgallen, /luzern, /winterthur
 - AI-kuratiert, bis zu 30 Events pro Stadt pro Tag
 - Kein Login, keine Filter, keine Kategorien
 - Eine chronologische Liste, Klick → externe URL
@@ -21,6 +21,7 @@
 | Zürich | `zuerich` | ✅ Aktiv | Eventfrog + hellozurich + Resident Advisor |
 | St. Gallen | `stgallen` | ✅ Aktiv | Eventfrog |
 | Luzern | `luzern` | ✅ Aktiv | Gangus + Eventfrog |
+| Winterthur | `winterthur` | ✅ Aktiv | Eventfrog (Extended, 25 Seiten + Early-Exit) |
 | Basel | `basel` | 🔜 Coming Soon | — |
 | Bern | `bern` | 🔜 Coming Soon | — |
 
