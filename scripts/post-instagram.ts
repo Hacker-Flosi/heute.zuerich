@@ -24,7 +24,7 @@ import {
 
 const GRAPH_BASE = 'https://graph.instagram.com/v21.0'
 
-const CITY_SLUGS = ['zuerich', 'stgallen', 'luzern'] as const
+const CITY_SLUGS = ['zuerich', 'stgallen', 'luzern', 'winterthur'] as const
 
 // ─── Filter: ausverkaufte / abgesagte Events ──────────────────────────────────
 
@@ -41,9 +41,10 @@ function isUnavailable(event: ImageEvent): boolean {
 type CitySlug = typeof CITY_SLUGS[number]
 
 const CITY_LABELS: Record<CitySlug, string> = {
-  zuerich:  'Zürich',
-  stgallen: 'St.Gallen',
-  luzern:   'Luzern',
+  zuerich:    'Zürich',
+  stgallen:   'St.Gallen',
+  luzern:     'Luzern',
+  winterthur: 'Winterthur',
 }
 
 // ─── Meta Graph API Helpers ───────────────────────────────────────────────────
@@ -238,9 +239,10 @@ export async function postInstagram(): Promise<void> {
   // ── Events aus Sanity laden
   console.log('[instagram] Lade Events aus Sanity...')
   const eventsByCity: Record<CitySlug, ImageEvent[]> = {
-    zuerich:  [],
-    stgallen: [],
-    luzern:   [],
+    zuerich:    [],
+    stgallen:   [],
+    luzern:     [],
+    winterthur: [],
   }
   for (const slug of CITY_SLUGS) {
     const events = await client.fetch<ImageEvent[]>(CURATED_EVENTS_QUERY, { date, city: slug })
@@ -327,11 +329,11 @@ export async function postInstagram(): Promise<void> {
   const feedCaption = [
     `Was läuft heute? ${dateShort}`,
     '',
-    'Zürich · St.Gallen · Luzern',
+    'Zürich · St.Gallen · Luzern · Winterthur',
     '',
     '→ waslauft.in',
     '',
-    '#zürich #stgallen #luzern #waslauft #schweiz #ausgehen #events #wasläuft',
+    '#zürich #stgallen #luzern #winterthur #waslauft #schweiz #ausgehen #events #wasläuft',
   ].join('\n')
 
   await postCarousel(feedSlides, feedCaption, `feed-${date}`, ts, igId, token)

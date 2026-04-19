@@ -7,17 +7,19 @@ export interface WeatherResult {
 }
 
 export interface CityWeather {
-  zuerich:  WeatherResult
-  stgallen: WeatherResult
-  luzern:   WeatherResult
-  basel:    WeatherResult
+  zuerich:    WeatherResult
+  stgallen:   WeatherResult
+  luzern:     WeatherResult
+  winterthur: WeatherResult
+  basel:      WeatherResult
 }
 
 const CITY_COORDS: Record<keyof CityWeather, { lat: number; lon: number }> = {
-  zuerich:  { lat: 47.3769, lon: 8.5417 },
-  stgallen: { lat: 47.4245, lon: 9.3767 },
-  luzern:   { lat: 47.0505, lon: 8.3048 },
-  basel:    { lat: 47.5596, lon: 7.5886 },
+  zuerich:    { lat: 47.3769, lon: 8.5417 },
+  stgallen:   { lat: 47.4245, lon: 9.3767 },
+  luzern:     { lat: 47.0505, lon: 8.3048 },
+  winterthur: { lat: 47.5001, lon: 8.7240 },
+  basel:      { lat: 47.5596, lon: 7.5886 },
 }
 
 // WMO weather codes → Beschreibung (nur Regen-relevante)
@@ -46,11 +48,12 @@ async function fetchWeather(lat: number, lon: number): Promise<WeatherResult> {
 }
 
 export async function fetchCityWeather(): Promise<CityWeather> {
-  const [zh, sg, lz, bs] = await Promise.all([
-    fetchWeather(CITY_COORDS.zuerich.lat,  CITY_COORDS.zuerich.lon),
-    fetchWeather(CITY_COORDS.stgallen.lat, CITY_COORDS.stgallen.lon),
-    fetchWeather(CITY_COORDS.luzern.lat,   CITY_COORDS.luzern.lon),
-    fetchWeather(CITY_COORDS.basel.lat,    CITY_COORDS.basel.lon),
+  const [zh, sg, lz, wt, bs] = await Promise.all([
+    fetchWeather(CITY_COORDS.zuerich.lat,    CITY_COORDS.zuerich.lon),
+    fetchWeather(CITY_COORDS.stgallen.lat,   CITY_COORDS.stgallen.lon),
+    fetchWeather(CITY_COORDS.luzern.lat,     CITY_COORDS.luzern.lon),
+    fetchWeather(CITY_COORDS.winterthur.lat, CITY_COORDS.winterthur.lon),
+    fetchWeather(CITY_COORDS.basel.lat,      CITY_COORDS.basel.lon),
   ])
-  return { zuerich: zh, stgallen: sg, luzern: lz, basel: bs }
+  return { zuerich: zh, stgallen: sg, luzern: lz, winterthur: wt, basel: bs }
 }
