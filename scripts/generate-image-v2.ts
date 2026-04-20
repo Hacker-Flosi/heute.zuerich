@@ -265,14 +265,14 @@ export async function generateCombinedTitleSlide(dateLabel: string, firstColorIn
           type: 'div',
           props: {
             style: { display: 'flex', gap: 16, marginTop: 40 },
-            children: ['Zürich', 'St.Gallen', 'Luzern'].map((city) => ({
+            children: ['Zürich', 'St.Gallen', 'Luzern', 'Winterthur'].map((city) => ({
               type: 'div',
               props: {
                 style: {
                   border: `2px solid ${fg}`, color: fg,
-                  fontSize: 22, fontWeight: 700,
+                  fontSize: 20, fontWeight: 700,
                   letterSpacing: '0.04em', textTransform: 'uppercase',
-                  padding: '8px 20px', borderRadius: 4,
+                  padding: '8px 16px', borderRadius: 4,
                 },
                 children: city,
               },
@@ -283,8 +283,8 @@ export async function generateCombinedTitleSlide(dateLabel: string, firstColorIn
           type: 'div',
           props: {
             style: {
-              fontSize: 36, fontWeight: 700, color: fg,
-              letterSpacing: '0.02em', opacity: 0.5, marginTop: 20,
+              fontSize: 56, fontWeight: 700, color: fg,
+              letterSpacing: '0.02em', opacity: 0.7, marginTop: 24,
             },
             children: dateLabel,
           },
