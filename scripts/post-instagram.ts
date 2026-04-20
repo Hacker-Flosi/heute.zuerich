@@ -60,7 +60,7 @@ async function getLatestFeedPostId(igId: string, token: string): Promise<string 
 }
 
 async function archivePost(mediaId: string, token: string): Promise<void> {
-  const params = new URLSearchParams({ is_hidden: 'true', access_token: token })
+  const params = new URLSearchParams({ is_hidden: 'true', comment_enabled: 'true', access_token: token })
   const res = await fetch(`${GRAPH_BASE}/${mediaId}?${params.toString()}`, { method: 'POST' })
   const data = await res.json()
   if (!res.ok) throw new Error(`Archivieren fehlgeschlagen: ${JSON.stringify(data)}`)
