@@ -5,11 +5,12 @@
 
 import { getSanityClient } from '../src/lib/sanity'
 import { CURATED_EVENTS_QUERY } from '../src/lib/queries'
-import { formatDateLabel, formatDateShort, getDateString } from '../src/lib/constants'
+import { formatDateShort, getDateString } from '../src/lib/constants'
 import { getSanityWriteClient } from '../src/lib/sanity'
 import { fetchCityWeather } from './weather'
 import { pickInstagramEvents } from './curate'
 import { savePipelineSnapshot, updateVenueStats } from './stats'
+import { sendCrashAlert } from './notify'
 import type { WeatherResult } from './weather'
 import type { ImageEvent, CityEvents } from './generate-image-v2'
 import {
@@ -53,8 +54,11 @@ async function getLatestFeedPostId(igId: string, token: string): Promise<string 
   try {
     const res = await fetch(`${GRAPH_BASE}/${igId}/media?fields=id,media_type&limit=1&access_token=${token}`)
     const data = await res.json()
-    return data.data?.[0]?.id ?? null
-  } catch {
+    const id = data.data?.[0]?.id ?? null
+    if (!id) console.warn(`[instagram] getLatestFeedPostId: kein Post gefunden — data=${JSON.stringify(data)}`)
+    return id
+  } catch (err) {
+    console.warn(`[instagram] getLatestFeedPostId Fehler:`, err)
     return null
   }
 }
@@ -63,7 +67,8 @@ async function archivePost(mediaId: string, token: string): Promise<void> {
   const params = new URLSearchParams({ is_hidden: 'true', comment_enabled: 'true', access_token: token })
   const res = await fetch(`${GRAPH_BASE}/${mediaId}?${params.toString()}`, { method: 'POST' })
   const data = await res.json()
-  if (!res.ok) throw new Error(`Archivieren fehlgeschlagen: ${JSON.stringify(data)}`)
+  console.log(`[instagram] archivePost ${mediaId}: HTTP ${res.status} → ${JSON.stringify(data)}`)
+  if (!res.ok) throw new Error(`Archivieren fehlgeschlagen: HTTP ${res.status} ${JSON.stringify(data)}`)
 }
 
 async function createCarouselItem(imageUrl: string, igId: string, token: string): Promise<string> {
@@ -164,7 +169,7 @@ async function deleteSanityAsset(assetId: string): Promise<void> {
 async function postCarousel(slides: Buffer[], caption: string, prefix: string, ts: number, igId: string, token: string): Promise<void> {
   // Letzten Feed-Post merken — wird nach Publish archiviert
   const previousPostId = await getLatestFeedPostId(igId, token)
-  if (previousPostId) console.log(`[instagram] Vorheriger Post: ${previousPostId} → wird nach Publish archiviert`)
+  console.log(`[instagram] Vorheriger Post ID: ${previousPostId ?? 'keiner gefunden — kein Archivieren'}`)
 
   const imageUrls: string[] = []
   const assetIds: string[] = []
@@ -196,10 +201,13 @@ async function postCarousel(slides: Buffer[], caption: string, prefix: string, t
   if (previousPostId) {
     try {
       await archivePost(previousPostId, token)
-      console.log(`[instagram] 📦 Vorheriger Post archiviert: ${previousPostId}`)
+      console.log(`[instagram] ✅ Vorheriger Post archiviert: ${previousPostId}`)
     } catch (err) {
-      console.warn(`[instagram] Archivieren fehlgeschlagen (non-critical):`, err)
+      console.error(`[instagram] ❌ Archivieren fehlgeschlagen für ${previousPostId}:`, err)
+      await sendCrashAlert(`Instagram archivePost ${previousPostId}`, err)
     }
+  } else {
+    console.log('[instagram] Kein vorheriger Post zum Archivieren')
   }
 
   for (const id of assetIds) await deleteSanityAsset(id)
@@ -231,7 +239,6 @@ export async function postInstagram(): Promise<void> {
   }
 
   const date      = getDateString(0)
-  const dateLabel = formatDateLabel(0)
   const dateShort = formatDateShort(0)
   const ts        = Date.now()
   const client    = getSanityClient()
@@ -374,6 +381,7 @@ export async function postInstagram(): Promise<void> {
       await postStories(storySlides, `${slug}-${date}`, ts, igId, token)
     } catch (err) {
       console.error(`[instagram] ❌ Stories ${CITY_LABELS[slug]} fehlgeschlagen:`, err)
+      await sendCrashAlert(`Instagram Stories ${CITY_LABELS[slug]}`, err)
       // Weiter mit nächster Stadt
     }
   }

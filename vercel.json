@@ -8,5 +8,13 @@
       "path": "/api/cron/instagram",
       "schedule": "45 5 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "src/app/api/cron/pipeline/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/cron/instagram/route.ts": {
+      "maxDuration": 300
+    }
+  }
 }

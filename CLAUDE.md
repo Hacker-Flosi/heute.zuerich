@@ -37,7 +37,7 @@ Basel + Bern sind im Frontend deaktiviert (`active: false` in `src/app/page.tsx`
 | CMS | Sanity v5 (Free Tier) |
 | Hosting | Vercel |
 | AI | Anthropic API — Claude Sonnet 4.6 |
-| Scheduling | Vercel Cron Jobs (Pipeline 05:00 UTC, Instagram 09:00 UTC) |
+| Scheduling | Vercel Cron Jobs (Pipeline 05:00 UTC, Instagram 05:45 UTC) |
 | Scraping | eventfrog-api npm + Cheerio + RA GraphQL + Drupal JSON:API |
 | Image Gen | Satori (JSX→SVG) + sharp (SVG→PNG) |
 | Instagram | Meta Graph API v21.0 (Feed Karussell + Stories) |
@@ -117,7 +117,7 @@ Basel + Bern sind im Frontend deaktiviert (`active: false` in `src/app/page.tsx`
 │   ├── pipelineSnapshot.ts      # Tägliche Pipeline-Statistiken
 │   └── venueStats.ts            # Kumulierte Venue-Auftritts-Stats
 ├── sanity.config.ts              # Studio: Venues + Events + Stats pro Stadt
-├── vercel.json                   # Cron: Pipeline 05:00 UTC, Instagram 09:00 UTC
+├── vercel.json                   # Cron: Pipeline 05:00 UTC, Instagram 05:45 UTC
 └── CLAUDE.md                     # Diese Datei
 ```
 
