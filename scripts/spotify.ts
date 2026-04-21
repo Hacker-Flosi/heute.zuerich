@@ -48,6 +48,7 @@ const EVENT_KEYWORDS = [
   'tour ', ' tour', 'tribute', 'cover', 'session', 'sessions',
   'feat.', 'featuring', ' feat ', ' ft ',
   'w/', ' vs ', ' vs. ', ' & ',
+  'soundcheck', 'sound check', 'quiz', 'open mic', 'open stage', 'jam ',
 ]
 
 /** Returns true only if the name looks like an actual artist name */
