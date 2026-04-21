@@ -281,7 +281,7 @@ async function writeToSanity(
 
   // Spotify-URLs für Music-Events nachträglich einpflegen
   if (process.env.SPOTIFY_CLIENT_ID) {
-    const musicEvents = events.filter(e => ['konzert', 'dj_club', 'party'].includes(e.eventType ?? ''))
+    const musicEvents = events.filter(e => ['konzert', 'dj_club', 'special'].includes(e.eventType ?? ''))
     let spotifyCount = 0
     for (const e of musicEvents) {
       const slug = `${e.name}-${e.location}-${e.time}`

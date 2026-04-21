@@ -126,9 +126,9 @@ async function isEstablishedArtist(artistId: string, token: string): Promise<boo
 /**
  * Sucht den Spotify Artist-Link für ein Event.
  *
- * konzert  → exact match + top-tracks check
- * dj_club  → nur pres.-Pattern + exact match (kein top-tracks check,
- *             da viele DJs wenige Streams haben aber trotzdem real sind)
+ * konzert  → exact match + established check (≥3 Releases)
+ * special  → wie konzert (viele Acts heissen nur nach dem Künstler, kein Keyword)
+ * dj_club  → nur via pres.-Pattern + exact match
  * party    → kein Lookup
  */
 export async function lookupSpotifyUrl(eventName: string, eventType: string | undefined): Promise<string | null> {
@@ -136,7 +136,7 @@ export async function lookupSpotifyUrl(eventName: string, eventType: string | un
 
   const token = await getToken()
 
-  if (eventType === 'konzert') {
+  if (eventType === 'konzert' || eventType === 'special') {
     const candidates = extractKonzertCandidates(eventName)
     for (const candidate of candidates) {
       const match = await searchExact(candidate, token)
