@@ -135,6 +135,13 @@ function buildRainDrops(width: number, height: number): object[] {
   return drops
 }
 
+// ─── Text Sanitization ────────────────────────────────────────────────────────
+
+/** Entfernt Emoji-Zeichen die von JetBrains Mono nicht dargestellt werden können */
+function stripEmoji(text: string): string {
+  return text.replace(/\p{Extended_Pictographic}/gu, '').replace(/\s{2,}/g, ' ').trim()
+}
+
 // ─── Event Row ────────────────────────────────────────────────────────────────
 
 function buildEventRow(event: ImageEvent, i: number, total: number, compact = false, bgOverride?: string, badWeather = false) {
@@ -191,7 +198,7 @@ function buildEventRow(event: ImageEvent, i: number, total: number, compact = fa
                           color: fg, opacity: 0.7,
                           letterSpacing: '0.04em', textTransform: 'uppercase',
                         },
-                        children: event.location,
+                        children: stripEmoji(event.location),
                       },
                     },
                   ],
@@ -219,7 +226,7 @@ function buildEventRow(event: ImageEvent, i: number, total: number, compact = fa
               color: fg, letterSpacing: '-0.02em',
               lineHeight: 1.05, textTransform: 'uppercase',
             },
-            children: event.name,
+            children: stripEmoji(event.name),
           },
         },
       ],
