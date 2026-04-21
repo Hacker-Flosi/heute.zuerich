@@ -333,6 +333,8 @@ INSTAGRAM_ACCOUNT_ID=            # Instagram Business Account ID
 TELEGRAM_BOT_TOKEN=              # BotFather
 TELEGRAM_CHAT_ID=                # Chat-ID für Pipeline-Notifications
 BLOB_READ_WRITE_TOKEN=           # Vercel Blob (temporäre Instagram-Bilder)
+SPOTIFY_CLIENT_ID=               # developer.spotify.com → App → Client ID
+SPOTIFY_CLIENT_SECRET=           # developer.spotify.com → App → Client Secret
 ```
 
 ---
