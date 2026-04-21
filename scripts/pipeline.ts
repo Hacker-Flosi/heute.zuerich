@@ -287,7 +287,7 @@ async function writeToSanity(
       const slug = `${e.name}-${e.location}-${e.time}`
         .toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 80)
       const docId = `event-${city}-${date}-${slug}`
-      const spotifyUrl = await lookupSpotifyUrl(e.name, e.eventType, e.location)
+      const spotifyUrl = await lookupSpotifyUrl(e.name, e.eventType, e.location, e.source)
       if (spotifyUrl) {
         await client.patch(docId).set({ spotifyUrl }).commit()
         spotifyCount++

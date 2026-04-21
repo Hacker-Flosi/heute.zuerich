@@ -144,9 +144,14 @@ async function isEstablishedArtist(artistId: string, token: string): Promise<boo
  * dj_club  → nur via pres.-Pattern + exact match
  * party    → kein Lookup
  */
-export async function lookupSpotifyUrl(eventName: string, eventType: string | undefined, location = ''): Promise<string | null> {
+// Quellen die Theater/Ausstellungen/Konzerte gemischt listen — bei 'special' zu unsicher
+const MIXED_CULTURE_SOURCES = ['saiten', 'hellozurich', 'coucou', 'kulturzueri', 'stadt-zuerich', 'guidle']
+
+export async function lookupSpotifyUrl(eventName: string, eventType: string | undefined, location = '', source = ''): Promise<string | null> {
   if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) return null
   if (isTheatreVenue(location)) return null
+  // 'special' von Kulturquellen: zu hohes Risiko für Theater-/Ausstellungstitel
+  if (eventType === 'special' && MIXED_CULTURE_SOURCES.includes(source)) return null
 
   const token = await getToken()
 
