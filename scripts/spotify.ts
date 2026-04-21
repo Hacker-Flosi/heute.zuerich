@@ -56,15 +56,23 @@ function extractPresCandidate(eventName: string): string | null {
   return isPlausibleArtistName(act) ? act : null
 }
 
-/** Extrahiert Artist-Namen für konzert: pres., Klammern, Original */
+// Ensemble-Suffixe die nach dem Artist-Namen vorkommen können
+const ENSEMBLE_SUFFIXES = /\s+(duo|trio|quartet|quartett|quintet|quintett|band|ensemble|orchester|orchestra|chor|choir|project|projekt|collective|experience|experience|system)\s*$/i
+
+/** Extrahiert Artist-Namen für konzert: pres., Klammern, Ensemble-Suffixe, Original */
 function extractKonzertCandidates(eventName: string): string[] {
   const candidates: string[] = []
 
   const pres = extractPresCandidate(eventName)
   if (pres) candidates.push(pres)
 
+  // Klammern und eckige Klammern entfernen
   const cleaned = eventName.replace(/\s*\(.*?\)/g, '').replace(/\s*\[.*?\]/g, '').trim()
   if (cleaned !== eventName && isPlausibleArtistName(cleaned)) candidates.push(cleaned)
+
+  // Ensemble-Suffix entfernen (z.B. "Elian Zeitel Duo" → "Elian Zeitel")
+  const stripped = eventName.replace(ENSEMBLE_SUFFIXES, '').trim()
+  if (stripped !== eventName && isPlausibleArtistName(stripped)) candidates.push(stripped)
 
   if (isPlausibleArtistName(eventName)) candidates.push(eventName)
 
