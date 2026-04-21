@@ -24,6 +24,19 @@ async function getToken(): Promise<string> {
   return TOKEN_CACHE.token
 }
 
+// Venue-Begriffe die auf Theater/Kultur-Institutionen hinweisen — kein Spotify-Lookup
+const THEATRE_VENUE_KEYWORDS = [
+  'theater', 'theatre', 'schauspiel', 'oper', 'opera', 'bühne',
+  'museum', 'kunsthalle', 'kunsthaus', 'galerie', 'gallery',
+  'bibliothek', 'library', 'kirche', 'church', 'kapelle',
+]
+
+/** Gibt true zurück wenn die Location eine Theater/Kultur-Institution ist */
+function isTheatreVenue(location: string): boolean {
+  const loc = location.toLowerCase()
+  return THEATRE_VENUE_KEYWORDS.some((kw) => loc.includes(kw))
+}
+
 // Keywords that indicate an event name, not an artist name
 const EVENT_KEYWORDS = [
   'meets', 'festival', 'concert', 'show', 'nacht', 'night', 'party', 'open air', 'openair',
@@ -131,8 +144,9 @@ async function isEstablishedArtist(artistId: string, token: string): Promise<boo
  * dj_club  → nur via pres.-Pattern + exact match
  * party    → kein Lookup
  */
-export async function lookupSpotifyUrl(eventName: string, eventType: string | undefined): Promise<string | null> {
+export async function lookupSpotifyUrl(eventName: string, eventType: string | undefined, location = ''): Promise<string | null> {
   if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) return null
+  if (isTheatreVenue(location)) return null
 
   const token = await getToken()
 
