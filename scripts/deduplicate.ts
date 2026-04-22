@@ -75,11 +75,18 @@ function isSameEvent(a: RawEvent, b: RawEvent): boolean {
   const normalizedLocationA = normalize(a.location)
   const normalizedLocationB = normalize(b.location)
 
-  // Location match: exact, substring, or word-overlap (≥50% of shorter name's words)
+  // Condensed (spaces removed): "Club 04" → "club04", "CLUB04" → "club04"
+  const condensedA = normalizedLocationA.replace(/\s+/g, '')
+  const condensedB = normalizedLocationB.replace(/\s+/g, '')
+
+  // Location match: exact, substring, condensed, or word-overlap (≥50% of shorter name's words)
   const locationMatch =
     normalizedLocationA === normalizedLocationB ||
     normalizedLocationA.includes(normalizedLocationB) ||
     normalizedLocationB.includes(normalizedLocationA) ||
+    condensedA === condensedB ||
+    condensedA.includes(condensedB) ||
+    condensedB.includes(condensedA) ||
     locationWordOverlap(normalizedLocationA, normalizedLocationB) >= 0.5
 
   if (!locationMatch) return false
@@ -110,11 +117,12 @@ function isSameEvent(a: RawEvent, b: RawEvent): boolean {
 // Quelle-Priorität: Veranstalter-Website > Eventfrog > Aggregator
 const SOURCE_PRIORITY: Record<string, number> = {
   'manual': 0,
-  'eventfrog': 1,
-  'hellozurich': 2,
-  'kulturzueri': 3,
-  'stadt-zuerich': 4,
-  'guidle': 5,
+  'residentadvisor': 1,
+  'eventfrog': 2,
+  'hellozurich': 3,
+  'kulturzueri': 4,
+  'stadt-zuerich': 5,
+  'guidle': 6,
 }
 
 /**
