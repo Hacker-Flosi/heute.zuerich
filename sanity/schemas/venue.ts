@@ -95,6 +95,73 @@ export default defineType({
       type: 'url',
       description: 'Offizielle Venue-Website (für Event-Links)',
     }),
+    defineField({
+      name: 'scrapeSources',
+      title: 'Scrape Sources',
+      type: 'array',
+      description: 'Von wo Events für diese Location gescrapt werden (venue-zentrisches System)',
+      of: [
+        {
+          type: 'object',
+          name: 'scrapeSource',
+          fields: [
+            defineField({
+              name: 'type',
+              title: 'Source-Typ',
+              type: 'string',
+              options: {
+                list: [
+                  { title: 'Website (Event-Listing)', value: 'website' },
+                  { title: 'Resident Advisor',        value: 'ra' },
+                  { title: 'Eventfrog',               value: 'eventfrog' },
+                  { title: 'Ticketmaster',            value: 'ticketmaster' },
+                  { title: 'Ticket Plus',             value: 'ticketplus' },
+                  { title: 'Instagram',               value: 'instagram' },
+                  { title: 'Facebook Events',         value: 'facebook' },
+                  { title: 'Bandsintown',             value: 'bandsintown' },
+                ],
+                layout: 'dropdown',
+              },
+              validation: (Rule) => Rule.required(),
+            }),
+            defineField({
+              name: 'url',
+              title: 'URL / Handle / ID',
+              type: 'string',
+              description: 'Vollständige URL für Website/RA, @handle für Instagram, ID für Eventfrog',
+            }),
+            defineField({
+              name: 'priority',
+              title: 'Priorität',
+              type: 'number',
+              description: '1 = höchste (Venue-Website), 2 = RA, 3 = Ticketing, 5 = Aggregatoren',
+              initialValue: 2,
+            }),
+            defineField({
+              name: 'active',
+              title: 'Aktiv',
+              type: 'boolean',
+              initialValue: true,
+            }),
+            defineField({
+              name: 'notes',
+              title: 'Notizen',
+              type: 'string',
+              description: 'Intern, z.B. "Nur Club-Events, keine Privatbuchungen"',
+            }),
+          ],
+          preview: {
+            select: { title: 'type', subtitle: 'url', active: 'active' },
+            prepare({ title, subtitle, active }: Record<string, any>) {
+              return {
+                title: `${active ? '' : '⏸ '}${title ?? '—'}`,
+                subtitle: subtitle ?? '—',
+              }
+            },
+          },
+        },
+      ],
+    }),
   ],
   preview: {
     select: {
