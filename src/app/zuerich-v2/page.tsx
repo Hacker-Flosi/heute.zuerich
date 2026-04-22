@@ -1,11 +1,14 @@
 // src/app/zuerich-v2/page.tsx
-// Test-Page für das venue-zentrische System — gleiche UI wie /zuerich
-// Kein Nav-Link, kein Index
+// Test-Page für das venue-zentrische System — kein Index, kein Nav-Link
 
 import { getSanityClient } from '@/lib/sanity'
 import { getDateString } from '@/lib/constants'
 import type { Event } from '@/lib/constants'
-import EventList from '@/components/EventList'
+import EventBlock from '@/components/EventBlock'
+import SiteHeader from '@/components/SiteHeader'
+import SiteFooter from '@/components/SiteFooter'
+
+import styles from '@/components/EventList.module.css'
 import type { Metadata } from 'next'
 
 export const revalidate = 0
@@ -22,9 +25,7 @@ interface RawCentricEvent {
   startTime?: string
   eventUrl?:  string
   ticketUrl?: string
-  sourceType: string
   venueName:  string
-  venueTier:  string
 }
 
 const QUERY = `
@@ -41,9 +42,7 @@ const QUERY = `
     startTime,
     eventUrl,
     ticketUrl,
-    sourceType,
     "venueName": venue->name,
-    "venueTier": venue->tier,
   }
 `
 
@@ -61,29 +60,25 @@ function toEvent(e: RawCentricEvent, index: number): Event {
 }
 
 export default async function ZuerichV2Page() {
-  const client   = getSanityClient()
-  const today    = getDateString(0)
-  const tomorrow = getDateString(1)
-  const dayAfter = getDateString(2)
-  const end      = getDateString(7)
+  const client = getSanityClient()
+  const today  = getDateString(0)
+  const end    = getDateString(7)
 
-  const raw = await client.fetch<RawCentricEvent[]>(QUERY, { today, end })
-
-  // Nach Datum aufteilen
-  const todayEvents    = raw.filter(e => e.startDate === today).map(toEvent)
-  const tomorrowEvents = raw.filter(e => e.startDate === tomorrow).map(toEvent)
-  const dayAfterEvents = raw.filter(e => e.startDate === dayAfter).map(toEvent)
+  const raw    = await client.fetch<RawCentricEvent[]>(QUERY, { today, end })
+  const events = raw.map(toEvent)
 
   return (
     <main>
-      <EventList
-        city="zuerich"
-        cityLabel="Zürich V2"
-        logoUrl={null}
-        today={todayEvents}
-        tomorrow={tomorrowEvents}
-        dayAfter={dayAfterEvents}
-      />
+      <SiteHeader current="Zürich V2" />
+      <ul className={styles.list}>
+        {events.length > 0
+          ? events.map((event, i) => (
+              <EventBlock key={event._id} event={event} index={i} />
+            ))
+          : <li className={styles.empty}>Keine Events.</li>
+        }
+      </ul>
+      <SiteFooter />
     </main>
   )
 }
