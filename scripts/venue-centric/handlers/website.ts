@@ -1,13 +1,12 @@
 // scripts/venue-centric/handlers/website.ts
 // Website Handler für das venue-zentrische System
 //
-// Stufe 1: Schema.org LD+JSON — strukturiertes Event-Markup direkt parsen
-// Stufe 2: Claude API Fallback — HTML → strukturierte Events via AI
-//
-// Kein Playwright: Fetch + Cheerio reicht für ~80% der Venue-Sites.
+// Fetch-Kaskade: normaler fetch → Playwright (JS-Sites) → Fehler
+// Parse-Kaskade: Schema.org LD+JSON → Claude API Fallback
 
 import * as cheerio from 'cheerio'
 import Anthropic from '@anthropic-ai/sdk'
+import { fetchHtmlPlaywright } from '../playwright-fetch'
 import type { NormalizedEvent, VenueWithSources, ScrapeSource } from '../types'
 
 const MAX_HTML_CHARS = 40_000  // Limit für Claude-Fallback
@@ -247,7 +246,12 @@ export async function handleWebsite(
   const scrapedAt = new Date().toISOString()
   const url       = source.url
 
-  const html = await fetchHtml(url)
+  // Fetch-Kaskade: normaler fetch → Playwright
+  let html = await fetchHtml(url)
+  if (!html) {
+    console.log(`    [playwright] ${venue.name}: normaler Fetch fehlgeschlagen — versuche Playwright`)
+    html = await fetchHtmlPlaywright(url)
+  }
   if (!html) return []
 
   // Stufe 1: Schema.org LD+JSON

@@ -18,6 +18,7 @@ import { handleRa } from './handlers/ra'
 import { handleWebsite } from './handlers/website'
 import { deduplicate } from './dedup'
 import { writeToCentricCollection, cleanupOldCentricEvents } from './sanity-write'
+import { startBrowser, closeBrowser } from './playwright-fetch'
 import type { VenueWithSources, NormalizedEvent, ScrapeSource } from './types'
 
 const DRY_RUN = process.argv.includes('--dry-run')
@@ -67,6 +68,9 @@ async function main(): Promise<void> {
   console.log(`  Venue-Centric Scraper${DRY_RUN ? ' [DRY-RUN]' : ''} · ${date}`)
   console.log(`${'─'.repeat(60)}\n`)
 
+  // ── Browser starten (für Sites die fetch blocken) ───────────────────────────
+  await startBrowser()
+
   // ── Venues aus Sanity laden ─────────────────────────────────────────────────
   const venues: VenueWithSources[] = await client.fetch(`
     *[_type == "venue" && city == "zuerich" && active == true && count(scrapeSources) > 0] {
@@ -107,6 +111,7 @@ async function main(): Promise<void> {
     console.log(`\n${'─'.repeat(60)}`)
     console.log('  DRY-RUN: keine Änderungen in Sanity')
     console.log(`${'─'.repeat(60)}\n`)
+    await closeBrowser()
     return
   }
 
@@ -118,6 +123,8 @@ async function main(): Promise<void> {
   // ── Sanity schreiben ────────────────────────────────────────────────────────
   console.log(`Schreibe ${deduped.length} Events in Sanity...`)
   const { written, errors } = await writeToCentricCollection(deduped)
+
+  await closeBrowser()
 
   // ── Summary ─────────────────────────────────────────────────────────────────
   console.log(`\n${'─'.repeat(60)}`)
