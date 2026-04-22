@@ -345,7 +345,7 @@ SPOTIFY_CLIENT_SECRET=           # developer.spotify.com → App → Client Secr
 Hallenstadion, The Hall (Dübendorf), X-TRA, Komplex 457, Kaufleuten, Volkshaus, Maag Halle, Mascotte
 
 ### Tier A — Electronic / Techno
-Hive, Supermarket, Frieda's Büxe, Zukunft/Zukki, Kauzu, Exil, Klaus, Mädchere
+Hive, Supermarket, Frieda's Büxe, Zukunft/Zukki, Kauz, Exil, Klaus, Mädchere
 
 ### Tier A — Alternative / Rock
 Dynamo, Rote Fabrik, Bogen F, Moods, Sender

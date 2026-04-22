@@ -24,7 +24,7 @@ const ZUERICH_VENUES: VenueSeed[] = [
   { name: 'Supermarket', eventfrogName: 'Supermarket Zürich', city: 'zuerich', tier: 'A', category: 'electronic', active: true, summerBonus: false, website: 'https://supermarket.li' },
   { name: "Frieda's Büxe", eventfrogName: "Frieda's Büxe", city: 'zuerich', tier: 'A', category: 'electronic', active: true, summerBonus: false, website: 'https://friedas.ch' },
   { name: 'Zukunft', eventfrogName: 'Zukunft Zürich', city: 'zuerich', tier: 'A', category: 'electronic', active: true, summerBonus: false, website: 'https://zukunft.cc' },
-  { name: 'Kauzu', eventfrogName: 'Kauzu Zürich', city: 'zuerich', tier: 'A', category: 'electronic', active: true, summerBonus: false, website: 'https://kauzu.ch' },
+  { name: 'Kauz', eventfrogName: 'Kauz Zürich', city: 'zuerich', tier: 'A', category: 'electronic', active: true, summerBonus: false, website: 'https://www.kauzig.ch' },
   { name: 'Exil', eventfrogName: 'Exil Zürich', city: 'zuerich', tier: 'A', category: 'electronic', active: true, summerBonus: false, website: 'https://exil.ch' },
   { name: 'Mädchere', eventfrogName: 'Mädchere Zürich', city: 'zuerich', tier: 'A', category: 'electronic', active: true, summerBonus: false, website: 'https://zukunft.cc' },
   { name: 'Klaus', eventfrogName: 'Klaus Zürich', city: 'zuerich', tier: 'A', category: 'electronic', active: true, summerBonus: false, website: 'https://hausvonklaus.ch' },

@@ -132,7 +132,7 @@ const VENUE_SOURCES: VenueConfig[] = [
     ],
   },
   {
-    name: 'Kauzu',
+    name: 'Kauz',
     sources: [
       { type: 'website',   url: 'https://kauzu.ch', priority: 1, active: true },
       { type: 'ra',        url: 'https://ra.co/clubs/kauzu', priority: 2, active: false, notes: 'RA-URL verifizieren' },
