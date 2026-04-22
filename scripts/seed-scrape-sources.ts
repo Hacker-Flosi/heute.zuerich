@@ -78,14 +78,14 @@ const VENUE_SOURCES: VenueConfig[] = [
   {
     name: 'Volkshaus',
     sources: [
-      { type: 'website',   url: 'https://volkshaus-zuerich.ch/programm', priority: 1, active: true },
+      { type: 'website',   url: 'https://www.volkshaus.ch/veranstaltungen', priority: 1, active: true },
       { type: 'instagram', url: '@volkshauszzh', priority: 6, active: false, notes: 'Handle verifizieren' },
     ],
   },
   {
     name: 'Maag Halle',
     sources: [
-      { type: 'website',   url: 'https://www.maag.ch/veranstaltungen', priority: 1, active: true },
+      { type: 'website',   url: 'https://www.maag-moments.ch/maag/de/events.html', priority: 1, active: true },
       { type: 'instagram', url: '@maag_zurich', priority: 6, active: false, notes: 'Handle verifizieren' },
     ],
   },
@@ -118,7 +118,7 @@ const VENUE_SOURCES: VenueConfig[] = [
   {
     name: "Frieda's Büxe",
     sources: [
-      { type: 'website',   url: 'https://friedas.ch/events', priority: 1, active: true },
+      { type: 'website',   url: 'https://ubwg.ch/location/friedas-buexe/', priority: 1, active: true },
       { type: 'ra',        url: 'https://ra.co/clubs/friedas-buxe', priority: 2, active: false, notes: 'RA-URL verifizieren' },
       { type: 'instagram', url: '@friedas_buxe', priority: 6, active: false, notes: 'Handle verifizieren' },
     ],
