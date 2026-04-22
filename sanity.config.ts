@@ -10,6 +10,7 @@ import siteSettingsSchema from './sanity/schemas/siteSettings'
 import pipelineSnapshotSchema from './sanity/schemas/pipelineSnapshot'
 import venueStatsSchema from './sanity/schemas/venueStats'
 import featuredEventSchema from './sanity/schemas/featuredEvent'
+import eventVenueCentricSchema from './sanity/schemas/eventVenueCentric'
 
 export default defineConfig({
   name: 'waslauft-in',
@@ -125,6 +126,15 @@ export default defineConfig({
               ),
             S.divider(),
             S.listItem()
+              .title('Events V2 — Zürich (venue-centric)')
+              .child(
+                S.documentTypeList('eventVenueCentric')
+                  .title('Events V2 Zürich')
+                  .filter('_type == "eventVenueCentric" && city == "zuerich"')
+                  .defaultOrdering([{ field: 'startDate', direction: 'desc' }])
+              ),
+            S.divider(),
+            S.listItem()
               .title('Featured Events (stadtübergreifend)')
               .child(
                 S.documentTypeList('featuredEvent')
@@ -160,6 +170,6 @@ export default defineConfig({
   ],
 
   schema: {
-    types: [venueSchema, eventSchema, siteSettingsSchema, pipelineSnapshotSchema, venueStatsSchema, featuredEventSchema],
+    types: [venueSchema, eventSchema, siteSettingsSchema, pipelineSnapshotSchema, venueStatsSchema, featuredEventSchema, eventVenueCentricSchema],
   },
 })
