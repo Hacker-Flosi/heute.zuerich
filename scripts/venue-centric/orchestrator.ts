@@ -15,6 +15,7 @@
 
 import { getSanityClient } from '../../src/lib/sanity'
 import { handleRa } from './handlers/ra'
+import { handleWebsite } from './handlers/website'
 import { deduplicate } from './dedup'
 import { writeToCentricCollection, cleanupOldCentricEvents } from './sanity-write'
 import type { VenueWithSources, NormalizedEvent, ScrapeSource } from './types'
@@ -41,9 +42,7 @@ async function runSource(
         return await handleRa(venue, source, date)
 
       case 'website':
-        // Phase 2: Website-Handler noch nicht implementiert
-        console.log(`  [website] ${venue.name}: Handler noch nicht implementiert — übersprungen`)
-        return []
+        return await handleWebsite(venue, source, date)
 
       case 'eventfrog':
         // Phase 2: Eventfrog-Adapter noch nicht implementiert (bestehender läuft separat)
