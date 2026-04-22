@@ -50,26 +50,9 @@ const CITY_LABELS: Record<CitySlug, string> = {
 
 // ─── Meta Graph API Helpers ───────────────────────────────────────────────────
 
-async function getLatestFeedPostId(igId: string, token: string): Promise<string | null> {
-  try {
-    const res = await fetch(`${GRAPH_BASE}/${igId}/media?fields=id,media_type&limit=1&access_token=${token}`)
-    const data = await res.json()
-    const id = data.data?.[0]?.id ?? null
-    if (!id) console.warn(`[instagram] getLatestFeedPostId: kein Post gefunden — data=${JSON.stringify(data)}`)
-    return id
-  } catch (err) {
-    console.warn(`[instagram] getLatestFeedPostId Fehler:`, err)
-    return null
-  }
-}
-
-async function archivePost(mediaId: string, token: string): Promise<void> {
-  const params = new URLSearchParams({ is_hidden: 'true', comment_enabled: 'true', access_token: token })
-  const res = await fetch(`${GRAPH_BASE}/${mediaId}?${params.toString()}`, { method: 'POST' })
-  const data = await res.json()
-  console.log(`[instagram] archivePost ${mediaId}: HTTP ${res.status} → ${JSON.stringify(data)}`)
-  if (!res.ok) throw new Error(`Archivieren fehlgeschlagen: HTTP ${res.status} ${JSON.stringify(data)}`)
-}
+// Note: Instagram Graph API does not support archiving feed posts programmatically.
+// is_hidden=true returns {"success":true} but has no effect on CAROUSEL_ALBUM posts.
+// Archiving must be done manually via the Instagram app.
 
 async function createCarouselItem(imageUrl: string, igId: string, token: string): Promise<string> {
   const params = new URLSearchParams({
@@ -167,10 +150,6 @@ async function deleteSanityAsset(assetId: string): Promise<void> {
 // ─── Karussell posten ─────────────────────────────────────────────────────────
 
 async function postCarousel(slides: Buffer[], caption: string, prefix: string, ts: number, igId: string, token: string): Promise<void> {
-  // Letzten Feed-Post merken — wird nach Publish archiviert
-  const previousPostId = await getLatestFeedPostId(igId, token)
-  console.log(`[instagram] Vorheriger Post ID: ${previousPostId ?? 'keiner gefunden — kein Archivieren'}`)
-
   const imageUrls: string[] = []
   const assetIds: string[] = []
 
@@ -195,19 +174,6 @@ async function postCarousel(slides: Buffer[], caption: string, prefix: string, t
     const carouselId = await createCarouselContainer(childIds, caption, igId, token)
     const postId = await publishContainer(carouselId, igId, token)
     console.log(`[instagram] ✅ Karussell publiziert: ${postId}`)
-  }
-
-  // Vorherigen Post archivieren
-  if (previousPostId) {
-    try {
-      await archivePost(previousPostId, token)
-      console.log(`[instagram] ✅ Vorheriger Post archiviert: ${previousPostId}`)
-    } catch (err) {
-      console.error(`[instagram] ❌ Archivieren fehlgeschlagen für ${previousPostId}:`, err)
-      await sendCrashAlert(`Instagram archivePost ${previousPostId}`, err)
-    }
-  } else {
-    console.log('[instagram] Kein vorheriger Post zum Archivieren')
   }
 
   for (const id of assetIds) await deleteSanityAsset(id)
