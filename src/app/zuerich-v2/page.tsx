@@ -6,7 +6,7 @@ import { getSanityClient } from '@/lib/sanity'
 import { getDateString } from '@/lib/constants'
 import type { Metadata } from 'next'
 
-export const revalidate = 3600
+export const revalidate = 0
 
 export const metadata: Metadata = {
   title: 'Zürich V2 (intern)',
@@ -72,7 +72,7 @@ function formatDate(d: string): string {
 export default async function ZuerichV2Page() {
   const client   = getSanityClient()
   const today    = getDateString(0)
-  const dayAfter = getDateString(2)
+  const dayAfter = getDateString(7)
 
   const events = await client.fetch<VenueCentricEvent[]>(QUERY, { today, dayAfter })
 
