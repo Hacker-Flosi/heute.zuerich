@@ -5,6 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runPipeline } from '../../../../../scripts/pipeline'
 
+export const maxDuration = 300
+
 // Vercel Cron sendet einen Authorization-Header mit CRON_SECRET
 export async function GET(request: NextRequest) {
   // Sicherheits-Check: Nur Vercel Cron darf diesen Endpoint aufrufen
