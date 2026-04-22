@@ -53,8 +53,10 @@ export async function fetchHtmlPlaywright(url: string): Promise<string | null> {
       return null
     }
 
-    // Kurz warten damit JS-gerenderter Inhalt erscheint
-    await page.waitForTimeout(1500)
+    // Warten bis Netzwerk-Aktivität abgeklungen ist (JS-rendered Sites)
+    try {
+      await page.waitForLoadState('networkidle', { timeout: 8000 })
+    } catch { /* Timeout ok — nehmen was da ist */ }
 
     return await page.content()
   } catch (err) {

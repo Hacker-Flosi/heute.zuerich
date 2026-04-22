@@ -63,7 +63,7 @@ const VENUE_SOURCES: VenueConfig[] = [
   {
     name: 'Komplex 457',
     sources: [
-      { type: 'website',   url: 'https://komplex457.ch/veranstaltungen', priority: 1, active: true },
+      { type: 'website',   url: 'https://komplex-457.ch/Programm', priority: 1, active: true },
       { type: 'ra',        url: 'https://ra.co/clubs/komplex457', priority: 2, active: false, notes: 'RA-URL verifizieren' },
       { type: 'instagram', url: '@komplex457', priority: 6, active: false, notes: 'Handle verifizieren' },
     ],
@@ -102,7 +102,7 @@ const VENUE_SOURCES: VenueConfig[] = [
   {
     name: 'Hive',
     sources: [
-      { type: 'website',   url: 'https://hive-club.ch/events', priority: 1, active: true },
+      { type: 'website',   url: 'https://www.hiveclub.ch/programm/', priority: 1, active: true },
       { type: 'ra',        url: 'https://ra.co/clubs/hive-zurich', priority: 2, active: false, notes: 'RA-URL verifizieren' },
       { type: 'instagram', url: '@hive_zurich', priority: 6, active: false, notes: 'Handle verifizieren' },
     ],

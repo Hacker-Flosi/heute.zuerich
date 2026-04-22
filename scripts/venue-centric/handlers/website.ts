@@ -227,6 +227,8 @@ ${stripped}`
         e.date === targetDate &&
         e.title &&
         e.title.toLowerCase() !== 'unknown' &&
+        e.title.toLowerCase() !== 'unbekannt' &&
+        !e.title.toLowerCase().startsWith('keine ') &&
         e.title.trim().length > 2
       )
     : []
