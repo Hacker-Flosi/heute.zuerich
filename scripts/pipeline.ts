@@ -212,12 +212,18 @@ function fillToTarget(chosen: RawEvent[], pool: RawEvent[]): RawEvent[] {
 async function hasEventsForDate(city: string, date: string): Promise<boolean> {
   // Use write client (no CDN) so deletions are immediately visible
   const client = getSanityWriteClient()
-  const count = await client.fetch<number>(
-    `count(*[_type == "event" && city == $city && date == $date])`,
-    { city, date }
-  )
-  return count > 0
+  const [total, saitenOnly] = await Promise.all([
+    client.fetch<number>(`count(*[_type == "event" && city == $city && date == $date])`, { city, date }),
+    client.fetch<number>(`count(*[_type == "event" && city == $city && date == $date && source != "saiten"])`, { city, date }),
+  ])
+  // If all events are saiten-only, treat as incomplete — allow re-scraping
+  if (total > 0 && saitenOnly === 0) {
+    console.log(`  [Skip] Nur saiten-Events (${total}) — wird neu gescrapt`)
+    return false
+  }
+  return total > 0
 }
+
 
 async function loadActiveVenues(city: string): Promise<SanityVenue[]> {
   const client = getSanityClient()
