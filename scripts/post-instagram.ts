@@ -101,19 +101,21 @@ async function createStoryContainer(imageUrl: string, igId: string, token: strin
 }
 
 async function waitForContainer(containerId: string, token: string): Promise<void> {
-  for (let i = 0; i < 12; i++) {
-    await new Promise((r) => setTimeout(r, 5000))
+  // Sofort checken, dann mit 2s Intervall (war 5s initial wait → spart ~3s pro Slide)
+  for (let i = 0; i < 20; i++) {
     const res = await fetch(`${GRAPH_BASE}/${containerId}?fields=status_code&access_token=${token}`)
     const data = await res.json()
     if (data.status_code === 'FINISHED') return
     if (data.status_code === 'ERROR') throw new Error(`Container fehlgeschlagen: ${JSON.stringify(data)}`)
-    console.log(`[instagram] Container Status: ${data.status_code ?? 'IN_PROGRESS'} (${i + 1}/12)`)
+    console.log(`[instagram] Container Status: ${data.status_code ?? 'IN_PROGRESS'} (${i + 1}/20)`)
+    await new Promise((r) => setTimeout(r, 2000))
   }
-  throw new Error('Container Timeout nach 60s')
+  throw new Error('Container Timeout nach 40s')
 }
 
 async function publishContainer(containerId: string, igId: string, token: string): Promise<string> {
   await waitForContainer(containerId, token)
+  await new Promise((r) => setTimeout(r, 2000)) // kurze Pause nach FINISHED
   const res = await fetch(`${GRAPH_BASE}/${igId}/media_publish`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

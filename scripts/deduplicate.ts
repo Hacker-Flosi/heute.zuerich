@@ -91,20 +91,19 @@ function isSameEvent(a: RawEvent, b: RawEvent): boolean {
 
   if (!locationMatch) return false
 
-  const timeDiff = timeDiffMinutes(a.time, b.time)
-  if (timeDiff > 30) return false
-
   // Name-Ähnlichkeit prüfen
   const nameA = normalize(a.name)
   const nameB = normalize(b.name)
 
-  // Exakter Name-Match
+  // Exakter Name-Match oder einer enthält den anderen → gleicher Event, Zeit egal
+  // (z.B. mehrere Vorstellungszeiten desselben Events)
   if (nameA === nameB) return true
-
-  // Einer enthält den anderen
   if (nameA.includes(nameB) || nameB.includes(nameA)) return true
 
-  // Fuzzy-Match: Levenshtein-Distanz relativ zur Länge
+  // Fuzzy-Match: Zeitdifferenz als zusätzlicher Filter
+  const timeDiff = timeDiffMinutes(a.time, b.time)
+  if (timeDiff > 30) return false
+
   const maxLen = Math.max(nameA.length, nameB.length)
   if (maxLen === 0) return false
 
