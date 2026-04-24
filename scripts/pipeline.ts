@@ -12,6 +12,7 @@ import { scrapeCoucou } from './scrapers/coucou'
 import { scrapeHellozurich } from './scrapers/hellozurich'
 import { scrapeGangus } from './scrapers/gangus'
 import { scrapeSaiten } from './scrapers/saiten'
+import { scrapeStGallenVenues } from './scrapers/stgallen-venues'
 import { scrapeResidentAdvisor } from './scrapers/residentadvisor'
 // import { scrapePetzi } from './scrapers/petzi'          // Bern: Coming Soon
 // import { scrapeDampfzentrale } from './scrapers/dampfzentrale' // Bern: Coming Soon
@@ -31,7 +32,7 @@ type ScraperFn = (date: string) => Promise<RawEvent[]>
 
 const CITY_CONFIG: Record<string, { twoLayer: boolean; scrapers: ScraperFn[] }> = {
   zuerich:     { twoLayer: true, scrapers: [scrapeEventfrog, scrapeHellozurich, scrapeResidentAdvisor] },
-  stgallen:    { twoLayer: true, scrapers: [scrapeEventfrog, scrapeSaiten] },
+  stgallen:    { twoLayer: true, scrapers: [scrapeEventfrog, scrapeSaiten, scrapeStGallenVenues] },
   luzern:      { twoLayer: true, scrapers: [scrapeGangus, scrapeEventfrog] },
   winterthur:  { twoLayer: true, scrapers: [scrapeEventfrogExtended, scrapeCoucou] },
   // Bern: Coming Soon — Scraper bereit (Petzi + Dampfzentrale), aber Stadt noch nicht aktiv
@@ -694,6 +695,17 @@ async function deleteExpiredEvents() {
   for (const id of expired) tx.delete(id)
   await tx.commit()
   console.log(`  [Cleanup] ${expired.length} abgelaufene Events gelöscht`)
+}
+
+export async function runPipelineForCity(city: string) {
+  const config = CITY_CONFIG[city]
+  if (!config) throw new Error(`Unbekannte Stadt: ${city}`)
+  console.log(`=== Pipeline für ${city.toUpperCase()} ===`)
+  const result = config.twoLayer
+    ? await runTwoLayer(city, config.scrapers)
+    : await runSingleLayer(city, config.scrapers)
+  console.log(`=== Fertig: ${result.counts} Events ===`)
+  return result
 }
 
 export async function runPipeline() {
