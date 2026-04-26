@@ -78,7 +78,7 @@ async function scrapePalace(date: string): Promise<RawEvent[]> {
         locationCity: 'St. Gallen',
       } satisfies RawEvent
     }))
-    results.push(...fetched.filter((e): e is RawEvent => e !== null))
+    fetched.forEach(e => { if (e) results.push(e) })
   }
 
   console.log(`  [stgallen-venues/palace] ${results.length} Events`)
@@ -258,7 +258,7 @@ async function scrapeOya(date: string): Promise<RawEvent[]> {
         locationCity: 'St. Gallen',
       } satisfies RawEvent
     }))
-    results.push(...fetched.filter((e): e is RawEvent => e !== null))
+    fetched.forEach(e => { if (e) results.push(e) })
   }
 
   console.log(`  [stgallen-venues/oya] ${results.length} Events`)
