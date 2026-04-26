@@ -11,11 +11,11 @@ export const revalidate = 3600
 
 const CITIES = [
   { slug: 'zuerich', label: 'Zürich', active: true },
-  { slug: 'basel', label: 'Basel', active: false },
-  { slug: 'bern', label: 'Bern', active: false },
+  { slug: 'basel', label: 'Basel', active: true },
   { slug: 'stgallen', label: 'St.Gallen', active: true },
   { slug: 'luzern', label: 'Luzern', active: true },
   { slug: 'winterthur', label: 'Winterthur', active: true },
+  { slug: 'bern', label: 'Bern', active: false },
 ]
 
 export const metadata = {

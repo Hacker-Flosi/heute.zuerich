@@ -7,7 +7,7 @@
 **waslauft.in** — minimale Multi-City Eventplattform. Beantwortet: "Was läuft heute in [Stadt]?"
 
 - Landing page: waslauft.in → Stadtauswahl
-- Stadtseiten: waslauft.in/zuerich, /stgallen, /luzern, /winterthur
+- Stadtseiten: waslauft.in/zuerich, /stgallen, /luzern, /winterthur, /basel
 - AI-kuratiert, bis zu 30 Events pro Stadt pro Tag
 - Kein Login, keine Filter, keine Kategorien
 - Eine chronologische Liste, Klick → externe URL
@@ -19,13 +19,13 @@
 | Stadt | Slug | Status | Scraper |
 |---|---|---|---|
 | Zürich | `zuerich` | ✅ Aktiv | Eventfrog + hellozurich + Resident Advisor |
-| St. Gallen | `stgallen` | ✅ Aktiv | Eventfrog |
+| St. Gallen | `stgallen` | ✅ Aktiv | Eventfrog + saiten + stgallen-venues |
 | Luzern | `luzern` | ✅ Aktiv | Gangus + Eventfrog |
 | Winterthur | `winterthur` | ✅ Aktiv | Eventfrog (Extended, 25 Seiten + Early-Exit) |
-| Basel | `basel` | 🔜 Coming Soon | — |
+| Basel | `basel` | ✅ Aktiv | Eventfrog + basel-venues (Kaserne + Kuppel + Hirscheneck + RA + denkmal.org) |
 | Bern | `bern` | 🔜 Coming Soon | — |
 
-Basel + Bern sind im Frontend deaktiviert (`active: false` in `src/app/page.tsx`) und werden **nicht** in der Pipeline gescrapt.
+Bern ist im Frontend deaktiviert (`active: false` in `src/app/page.tsx`) und wird **nicht** in der Pipeline gescrapt.
 
 ---
 

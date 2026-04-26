@@ -13,6 +13,7 @@ import { scrapeHellozurich } from './scrapers/hellozurich'
 import { scrapeGangus } from './scrapers/gangus'
 import { scrapeSaiten } from './scrapers/saiten'
 import { scrapeStGallenVenues } from './scrapers/stgallen-venues'
+import { scrapeBaselVenues } from './scrapers/basel-venues'
 import { scrapeResidentAdvisor } from './scrapers/residentadvisor'
 // import { scrapePetzi } from './scrapers/petzi'          // Bern: Coming Soon
 // import { scrapeDampfzentrale } from './scrapers/dampfzentrale' // Bern: Coming Soon
@@ -37,8 +38,7 @@ const CITY_CONFIG: Record<string, { twoLayer: boolean; scrapers: ScraperFn[] }> 
   winterthur:  { twoLayer: true, scrapers: [scrapeEventfrogExtended, scrapeCoucou] },
   // Bern: Coming Soon — Scraper bereit (Petzi + Dampfzentrale), aber Stadt noch nicht aktiv
   // bern: { twoLayer: true, scrapers: [scrapePetzi, scrapeDampfzentrale] },
-  // Basel: Coming Soon — kein guter Scraper verfügbar, vorerst deaktiviert
-  // basel: { twoLayer: true, scrapers: [scrapeEventfrogBasel] },
+  basel: { twoLayer: true, scrapers: [scrapeEventfrog, scrapeBaselVenues] },
 }
 
 // Zürich: blacklist approach (exclude surrounding cities)
