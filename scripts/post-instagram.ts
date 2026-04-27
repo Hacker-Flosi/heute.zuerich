@@ -25,7 +25,7 @@ import {
 
 const GRAPH_BASE = 'https://graph.instagram.com/v21.0'
 
-const CITY_SLUGS = ['zuerich', 'stgallen', 'luzern', 'winterthur'] as const
+const CITY_SLUGS = ['zuerich', 'stgallen', 'luzern', 'winterthur', 'basel'] as const
 
 // ─── Filter: ausverkaufte / abgesagte Events ──────────────────────────────────
 
@@ -46,6 +46,7 @@ const CITY_LABELS: Record<CitySlug, string> = {
   stgallen:   'St.Gallen',
   luzern:     'Luzern',
   winterthur: 'Winterthur',
+  basel:      'Basel',
 }
 
 // ─── Meta Graph API Helpers ───────────────────────────────────────────────────
@@ -218,6 +219,7 @@ export async function postInstagram(): Promise<void> {
     stgallen:   [],
     luzern:     [],
     winterthur: [],
+    basel:      [],
   }
   for (const slug of CITY_SLUGS) {
     const events = await client.fetch<ImageEvent[]>(CURATED_EVENTS_QUERY, { date, city: slug })
