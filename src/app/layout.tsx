@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     locale: 'de_CH',
     images: [
       {
-        url: '/opengraph-image',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
         alt: 'waslauft.in — Was läuft heute?',
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'waslauft.in — Was läuft heute?',
     description: 'Jeden Tag die besten Events in Zürich, St.Gallen und Luzern. Kuratiert, ohne Noise.',
-    images: ['/opengraph-image'],
+    images: ['/og-image.png'],
   },
 }
 
