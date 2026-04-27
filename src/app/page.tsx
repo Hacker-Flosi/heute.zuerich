@@ -28,7 +28,7 @@ export default async function Home() {
     '@type': 'WebSite',
     name: 'waslauft.in',
     url: 'https://waslauft.in',
-    description: 'Jeden Tag die besten Events in Zürich, St.Gallen und Luzern — kuratiert, ohne Noise.',
+    description: 'Jeden Tag die besten Events in Zürich, Basel, St.Gallen, Luzern und Winterthur — kuratiert, ohne Noise.',
     potentialAction: {
       '@type': 'SearchAction',
       target: 'https://waslauft.in/{city}',

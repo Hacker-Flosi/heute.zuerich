@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: `Was läuft heute in ${label}? — waslauft.in`,
       description: `Die besten Events heute in ${label} — Konzerte, Clubs, Kultur und mehr.`,
       url: `https://waslauft.in/${city}`,
-      images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
+      images: [{ url: '/og-image.png', width: 1200, height: 630 }],
     },
   }
 }

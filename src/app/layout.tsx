@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     default: 'waslauft.in — Was läuft heute in deiner Stadt?',
     template: '%s | waslauft.in',
   },
-  description: 'Jeden Tag die besten Events in Zürich, St.Gallen und Luzern — kuratiert, ohne Werbung, ohne Noise.',
+  description: 'Jeden Tag die besten Events in Zürich, Basel, St.Gallen, Luzern und Winterthur — kuratiert, ohne Werbung, ohne Noise.',
   metadataBase: new URL('https://waslauft.in'),
   alternates: {
     canonical: '/',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'waslauft.in — Was läuft heute?',
-    description: 'Jeden Tag die besten Events in Zürich, St.Gallen und Luzern. Kuratiert, ohne Noise.',
+    description: 'Jeden Tag die besten Events in Zürich, Basel, St.Gallen, Luzern und Winterthur. Kuratiert, ohne Noise.',
     url: 'https://waslauft.in',
     siteName: 'waslauft.in',
     type: 'website',
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'waslauft.in — Was läuft heute?',
-    description: 'Jeden Tag die besten Events in Zürich, St.Gallen und Luzern. Kuratiert, ohne Noise.',
+    description: 'Jeden Tag die besten Events in Zürich, Basel, St.Gallen, Luzern und Winterthur. Kuratiert, ohne Noise.',
     images: ['/og-image.png'],
   },
 }
