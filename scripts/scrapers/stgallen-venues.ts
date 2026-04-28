@@ -265,17 +265,123 @@ async function scrapeOya(date: string): Promise<RawEvent[]> {
   return results
 }
 
+// ─── Flon St. Gallen ──────────────────────────────────────────────────────────
+// flon-sg.ch/programm — SSR HTML
+// Listing: a[href*="/veranstaltungen/YYYY-MM-DD"] → Text "SA 2.5.2026 Eventname"
+// Detail-Seite für Zeit: /veranstaltungen/YYYY-MM-DD
+
+async function scrapeFlon(date: string): Promise<RawEvent[]> {
+  const html = await fetchHtml('https://flon-sg.ch/programm')
+  if (!html) {
+    console.log('  [stgallen-venues/flon] Fetch fehlgeschlagen')
+    return []
+  }
+
+  const $ = cheerio.load(html)
+  const results: RawEvent[] = []
+
+  const seenUrls = new Set<string>()
+  $('a[href*="/veranstaltungen/"]').each((_, el) => {
+    const href = $(el).attr('href') ?? ''
+    if (!href.includes(date)) return
+    if (seenUrls.has(href)) return
+    seenUrls.add(href)
+
+    const text = $(el).clone().find('img').remove().end().text().replace(/\s+/g, ' ').trim()
+    // "SA 2.5.2026 Eventname" → strip day + date prefix
+    const nameMatch = text.match(/^[A-Z]{2}\s+\d{1,2}\.\d{1,2}\.\d{4}\s+(.+)$/i)
+    const name = nameMatch ? nameMatch[1].replace(/\s*\/\/\s*$/, '').trim() : ''
+    if (!name) return
+
+    const url = `https://flon-sg.ch${href}`
+    results.push({
+      name,
+      rawName: name,
+      location: 'Flon',
+      date,
+      time: '21:00',
+      url,
+      source: 'stgallen-venues' as const,
+      locationCity: 'St. Gallen',
+    } satisfies RawEvent)
+  })
+
+  // Fetch detail page for time (one request per matched date)
+  if (results.length > 0) {
+    const detail = await fetchHtml(`https://flon-sg.ch/veranstaltungen/${date}`)
+    if (detail) {
+      const $d = cheerio.load(detail)
+      const bodyText = $d('body').text()
+      const timeMatch = bodyText.match(/(\d{2}:\d{2})\s*(?:Uhr|h\b)/)
+        ?? bodyText.match(/Türöffnung[:\s]+(\d{2}:\d{2})/)
+        ?? bodyText.match(/Doors?[:\s]+(\d{2}:\d{2})/i)
+      if (timeMatch) results.forEach(e => { e.time = timeMatch[1] })
+    }
+  }
+
+  console.log(`  [stgallen-venues/flon] ${results.length} Events`)
+  return results
+}
+
+// ─── Talhof St. Gallen ────────────────────────────────────────────────────────
+// talhof.sg/veranstaltungen — Grav CMS SSR
+// Struktur: div.event → span.date ("Di 28.4.2026") + span.title + p ("Türöffnung: 21:00")
+
+async function scrapeTalhof(date: string): Promise<RawEvent[]> {
+  const html = await fetchHtml('https://www.talhof.sg/veranstaltungen')
+  if (!html) {
+    console.log('  [stgallen-venues/talhof] Fetch fehlgeschlagen')
+    return []
+  }
+
+  const [year, month, day] = date.split('-').map(Number)
+  const $ = cheerio.load(html)
+  const results: RawEvent[] = []
+
+  $('div.event').each((_, el) => {
+    const dateText = $(el).find('span.date').text().trim()
+    // "Di 28.4.2026" or "Fr 1.5.2026"
+    const dateMatch = dateText.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/)
+    if (!dateMatch) return
+    if (parseInt(dateMatch[1]) !== day || parseInt(dateMatch[2]) !== month || parseInt(dateMatch[3]) !== year) return
+
+    const name = $(el).find('span.title').text().trim()
+    if (!name) return
+
+    // "Türöffnung: 21:00" or "Türöffnung: 21:00 / Eintritt: 5"
+    const pText = $(el).find('p').first().text()
+    const timeMatch = pText.match(/(\d{2}:\d{2})/)
+    const time = timeMatch ? timeMatch[1] : '21:00'
+
+    results.push({
+      name,
+      rawName: name,
+      location: 'Talhof',
+      date,
+      time,
+      url: 'https://www.talhof.sg/veranstaltungen',
+      source: 'stgallen-venues' as const,
+      locationCity: 'St. Gallen',
+    } satisfies RawEvent)
+  })
+
+  console.log(`  [stgallen-venues/talhof] ${results.length} Events`)
+  return results
+}
+
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
 export async function scrapeStGallenVenues(date: string): Promise<RawEvent[]> {
-  const [palace, grabenhalle, kugl, oya] = await Promise.all([
+  const [palace, grabenhalle, kugl, oya, flon, talhof] = await Promise.all([
     scrapePalace(date),
     scrapeGrabenhalle(date),
     scrapeKugl(date),
     scrapeOya(date),
+    scrapeFlon(date),
+    scrapeTalhof(date),
   ])
 
-  const all = [...palace, ...grabenhalle, ...kugl, ...oya]
+  const all = [...palace, ...grabenhalle, ...kugl, ...oya, ...flon, ...talhof]
   console.log(`[stgallen-venues] ${all.length} Events total für ${date}`)
   return all
 }
