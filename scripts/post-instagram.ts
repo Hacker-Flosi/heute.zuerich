@@ -257,7 +257,7 @@ export async function postInstagram(): Promise<void> {
 
   // Slide 1: Titel
   console.log('[instagram] Generiere Titel-Slide...')
-  feedSlides.push(await generateCombinedTitleSlide(dateShort, firstColorIndex))
+  feedSlides.push(await generateCombinedTitleSlide(dateShort, firstColorIndex, dayOfYear))
 
   // Slides 2-4: Je eine Stadt — AI wählt die 5 besten Events
   for (const slug of CITY_SLUGS) {

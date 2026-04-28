@@ -82,6 +82,11 @@ function loadLogoDataUrl(color = '#ffffff'): string {
   return `data:image/svg+xml;base64,${Buffer.from(colored).toString('base64')}`
 }
 
+function loadTitleOverlayDataUrl(): string {
+  const buf = fs.readFileSync(path.join(process.cwd(), 'scripts', 'assets', 'title-overlay.png'))
+  return `data:image/png;base64,${buf.toString('base64')}`
+}
+
 async function renderFeed(jsx: object, fontRegular: ArrayBuffer, fontBold: ArrayBuffer, fontName: string): Promise<Buffer> {
   const svg = await satori(jsx as any, {
     width: FEED_W, height: FEED_H,
@@ -236,11 +241,29 @@ function buildEventRow(event: ImageEvent, i: number, total: number, compact = fa
 
 // ─── 1. Kombinierter Titel-Slide (Feed, farbiger BG) ─────────────────────────
 
-export async function generateCombinedTitleSlide(dateLabel: string, firstColorIndex = 0): Promise<Buffer> {
+const TITLE_PHRASES = [
+  'Chunsch au?',
+  'Was lauft hüt?',
+  'Wohi?',
+  'Hüt nöd dehei.',
+  'Hüt use?',
+  'Ok, let\'s go',
+  'Wo ane?',
+  'Was machemer?',
+  'Wenn? Wo?',
+  'Bisch debi?',
+]
+
+export function getTitlePhrase(dayOfYear: number): string {
+  return TITLE_PHRASES[dayOfYear % TITLE_PHRASES.length]
+}
+
+export async function generateCombinedTitleSlide(dateLabel: string, firstColorIndex = 0, dayOfYear = 0): Promise<Buffer> {
   const { fontRegular, fontBold, fontName } = loadFonts()
   const bg = getColor(firstColorIndex)
   const fg = getTextColor(bg)
-  const logoDataUrl = loadLogoDataUrl(fg)
+  const overlayDataUrl = loadTitleOverlayDataUrl()
+  const phrase = getTitlePhrase(dayOfYear)
 
   const jsx = {
     type: 'div',
@@ -248,52 +271,54 @@ export async function generateCombinedTitleSlide(dateLabel: string, firstColorIn
       style: {
         width: FEED_W, height: FEED_H,
         background: bg,
-        display: 'flex', flexDirection: 'column',
-        padding: '80px 60px',
+        display: 'flex',
+        position: 'relative',
         fontFamily: fontName,
       },
       children: [
+        // Transparentes PNG-Overlay (enthält "Was lauft .in" + Stadt-Pills)
         {
           type: 'img',
-          props: { src: logoDataUrl, style: { width: 260, height: 52, objectFit: 'contain', objectPosition: 'left center' } },
+          props: {
+            src: overlayDataUrl,
+            style: {
+              position: 'absolute',
+              top: 0, left: 0,
+              width: FEED_W, height: FEED_H,
+            },
+          },
         },
-        { type: 'div', props: { style: { flex: 1 }, children: '' } },
+        // Phrase + Datum unten links
         {
           type: 'div',
           props: {
             style: {
-              fontSize: 120, fontWeight: 700, color: fg,
-              letterSpacing: '-0.04em', lineHeight: 0.9, textTransform: 'uppercase',
+              position: 'absolute',
+              bottom: 80, left: 80,
+              display: 'flex', flexDirection: 'column', gap: 12,
             },
-            children: 'Was läuft heute?',
-          },
-        },
-        {
-          type: 'div',
-          props: {
-            style: { display: 'flex', gap: 16, marginTop: 40 },
-            children: ['Zürich', 'St.Gallen', 'Luzern', 'Winterthur'].map((city) => ({
-              type: 'div',
-              props: {
-                style: {
-                  border: `2px solid ${fg}`, color: fg,
-                  fontSize: 20, fontWeight: 700,
-                  letterSpacing: '0.04em', textTransform: 'uppercase',
-                  padding: '8px 16px', borderRadius: 4,
+            children: [
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    fontSize: 96, fontWeight: 700,
+                    color: fg, letterSpacing: '-0.03em', lineHeight: 1,
+                  },
+                  children: phrase,
                 },
-                children: city,
               },
-            })),
-          },
-        },
-        {
-          type: 'div',
-          props: {
-            style: {
-              fontSize: 56, fontWeight: 700, color: fg,
-              letterSpacing: '0.02em', opacity: 0.7, marginTop: 24,
-            },
-            children: dateLabel,
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    fontSize: 36, fontWeight: 400,
+                    color: fg, letterSpacing: '0.01em', opacity: 0.7,
+                  },
+                  children: dateLabel,
+                },
+              },
+            ],
           },
         },
       ],
