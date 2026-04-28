@@ -150,6 +150,8 @@ const STGALLEN_VENUES: VenueSeed[] = [
   { name: 'Elephant Club', eventfrogName: 'Elephant Club St. Gallen', city: 'stgallen', tier: 'B', category: 'mainstream', active: true, summerBonus: false },
   { name: 'Point Jaune Museum', eventfrogName: 'Point Jaune Museum St. Gallen', city: 'stgallen', tier: 'B', category: 'kultur', active: true, summerBonus: false, website: 'https://postpost.ch' },
   { name: 'Militärkantine', eventfrogName: 'Militärkantine St. Gallen', city: 'stgallen', tier: 'B', category: 'alternative', active: true, summerBonus: false, website: 'https://www.militaerkantine.ch' },
+  { name: 'Flon', eventfrogName: 'Flon St. Gallen', city: 'stgallen', tier: 'B', category: 'alternative', active: true, summerBonus: false, website: 'https://flon-sg.ch' },
+  { name: 'Talhof', eventfrogName: 'Talhof St. Gallen', city: 'stgallen', tier: 'B', category: 'alternative', active: true, summerBonus: false, website: 'https://talhof.sg' },
 ]
 
 // ─── LUZERN ───────────────────────────────────────────────────────────────────

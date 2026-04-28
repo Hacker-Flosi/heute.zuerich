@@ -328,7 +328,7 @@ async function scrapeFlon(date: string): Promise<RawEvent[]> {
 // Struktur: div.event → span.date ("Di 28.4.2026") + span.title + p ("Türöffnung: 21:00")
 
 async function scrapeTalhof(date: string): Promise<RawEvent[]> {
-  const html = await fetchHtml('https://www.talhof.sg/veranstaltungen')
+  const html = await fetchHtml('https://talhof.sg/veranstaltungen')
   if (!html) {
     console.log('  [stgallen-venues/talhof] Fetch fehlgeschlagen')
     return []
@@ -359,7 +359,7 @@ async function scrapeTalhof(date: string): Promise<RawEvent[]> {
       location: 'Talhof',
       date,
       time,
-      url: 'https://www.talhof.sg/veranstaltungen',
+      url: 'https://talhof.sg/veranstaltungen',
       source: 'stgallen-venues' as const,
       locationCity: 'St. Gallen',
     } satisfies RawEvent)
