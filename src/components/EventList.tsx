@@ -44,10 +44,22 @@ const TAB_LABELS = [
 ]
 
 export default function EventList({ cityLabel, today, tomorrow, dayAfter, rainToday, rainTomorrow, rainDayAfter, isRainy, featuredEvents }: EventListProps) {
-  const [activeTab, setActiveTab] = useState<number>(0)
-  const [badWeather, setBadWeather] = useState<boolean>(false)
+  const [activeTab, setActiveTab] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0
+    const saved = sessionStorage.getItem('activeTab')
+    const n = saved ? parseInt(saved, 10) : 0
+    return n >= 0 && n <= 2 ? n : 0
+  })
+  const [badWeather, setBadWeather] = useState<boolean>(isRainy ?? false)
   const [showRain, setShowRain] = useState<boolean>(false)
   const rainTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Sync initial rain state to CSS data attribute on mount
+  useEffect(() => {
+    if (isRainy) {
+      document.documentElement.dataset.rain = 'true'
+    }
+  }, [])
 
   function toggleBadWeather() {
     const next = !badWeather
@@ -103,7 +115,7 @@ export default function EventList({ cityLabel, today, tomorrow, dayAfter, rainTo
             <button
               key={i}
               className={`${styles.tab} ${i === activeTab ? styles.tabActive : ''}`}
-              onClick={() => setActiveTab(i)}
+              onClick={() => { setActiveTab(i); sessionStorage.setItem('activeTab', String(i)) }}
             >
               {label}
             </button>

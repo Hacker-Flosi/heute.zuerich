@@ -62,6 +62,7 @@ export default function RootLayout({
   return (
     <html lang="de">
       <head>
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
         <Script id="gtag-consent" strategy="afterInteractive">{`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}

@@ -1,60 +1,116 @@
-.toggle {
+.wrapper {
   position: fixed;
   bottom: 24px;
-  right: 72px; /* next to ThemeToggle (24px right + 40px width + 8px gap) */
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 200;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1.5px solid var(--border);
+
+  height: 52px;
+  display: flex;
+  align-items: stretch;
+
   background: var(--bg);
-  color: var(--fg);
-  font-size: 1.05rem;
-  cursor: pointer;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  padding: 4px;
+
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+/* Sliding pill */
+.pill {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  border-radius: 999px;
+  background: var(--fg);
+  transition: transform 0.22s ease, background 0.25s ease;
+  pointer-events: none;
+}
+
+.pillLeft {
+  transform: translateX(0);
+}
+
+.pillRight {
+  transform: translateX(100%);
+}
+
+/* Buttons */
+.option {
+  position: relative;
+  z-index: 1;
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  gap: 7px;
+  padding: 0 20px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  transition: color 0.15s ease;
+  border-radius: 999px;
 }
 
-.toggle:hover {
-  background: var(--fg);
+.option:hover {
+  color: var(--fg);
+}
+
+.optionActive {
+  color: var(--bg);
+  cursor: default;
+}
+
+.optionActive:hover {
   color: var(--bg);
 }
 
-/* Active: filter is on — inverted like hover state */
-.active {
-  background: var(--fg);
-  border-color: var(--fg);
-  color: var(--bg);
+/* Material Icon size */
+.icon {
+  font-size: 20px !important;
+  width: 20px;
+  height: 20px;
+  line-height: 20px !important;
+  display: inline-block;
+  flex-shrink: 0;
 }
 
-.active:hover {
-  background: var(--fg);
-  color: var(--bg);
+.label {
+  line-height: 1;
 }
 
-/* Suggested: weather API says it's rainy, but user hasn't toggled yet */
-.suggested {
-  border-color: var(--fg);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(128, 128, 128, 0.4); }
-  50%       { box-shadow: 0 0 0 6px rgba(128, 128, 128, 0); }
-}
-
-/* Rain mode: button follows the rain palette */
-[data-rain="true"] .toggle {
+/* Rain mode */
+.wrapperRain {
   background: #0D1A2D;
   border-color: #ffffff;
-  color: #ffffff;
 }
 
-[data-rain="true"] .toggle:hover,
-[data-rain="true"] .active {
+.wrapperRain .pill {
   background: #ffffff;
-  border-color: #ffffff;
+}
+
+.wrapperRain .optionActive {
   color: #0D1A2D;
+}
+
+.wrapperRain .option:not(.optionActive) {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.wrapperRain .option:not(.optionActive):hover {
+  color: #ffffff;
 }

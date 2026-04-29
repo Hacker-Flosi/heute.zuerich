@@ -82,6 +82,126 @@ function isSummerSeason(): boolean {
   return month >= 5 && month <= 9
 }
 
+// ─── Commercial/Non-Event Filter ─────────────────────────────────────────────
+// Filtert kommerzielle Aktionen, Shop-Events und Non-Events aus allen Scrapers
+
+const COMMERCIAL_NAME_KEYWORDS = [
+  // Shop-Aktionen / Gewinnspiele
+  'giveaway', 'gewinnspiel', 'verlosung', 'rabatt', 'gutschein',
+  'kostenlos testen', 'gewinne einen', 'gewinnen ',
+  'shoppen', 'shopping', 'einkaufen',
+  'infostand', 'info-stand', 'stand pick!',
+  // Gesundheit/Körper-Tests im Laden
+  'knochendichte', 'blutdruckmessung', 'gesundheitscheck', 'hörtest', 'sehtest',
+  'sinne testen', 'sehen & hören', 'sehen und hören',
+  // Religiöse Inhalte / Kirche
+  'kirche', 'kirchliche', 'gottesdienst', 'messe ', 'heilige messe', 'vesper',
+  'taufe', 'firmung', 'kommunion', 'beichte', 'predigt', 'gebet', 'andacht',
+  'kloster', 'stiftskirche', 'münster', 'dom ', 'pfarrei', 'pfarrkirche',
+  'bibelkurs', 'bibelstunde', 'glaubenskurs',
+  // Kinder-Kurs / Kita
+  'kindertreff', 'spielgruppe', 'kindertag',
+  // Kurse die keine Abend-Events sind
+  'anfängerkurs', 'aufbaukurs', 'sprachkurs', 'english intensive', 'english course',
+  'yoga für alle', 'tango argentino',
+  // Laden-Specials / Aktionen
+  'frisch gebacken', 'frisch gebackene',
+  'zu besuch bei', 'gesucht:', ' gesucht ',
+  'atelier couture', 'offenes atelier',
+  'gratis ballon', 'gratis für kinder',
+  'gravur-aktion', 'gravur aktion', 'machen sie ihr',
+  'glücksrad', 'glücksrad-aktion',
+  'styling day', 'styling-day',
+  'kleider und kaffee', 'kleider & kaffee',
+  'sneaker probieren', 'gürtel designen',
+  'genuss einkaufen', 'genuss-einkaufen',
+  'düfte entdecken', 'düfte & farben', 'düfte und farben',
+  'über finanzen erfahren', 'mehr über finanzen',
+  'haar und mode', 'haar & mode',
+  'gaumenfreude', 'reise-quiz', 'reiseberatung', 'fachkundige reise',
+  'design your glasses', 'barfuss-schuhe', 'laufveloparcours',
+  'gewürzwettbewerb',
+  'dip-degustation', 'goba produkte', 'goba-produkte',
+  'leder-accessoire', 'leder accessoire', 'motivationskärtli',
+  'gestalte dein', 'gestalte deine',
+  // Stadtdekorationen / Markt-Dekorationen (keine Events)
+  'brunnenschmuck',
+  // Brand-Promotionen
+  'aperol piaggio', 'piaggio am klosterplatz', 'ap-rol piaggio',
+  // Süsswaren / Confiserie
+  'praliné', 'praline', 'pralinés',
+  // Vintage Textile / Mode Shops
+  'vintage textile', 'fizzenbag',
+  // Shop-Typen in Eventnamen
+  'schuhhaus', 'buchcaf', 'buchcafe', 'concept store', 'butikk',
+  'lückerli', 'läckerli', 'lckerli', 'confiserie', 'goldschmiede', 'chronometrie',
+  'papeterie', 'kosmetik ',
+  'bücherwürmer', 'bucherwurmer', 'glücksmomente', 'glucksmomente',
+  'genussmomente',
+  'kultkosmetik', 'parfümdegustation', 'düftedegustation',
+  // Läden explizit
+  'torso mode', 'jeanswerk', 'stadtblumen', 'weber butikk', 'rituals cosmetics',
+  // Weinbar / Tasting im Shop (nicht Bars)
+  'pop-up weinbar', 'popup weinbar', 'weinbar von', 'tonicdegustation', 'wein-tonic',
+  'pop up weinbar',
+]
+
+const COMMERCIAL_VENUE_KEYWORDS = [
+  // Medizin / Gesundheit / Optik
+  'drogerie', 'reformhaus', 'apotheke', 'optiker', 'optik&', 'optik ',
+  // Transport / Infrastruktur
+  'parkhaus', 'parkgarage', 'cityparking',
+  // Mode / Schuhe
+  'schuhgeschäft', 'schuhhaus',
+  'modegeschäft', 'botty', 'torso mode', 'jeanswerk', 'mode weber',
+  'weber butikk', 'zazou', 'concept store', 'butikk', 'boutique',
+  'elisabeth berger', 'tiefenbacher schuhe', 'nisago',
+  // Kaufhäuser / Supermärkte
+  'manor ag', 'manor ', 'migros', 'coop',
+  // Elektronik / Uhren
+  'bang & olufsen', 'bang olufsen', 'chronometrie', 'goldschmiede', 'labhart',
+  // Café / Konditorei ohne Veranstaltungscharakter
+  'buchcaf', 'buchcafe', 'cafe gschwend', 'stadtbistro', 'buchcafé',
+  // Blumen
+  'stadtblumen gmbh', 'creativ floristik', 'flippy shop', 'ideenreich petra',
+  // Papier / Büro
+  'papeterie', 'zum schiff ag',
+  // Kosmetik / Beauty / Düfte
+  'rituals cosmetics', 'kosmetikstudio', 'iqos', 'opal18',
+  // Süsswaren / Konfiserie / Pralinés
+  'lückerli', 'läckerli', 'lckerli huus', 'konfiserie', 'praliné', 'praline scherrer',
+  // Atelier / Nähkurs (kein Event)
+  'lehratelier', 'nähstudio', 'couture lehratelier',
+  // Buchhandlung
+  'buchhandlung', 'buchcafé benedikt', 'benedikt',
+  // Galerie nur mit Weinverkauf
+  'glen fahrn',
+  // Vintage Textil / Textil-Shops
+  'vintage textile', 'fizzen', 'fizzenbag',
+  // Weitere bekannte Läden / Shops
+  'kaffee baumgartner', 'kleika', 'acrevis bank',
+  'kuoni', 'hotelplan', 'dertour',
+  'einstoffen', 'brand store',
+  'schneider schuhe', 'schuhe ag', 'transa',
+  'baettig', 'pro table',
+  'atelier stella', 'univo', 'orell füssli', 'rösslitor',
+  'lush', 'zollibolli', 'bonneheure', 'bean to bar', 'schokoladenmanufaktur',
+  'focacceria', 'haus olé', 'haus ole',
+  // Kirchen / Religiöse Locations
+  'kirche ', 'kirchgemeinde', 'pfarrkirche', 'stiftskirche', 'kapuzinerkloster',
+  'münster', 'kathedrale', 'kloster', 'pfarrei', 'heilsarmee',
+  // Übrige bekannte Läden
+  'weber-butikk',
+]
+
+function isCommercialEvent(event: RawEvent): boolean {
+  const name = event.name.toLowerCase()
+  const loc = event.location.toLowerCase()
+  if (COMMERCIAL_NAME_KEYWORDS.some(kw => name.includes(kw))) return true
+  if (COMMERCIAL_VENUE_KEYWORDS.some(kw => loc.includes(kw))) return true
+  return false
+}
+
 function geoFilterZuerich(event: RawEvent): boolean {
   const loc = (event.location + ' ' + (event.locationCity ?? '')).toLowerCase()
   return !ZH_EXCLUDED.some((excl) => loc.includes(excl))
@@ -341,8 +461,14 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
     if (geoExcluded > 0)
       console.log(`  [Geo] ${geoExcluded} Events ausgeschlossen`)
 
+    // ── Commercial filter (Shop-Aktionen, Läden, Non-Events)
+    const cleanFiltered = geoFiltered.filter(e => !isCommercialEvent(e))
+    const commercialExcluded = geoFiltered.length - cleanFiltered.length
+    if (commercialExcluded > 0)
+      console.log(`  [Commercial] ${commercialExcluded} Shop/Non-Events ausgeschlossen`)
+
     // ── Venue URL enrichment
-    for (const e of geoFiltered) {
+    for (const e of cleanFiltered) {
       if (!e.url || isAggregatorUrl(e.url)) {
         const v = lookupVenueUrl(e.location, city)
         if (v) e.url = v
@@ -354,7 +480,7 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
     const layer1: RawEvent[] = []
     const remainder: RawEvent[] = []
 
-    for (const e of geoFiltered) {
+    for (const e of cleanFiltered) {
       const venue = matchVenue(e, venues, summer)
       if (venue) {
         e.layer = 'venue'
@@ -440,7 +566,7 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
     const weather = await fetchWeather(city)
     if (weather?.isRainy) {
       console.log(`  [Rain] ${weather.description} — kuratiere Rain Reserve...`)
-      const unusedPool = geoFiltered.filter((e) => !curatedIds.has(e.name))
+      const unusedPool = cleanFiltered.filter((e) => !curatedIds.has(e.name))
       try {
         const rainPicks = await curateRainReserve(unusedPool, city)
         for (const pick of rainPicks) {

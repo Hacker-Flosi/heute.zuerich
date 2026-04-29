@@ -3,8 +3,8 @@
   bottom: 24px;
   right: 24px;
   z-index: 200;
-  width: 40px;
-  height: 40px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   border: 1.5px solid var(--border);
   background: var(--bg);
@@ -20,3 +20,15 @@
   background: var(--fg);
   color: var(--bg);
 }
+
+/* Disabled in rain mode */
+.toggle:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.toggle:disabled:hover {
+  background: var(--bg);
+  color: var(--fg);
+}
+
