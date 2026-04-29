@@ -8,6 +8,7 @@ import EventBlock from './EventBlock'
 import FeaturedEventCallout from './FeaturedEventCallout'
 import LogoAnimated from './LogoAnimated'
 import BadWeatherToggle from './BadWeatherToggle'
+import ThemeToggle from './ThemeToggle'
 import RainIntro from './RainIntro'
 import RainEffect from './RainEffect'
 import SiteFooter from './SiteFooter'
@@ -168,13 +169,18 @@ export default function EventList({ cityLabel, today, tomorrow, dayAfter, rainTo
         )}
       </ul>
 
-      {FEATURE_BADWEATHER && (
-        <BadWeatherToggle
-          active={badWeather}
-          onToggle={toggleBadWeather}
-          autoSuggested={isRainy}
-        />
-      )}
+      <div className={styles.bottomControls}>
+        {FEATURE_BADWEATHER && (
+          <BadWeatherToggle
+            active={badWeather}
+            onToggle={toggleBadWeather}
+            autoSuggested={isRainy}
+          />
+        )}
+        <div className={styles.themeWrapper}>
+          <ThemeToggle />
+        </div>
+      </div>
 
       {[...today, ...tomorrow, ...dayAfter].some(e => e.spotifyUrl) && (
         <div className={styles.spotifyDisclaimer}>

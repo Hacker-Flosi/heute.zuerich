@@ -3,7 +3,6 @@
 import type { Metadata } from 'next'
 import Script from 'next/script'
 import CookieBanner from '@/components/CookieBanner'
-import ThemeToggle from '@/components/ThemeToggle'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -74,7 +73,6 @@ export default function RootLayout({
       </head>
       <body>
         {children}
-        <ThemeToggle />
         <CookieBanner />
       </body>
     </html>
