@@ -61,6 +61,35 @@ function matchesDate(dateText: string, targetDate: string): boolean {
   return false
 }
 
+// Venues/Locations die keine Event-Locations sind — aus Saiten-Results ausschliessen
+const SAITEN_VENUE_BLOCKLIST = [
+  'drogerie', 'reformhaus', 'apotheke', 'optiker', 'parkhaus', 'parkgarage',
+  'buchhandlung', 'bücher', 'bibliothek', 'stiftsbibliothek',
+  'universität', 'university', 'hochschule', 'hsg', 'square hsg',
+  'kindertreff', 'kindertagesstätte', 'kita', 'spielgruppe',
+  'tangoschule', 'tanzschule', 'yogastudio', 'yoga',
+  'supermarkt', 'migros', 'coop',
+  'stückelberg', 'english teachers',
+]
+
+const SAITEN_NAME_BLOCKLIST = [
+  'kindertreff', 'kindertag', 'spielgruppe',
+  'yoga', 'tango argentino', 'tanzkurs', 'anfängerkurs',
+  'knochendichte', 'blutdruck', 'gesundheits',
+  'führung durch', 'öffentliche führung',
+  'english intensive', 'english course', 'sprachkurs',
+]
+
+function isBlockedVenue(location: string): boolean {
+  const loc = location.toLowerCase()
+  return SAITEN_VENUE_BLOCKLIST.some(kw => loc.includes(kw))
+}
+
+function isBlockedName(name: string): boolean {
+  const n = name.toLowerCase()
+  return SAITEN_NAME_BLOCKLIST.some(kw => n.includes(kw))
+}
+
 /** Extract organizer URL from a saiten.ch event detail page */
 async function resolveOrganizerUrl(saitenUrl: string, location: string): Promise<string> {
   const html = await fetchHtml(saitenUrl)
@@ -128,6 +157,8 @@ function parseItems(html: string, date: string, seenSlugs: Set<string>): {
     const place = $(el).find('.a-calendar-item__location__place').text().trim()
     const city = $(el).find('.a-calendar-item__location__name').text().trim()
     if (!city.toLowerCase().match(/st\.?\s*gallen/)) return
+    if (isBlockedVenue(place)) return
+    if (isBlockedName(name)) return
 
     const rawTime = $(el).find('.a-calendar-item__time').text().trim()
     const timeMatch = rawTime.match(/(\d{2}:\d{2})/)
