@@ -306,11 +306,11 @@ export async function postInstagram(): Promise<void> {
   const feedCaption = [
     `Was läuft heute? ${dateShort}`,
     '',
-    'Zürich · St.Gallen · Luzern · Winterthur',
+    'Zürich · St.Gallen · Luzern · Winterthur · Basel',
     '',
     '→ waslauft.in',
     '',
-    '#zürich #stgallen #luzern #winterthur #waslauft #schweiz #ausgehen #events #wasläuft',
+    '#zürich #stgallen #luzern #winterthur #basel #waslauft #schweiz #ausgehen #events #wasläuft',
   ].join('\n')
 
   await postCarousel(feedSlides, feedCaption, `feed-${date}`, ts, igId, token)
@@ -323,29 +323,49 @@ export async function postInstagram(): Promise<void> {
     return
   }
 
+  console.log(`[instagram] Events pro Stadt: ${CITY_SLUGS.map((s) => `${CITY_LABELS[s]}=${eventsByCity[s].length}`).join(', ')}`)
+
   for (const slug of CITY_SLUGS) {
     if (eventsByCity[slug].length === 0) {
-      console.log(`\n[instagram] ${CITY_LABELS[slug]}: keine Events — Stories übersprungen`)
+      console.log(`\n[instagram] ${CITY_LABELS[slug]}: keine Events (curated=true) — Stories übersprungen`)
       continue
     }
 
     console.log(`\n[instagram] ── Stories ${CITY_LABELS[slug]} ──`)
-    const cityData: CityEvents = { label: CITY_LABELS[slug], events: eventsByCity[slug] }
+    // Abend-Events (≥18:00) zuerst, dann Tagesprogramm — max. 14 Events (2 Slides à 7)
+    const MAX_STORY_EVENTS = 14
+    const all = eventsByCity[slug]
+    const evening = all.filter((e) => (e.time ?? '00:00') >= '18:00')
+    const daytime = all.filter((e) => (e.time ?? '00:00') < '18:00')
+    const storyEvents = [...evening, ...daytime].slice(0, MAX_STORY_EVENTS)
+    console.log(`[instagram] ${CITY_LABELS[slug]}: ${evening.length} Abend + ${daytime.length} Tag → ${storyEvents.length} für Stories`)
+    const cityData: CityEvents = { label: CITY_LABELS[slug], events: storyEvents }
     const w: WeatherResult = weather[slug]
     const storySlides: Buffer[] = []
 
-    if (w.isRain) {
-      console.log(`[instagram] ${CITY_LABELS[slug]}: Bad-Weather Stories (${w.description})`)
-      storySlides.push(await generateBadWeatherStoryTitleSlide(cityData, dateShort, w.description))
-      const eventSlides = await generateBadWeatherStoryEventSlides(cityData)
-      storySlides.push(...eventSlides)
-    } else {
-      storySlides.push(await generateStoryTitleSlide(cityData, dateShort))
-      const eventSlides = await generateStoryEventSlides(cityData)
-      storySlides.push(...eventSlides)
+    try {
+      if (w.isRain) {
+        console.log(`[instagram] ${CITY_LABELS[slug]}: Bad-Weather Stories (${w.description})`)
+        storySlides.push(await generateBadWeatherStoryTitleSlide(cityData, dateShort, w.description))
+        const eventSlides = await generateBadWeatherStoryEventSlides(cityData)
+        storySlides.push(...eventSlides)
+      } else {
+        storySlides.push(await generateStoryTitleSlide(cityData, dateShort))
+        const eventSlides = await generateStoryEventSlides(cityData)
+        storySlides.push(...eventSlides)
+      }
+    } catch (err) {
+      console.error(`[instagram] ❌ Story-Generierung ${CITY_LABELS[slug]} fehlgeschlagen:`, err)
+      await sendCrashAlert(`Instagram Story-Generierung ${CITY_LABELS[slug]}`, err)
+      continue
     }
 
     console.log(`[instagram] ${CITY_LABELS[slug]}: ${storySlides.length} Story-Slides`)
+
+    if (storySlides.length === 0) {
+      console.log(`[instagram] ${CITY_LABELS[slug]}: 0 Slides generiert — übersprungen`)
+      continue
+    }
 
     try {
       await postStories(storySlides, `${slug}-${date}`, ts, igId, token)
