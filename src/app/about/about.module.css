@@ -7,12 +7,40 @@
   background: var(--bg);
 }
 
-/* ── Sections ── */
+.header {
+  padding: 1.2rem 1rem 0.8rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
 
-.section {
+.logo {
+  display: flex;
+  align-items: flex-end;
+  text-decoration: none;
+  line-height: 1;
+  color: var(--fg);
+}
+
+.logoImage {
+  display: block;
+  height: 1.6rem;
+  width: auto;
+  opacity: 0.6;
+}
+
+.current {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.8rem;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--fg);
+}
+
+.content {
   padding: 2rem 1rem;
   border-top: 1px solid var(--border-muted);
-  max-width: 640px;
 }
 
 .headline {
@@ -20,276 +48,90 @@
   font-weight: 700;
   font-size: 2.5rem;
   letter-spacing: -0.03em;
-  line-height: 1.05;
+  line-height: 1.1;
   color: var(--fg);
   margin-bottom: 1.5rem;
   text-transform: uppercase;
 }
 
-.sectionHeadline {
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 1.25rem;
-}
-
 .body {
   font-family: var(--font-mono);
-  font-size: 0.8rem;
-  line-height: 1.75;
-  color: var(--fg);
-  opacity: 0.7;
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: var(--muted);
   margin-bottom: 1rem;
 }
 
-/* ── Wie funktioniert's ── */
-
-.featureList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.featureItem {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.featureLabel {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.85rem;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
-  color: var(--fg);
-}
-
-.featureText {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  line-height: 1.65;
-  color: var(--fg);
-  opacity: 0.65;
-}
-
-/* ── Städte ── */
-
-.cityList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.cityItem {
+.contact {
+  padding: 2rem 1rem;
   border-top: 1px solid var(--border-muted);
 }
 
-.cityItem:last-child {
-  border-bottom: 1px solid var(--border-muted);
-}
-
-.cityRow {
-  display: flex;
-  flex-direction: column;
-}
-
-.cityLink,
-.cityInactive {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 0 0.5rem;
+.contactHeadline {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
-  color: var(--fg);
-  text-decoration: none;
-}
-
-.cityInactive {
-  padding: 0.75rem 0;
-}
-
-.cityLink:hover {
-  opacity: 0.6;
-}
-
-.cityInactive {
-  opacity: 0.35;
-}
-
-.venueList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  padding-bottom: 0.75rem;
-}
-
-.venueTag {
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--fg);
-  opacity: 0.45;
-  border: 1px solid var(--border-muted);
-  padding: 0.2em 0.55em;
-}
-
-.venueTagS {
-  opacity: 0.7;
-  border-color: var(--border);
-}
-
-.cityActive,
-.citySoon {
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.cityActive {
-  color: var(--fg);
-  opacity: 0.5;
-}
-
-.citySoon {
-  color: var(--muted);
-}
-
-.inlineLink {
-  color: var(--fg);
-  opacity: 0.7;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.inlineLink:hover {
-  opacity: 1;
-}
-
-/* ── FAQ ── */
-
-.faqList {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.faqItem {
-  padding: 1rem 0;
-  border-top: 1px solid var(--border-muted);
-}
-
-.faqItem:last-child {
-  border-bottom: 1px solid var(--border-muted);
-}
-
-.faqQ {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.9rem;
-  letter-spacing: -0.01em;
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
   color: var(--fg);
   text-transform: uppercase;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
-
-.faqA {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  line-height: 1.65;
-  color: var(--fg);
-  opacity: 0.6;
-  margin: 0;
-}
-
-/* ── Feedback ── */
-
-.feedbackLink {
-  display: inline-block;
-  margin-top: 0.75rem;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.9rem;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
-  color: var(--fg);
-  text-decoration: none;
-  border-bottom: 2px solid var(--fg);
-  padding-bottom: 0.1em;
-  transition: opacity 0.15s ease;
-}
-
-.feedbackLink:hover {
-  opacity: 0.5;
-}
-
-/* ── Buy Me a Coffee ── */
-
-.bmcButton {
-  display: inline-block;
-  margin-top: 1rem;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.9rem;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
-  color: var(--fg);
-  text-decoration: none;
-  border: 1.5px solid var(--border);
-  padding: 0.65rem 1.25rem;
-  transition: opacity 0.15s ease;
-}
-
-.bmcButton:hover {
-  opacity: 0.6;
-}
-
-/* ── Kontakt ── */
 
 .email {
   display: inline-block;
-  margin-top: 0.75rem;
+  margin-top: 1rem;
   font-family: var(--font-mono);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: var(--fg);
   text-decoration: none;
   letter-spacing: 0.02em;
   border-bottom: 1px solid var(--fg);
-  opacity: 0.8;
-  transition: opacity 0.15s ease;
 }
 
 .email:hover {
-  opacity: 0.4;
+  opacity: 0.6;
 }
 
-/* ── Responsive ── */
+.footer {
+  margin-top: auto;
+  padding: 2.5rem 1rem;
+  display: flex;
+  gap: 1.5rem;
+  border-top: 1px solid var(--border-muted);
+}
+
+.footer a {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--fg);
+  opacity: 0.55;
+  text-decoration: none;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: opacity 0.2s ease;
+}
+
+.footer a:hover {
+  opacity: 0.8;
+}
 
 @media (min-width: 768px) {
-  .section {
-    padding: 2.5rem 2rem;
-  }
+  .header { padding: 1.5rem 2rem 1rem; }
+  .logo { font-size: 2.4rem; }
+  .logoImage { height: 2rem; }
+  .current { font-size: 2.4rem; }
+  .content { padding: 2.5rem 2rem; }
   .headline { font-size: 3.5rem; }
+  .contact { padding: 2.5rem 2rem; }
+  .footer { padding: 2rem; }
 }
 
 @media (min-width: 1024px) {
-  .section {
-    padding: 3rem 3rem;
-  }
-  .headline { font-size: 4rem; }
+  .header { padding: 2rem 3rem 1rem; }
+  .logo { font-size: 2.8rem; }
+  .logoImage { height: 2.4rem; }
+  .current { font-size: 2.8rem; }
+  .content { padding: 3rem; }
+  .contact { padding: 3rem; }
+  .footer { padding: 2.5rem 3rem; }
 }
