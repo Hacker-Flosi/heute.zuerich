@@ -176,13 +176,19 @@
 .bottomControls {
   position: fixed;
   bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
   display: flex;
   flex-direction: row;
+  justify-content: center;
   align-items: flex-end;
   gap: 12px;
   z-index: 200;
+  pointer-events: none;
+}
+
+.bottomControls > * {
+  pointer-events: auto;
 }
 
 /* ThemeToggle wrapper — grouped on mobile, fixed right on desktop */
