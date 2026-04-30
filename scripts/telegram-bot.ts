@@ -37,24 +37,28 @@ function formatDate(dateStr: string): string {
   return `${days[d.getDay()]} ${d.getDate()}.${d.getMonth() + 1}.`
 }
 
-async function getLastInstagramPost(): Promise<string> {
+async function getLastInstagramPost(): Promise<{ timestamp: string; mediaType: string; permalink: string } | null> {
   const igId = process.env.INSTAGRAM_ACCOUNT_ID
   const token = process.env.META_ACCESS_TOKEN
-  if (!igId || !token) return 'nicht konfiguriert'
+  if (!igId || !token) return null
 
   try {
-    const res = await fetch(`${GRAPH_BASE}/${igId}/media?fields=timestamp&limit=1&access_token=${token}`)
-    const data = await res.json() as { data?: { timestamp: string }[] }
-    const ts = data?.data?.[0]?.timestamp
-    if (!ts) return 'kein Post gefunden'
-    const d = new Date(ts)
-    return d.toLocaleString('de-CH', {
-      timeZone: 'Europe/Zurich',
-      day: '2-digit', month: '2-digit',
-      hour: '2-digit', minute: '2-digit',
-    }) + ' Uhr'
+    const res = await fetch(`${GRAPH_BASE}/${igId}/media?fields=timestamp,media_type,permalink&limit=1&access_token=${token}`)
+    const data = await res.json() as { data?: { timestamp: string; media_type: string; permalink: string }[] }
+    const post = data?.data?.[0]
+    if (!post) return null
+    const d = new Date(post.timestamp)
+    return {
+      timestamp: d.toLocaleString('de-CH', {
+        timeZone: 'Europe/Zurich',
+        weekday: 'short', day: '2-digit', month: '2-digit',
+        hour: '2-digit', minute: '2-digit',
+      }) + ' Uhr',
+      mediaType: post.media_type === 'CAROUSEL_ALBUM' ? 'Karussell' : post.media_type === 'IMAGE' ? 'Bild' : post.media_type,
+      permalink: post.permalink,
+    }
   } catch {
-    return 'Fehler beim Abrufen'
+    return null
   }
 }
 
@@ -63,7 +67,7 @@ async function getStatus(): Promise<string> {
   const dates = [getDate(0), getDate(1), getDate(2)]
 
   // Alle Daten parallel laden
-  const [counts, weather, lastPost] = await Promise.all([
+  const [counts, weather, igPost] = await Promise.all([
     client.fetch<Record<string, number>>(`{
       'zh_0': count(*[_type=='event' && city=='zuerich'    && date==$d0]),
       'zh_1': count(*[_type=='event' && city=='zuerich'    && date==$d1]),
@@ -119,7 +123,9 @@ async function getStatus(): Promise<string> {
     weatherLine,
     ``,
     `📸 <b>Letzter Instagram-Post</b>`,
-    lastPost,
+    igPost
+      ? `${igPost.timestamp} · ${igPost.mediaType}\n${igPost.permalink}`
+      : 'nicht konfiguriert',
     ``,
     `⏰ <b>Nächste Ausführungen</b>`,
     `<code>Pipeline    ${nextCron(5, 0)}</code>`,

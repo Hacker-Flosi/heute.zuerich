@@ -47,11 +47,11 @@ function buildMessage(report: PipelineReport, date: string): string {
   lines.push('')
 
   if (report.instagramPosted) {
-    lines.push('📸 Instagram gepostet')
+    lines.push('📸 Instagram gepostet ✓')
   } else if (report.instagramError) {
     lines.push(`📸 Instagram fehlgeschlagen: ${report.instagramError}`)
   } else {
-    lines.push('📸 Instagram nicht konfiguriert')
+    lines.push('📸 Instagram folgt um 11:00 Uhr')
   }
 
   if (report.errors.length > 0) {
