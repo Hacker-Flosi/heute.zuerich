@@ -42,7 +42,7 @@ export default function ThemeToggle() {
       aria-label={theme === 'light' ? 'Dark Mode aktivieren' : 'Light Mode aktivieren'}
     >
       {colorful ? (
-        <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <g clipPath="url(#colormode)">
             <rect width="32" height="6" fill="#00E05A"/>
             <rect y="6" width="32" height="6" fill="#FE01FF"/>

@@ -13,8 +13,8 @@ const HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; waslauft-bot/1.0)' }
 const TIMEOUT_MS = 10_000
 const CONCURRENCY = 5
 // Max pages to scan — each page has 50 items, events are chronological
-// Pages 1-8 cover roughly today + 3 days ahead
-const MAX_PAGES = 8
+// Pages 1-12 cover roughly today + 4 days ahead, even on busy days like 1. Mai
+const MAX_PAGES = 12
 
 async function fetchHtml(url: string): Promise<string | null> {
   try {
