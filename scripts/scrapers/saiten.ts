@@ -13,8 +13,8 @@ const HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; waslauft-bot/1.0)' }
 const TIMEOUT_MS = 10_000
 const CONCURRENCY = 5
 // Max pages to scan — each page has 50 items, events are chronological
-// Pages 1-12 cover roughly today + 4 days ahead, even on busy days like 1. Mai
-const MAX_PAGES = 12
+// On busy days (holidays), übermorgen events can appear on pages 10+
+const MAX_PAGES = 20
 
 async function fetchHtml(url: string): Promise<string | null> {
   try {
@@ -123,11 +123,9 @@ async function resolveOrganizerUrl(saitenUrl: string, location: string): Promise
 
 function parseItems(html: string, date: string, seenSlugs: Set<string>): {
   entries: Array<{ slug: string; name: string; location: string; time: string }>
-  pastDate: boolean
 } {
   const $ = cheerio.load(html)
   const entries: Array<{ slug: string; name: string; location: string; time: string }> = []
-  let pastDate = false
 
   $('.a-calendar-item').each((_, el) => {
     const href = (el as any).attribs?.href ?? ''
@@ -137,17 +135,6 @@ function parseItems(html: string, date: string, seenSlugs: Set<string>): {
     seenSlugs.add(slug)
 
     const rawDate = $(el).find('.a-calendar-item__date').text().replace(/\s+/g, '').trim()
-
-    // Stop scanning if we've gone past the target date
-    const [, month, day] = date.split('-').map(Number)
-    const firstMatch = rawDate.match(/(\d{1,2})\.(\d{1,2})\./)
-    if (firstMatch) {
-      const itemDay = parseInt(firstMatch[1]), itemMo = parseInt(firstMatch[2])
-      if (itemMo > month || (itemMo === month && itemDay > day)) {
-        pastDate = true
-        return
-      }
-    }
 
     if (!matchesDate(rawDate, date)) return
 
@@ -167,7 +154,7 @@ function parseItems(html: string, date: string, seenSlugs: Set<string>): {
     entries.push({ slug, name, location: place, time })
   })
 
-  return { entries, pastDate }
+  return { entries }
 }
 
 export async function scrapeSaiten(date: string): Promise<RawEvent[]> {
@@ -178,11 +165,8 @@ export async function scrapeSaiten(date: string): Promise<RawEvent[]> {
     const html = await fetchApiPage(page)
     if (!html) break
 
-    const { entries, pastDate } = parseItems(html, date, seenSlugs)
+    const { entries } = parseItems(html, date, seenSlugs)
     allEntries.push(...entries)
-
-    // Stop if we've gone past the target date
-    if (pastDate) break
   }
 
   const entries = allEntries
