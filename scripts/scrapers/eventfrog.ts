@@ -145,7 +145,14 @@ export async function scrapeEventfrog(
 }
 
 
-/** Wrapper für kleinere Städte (Winterthur etc.) — mehr Seiten, Verzögerung, Early-Exit. */
+/** Wrapper für kleinere Städte (Winterthur etc.) — mehr Seiten, Verzögerung, kein Early-Exit. */
 export function scrapeEventfrogExtended(date: string): Promise<RawEvent[]> {
-  return scrapeEventfrog(date, 25, 1500, true)
+  // earlyExit=false: für Übermorgen sind Events über viele Seiten verteilt, kein vorzeitiger Stop
+  return scrapeEventfrog(date, 25, 1500, false)
+}
+
+/** Wrapper für mittlere Städte (Luzern, St. Gallen) — mehr Seiten als Default, kleiner Delay. */
+export function scrapeEventfrogMedium(date: string): Promise<RawEvent[]> {
+  // maxPages=12: Übermorgen-Events liegen bei busy Wochenenden auf Seiten 6–10
+  return scrapeEventfrog(date, 12, 300, false)
 }
