@@ -69,7 +69,7 @@ const VENUE_MAP: Record<string, VenueEntry[]> = {
 
   basel: [
     // Clubs / Nightlife
-    { patterns: ['nordstern'], url: 'https://nordstern.bar' },
+    { patterns: ['nordstern'], url: 'https://nordstern.ch' },
     { patterns: ['elysia'], url: 'https://elysia.ch' },
     { patterns: ['viertel klub', 'das viertel', 'dasviertel'], url: 'https://www.dasviertel.ch' },
     { patterns: ['sommercasino'], url: 'https://sommercasino.ch' },
