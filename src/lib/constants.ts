@@ -33,13 +33,16 @@ export function getTextColor(hex: string): '#000000' | '#ffffff' {
 
 // Datumshelfer
 export const getDateString = (offset: number = 0): string => {
-  const d = new Date()
+  // Use Swiss timezone so midnight–2 AM doesn't show yesterday's events
+  const zurichDate = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Zurich' })
+  const d = new Date(zurichDate)
   d.setDate(d.getDate() + offset)
   return d.toISOString().split('T')[0] // YYYY-MM-DD
 }
 
 export const formatDateLabel = (offset: number): string => {
-  const d = new Date()
+  const zurichDate = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Zurich' })
+  const d = new Date(zurichDate)
   d.setDate(d.getDate() + offset)
   const days = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
   const months = [
@@ -50,7 +53,8 @@ export const formatDateLabel = (offset: number): string => {
 }
 
 export const formatDateShort = (offset: number): string => {
-  const d = new Date()
+  const zurichDate = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Zurich' })
+  const d = new Date(zurichDate)
   d.setDate(d.getDate() + offset)
   const days = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
   const months = [
