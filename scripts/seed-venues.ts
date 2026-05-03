@@ -76,7 +76,7 @@ const BASEL_VENUES: VenueSeed[] = [
   { name: 'Musical Theater Basel', eventfrogName: 'Musical Theater Basel', city: 'basel', tier: 'S', category: 'kultur', active: true, summerBonus: false, website: 'https://musicaltheater.ch' },
   { name: 'Kaserne Basel', eventfrogName: 'Kaserne Basel', city: 'basel', tier: 'S', category: 'alternative', active: true, summerBonus: false, website: 'https://kaserne-basel.ch' },
   // Tier A — Electronic/Club
-  { name: 'Nordstern', eventfrogName: 'Nordstern Basel', city: 'basel', tier: 'A', category: 'electronic', active: true, summerBonus: false, website: 'https://nordstern.ch' },
+  { name: 'Nordstern', eventfrogName: 'Nordstern Basel', city: 'basel', tier: 'A', category: 'electronic', active: true, summerBonus: false, website: 'https://www.nordstern.com' },
   { name: 'Viertel Klub', eventfrogName: 'Viertel Klub Basel', city: 'basel', tier: 'A', category: 'electronic', active: true, summerBonus: false, website: 'https://www.dasviertel.ch' },
   { name: 'Elysia', eventfrogName: 'Elysia Basel', city: 'basel', tier: 'A', category: 'electronic', active: true, summerBonus: false, website: 'https://elysia.ch' },
   { name: 'Balz Klub', eventfrogName: 'Balz Klub Basel', city: 'basel', tier: 'A', category: 'electronic', active: true, summerBonus: false, website: 'https://www.balzklub.ch' },
