@@ -5,6 +5,7 @@ import { getSanityClient } from '@/lib/sanity'
 import { SITE_SETTINGS_QUERY } from '@/lib/queries'
 import LogoAnimated from '@/components/LogoAnimated'
 import SiteFooter from '@/components/SiteFooter'
+import ClearRainMode from '@/components/ClearRainMode'
 import styles from './page.module.css'
 
 export const revalidate = 3600
@@ -40,6 +41,7 @@ export default async function Home() {
 
   return (
     <main className={styles.main}>
+      <ClearRainMode />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
