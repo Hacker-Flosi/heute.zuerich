@@ -1,8 +1,8 @@
 // src/app/impressum/page.tsx
 
-import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
+import ClearRainMode from '@/components/ClearRainMode'
 import styles from '../about/about.module.css'
 import type { Metadata } from 'next'
 
@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 export default function ImpressumPage() {
   return (
     <main className={styles.main}>
+      <ClearRainMode />
       <SiteHeader current="Impressum" />
 
       <section className={styles.content}>

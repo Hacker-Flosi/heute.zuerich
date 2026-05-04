@@ -413,6 +413,59 @@
 
 /* ── Responsive ── */
 
+/* ── Content pages (Datenschutz / Impressum) ── */
+
+.content {
+  flex: 1;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.content .body {
+  color: var(--fg);
+}
+
+.contactHeadline {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg);
+  margin: 2rem 0 0.6rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 2px solid var(--fg);
+}
+
+.email {
+  font-family: var(--font-mono);
+  font-size: inherit;
+  color: #FF0000;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;
+}
+
+.email:hover { opacity: 0.7; }
+
+.revokeButton {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--fg);
+  background: transparent;
+  border: 2px solid var(--fg);
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.revokeButton:hover {
+  background: var(--fg);
+  color: var(--bg);
+}
+
 @media (min-width: 768px) {
 
   /* Global padding */
@@ -423,6 +476,9 @@
   .cityBlockHeader { padding: 0.6rem 1rem; margin: 0.4rem 2rem; }
   .venueList       { padding: 0.6rem 2rem; }
   .sectionContent  { padding: 2rem; }
+
+  /* Content pages */
+  .content { padding: 2.5rem 2rem 4rem; max-width: 760px; }
 
   /* Intro: 2-column */
   .introSection { display: grid; grid-template-columns: 1fr 1fr; }
@@ -479,6 +535,9 @@
   .sectionContent  { padding: 2rem 3rem; }
   .headline        { padding: 3rem; }
   .introBody       { padding: 3rem; }
+
+  /* Content pages */
+  .content { padding: 4rem 0 6rem; margin: 0 auto; }
 
   /* Bento grid: stays the same, just more padding */
 
