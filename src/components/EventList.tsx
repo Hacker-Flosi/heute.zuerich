@@ -53,12 +53,20 @@ export default function EventList({ cityLabel, today, tomorrow, dayAfter, rainTo
   })
   const [badWeather, setBadWeather] = useState<boolean>(isRainy ?? false)
   const [showRain, setShowRain] = useState<boolean>(false)
+
+  // Re-sync toggle if isRainy changes (e.g. navigating between cities)
+  useEffect(() => {
+    setBadWeather(isRainy ?? false)
+    document.documentElement.dataset.rain = isRainy ? 'true' : 'false'
+  }, [isRainy])
   const rainTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Sync initial rain state to CSS data attribute on mount
+  // On mount: if rainy, set CSS attribute + trigger rain animation once
   useEffect(() => {
     if (isRainy) {
       document.documentElement.dataset.rain = 'true'
+      setShowRain(true)
+      rainTimer.current = setTimeout(() => setShowRain(false), 3000)
     }
   }, [])
 
