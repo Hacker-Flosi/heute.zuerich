@@ -27,6 +27,7 @@ interface EventListProps {
   rainTomorrow?: Event[]
   rainDayAfter?: Event[]
   isRainy?: boolean
+  isRainyDays?: [boolean, boolean, boolean]
   featuredEvents?: FeaturedEvent[]
 }
 
@@ -44,7 +45,7 @@ const TAB_LABELS = [
   getTabLabel('Übermorgen', 2),
 ]
 
-export default function EventList({ cityLabel, today, tomorrow, dayAfter, rainToday, rainTomorrow, rainDayAfter, isRainy, featuredEvents }: EventListProps) {
+export default function EventList({ cityLabel, today, tomorrow, dayAfter, rainToday, rainTomorrow, rainDayAfter, isRainy, isRainyDays, featuredEvents }: EventListProps) {
   const [activeTab, setActiveTab] = useState<number>(() => {
     if (typeof window === 'undefined') return 0
     const saved = sessionStorage.getItem('activeTab')
@@ -59,6 +60,21 @@ export default function EventList({ cityLabel, today, tomorrow, dayAfter, rainTo
     setBadWeather(isRainy ?? false)
     document.documentElement.dataset.rain = isRainy ? 'true' : 'false'
   }, [isRainy])
+
+  // Auto-switch bad weather mode when changing tabs, based on per-day forecast
+  useEffect(() => {
+    if (!isRainyDays) return
+    const rainy = isRainyDays[activeTab]
+    setBadWeather(rainy)
+    document.documentElement.dataset.rain = rainy ? 'true' : 'false'
+    if (rainy) {
+      setShowRain(true)
+      if (rainTimer.current) clearTimeout(rainTimer.current)
+      rainTimer.current = setTimeout(() => setShowRain(false), 3000)
+    } else {
+      setShowRain(false)
+    }
+  }, [activeTab, isRainyDays])
   const rainTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // On mount: if rainy, set CSS attribute + trigger rain animation once

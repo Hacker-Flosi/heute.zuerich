@@ -96,6 +96,7 @@ export default async function CityPage({ params }: PageProps) {
         rainTomorrow={rainTomorrow}
         rainDayAfter={rainDayAfter}
         isRainy={weather?.isRainy ?? false}
+        isRainyDays={weather?.isRainyDays ?? [false, false, false]}
         featuredEvents={featuredEvents}
       />
     </main>
