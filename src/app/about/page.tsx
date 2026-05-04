@@ -4,6 +4,7 @@ import { getSanityClient } from '@/lib/sanity'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
 import FaqAccordion from './FaqAccordion'
+import ClearRainMode from '@/components/ClearRainMode'
 import styles from './about.module.css'
 import type { Metadata } from 'next'
 
@@ -62,6 +63,7 @@ export default async function AboutPage() {
 
   return (
     <main className={styles.main}>
+      <ClearRainMode />
       <SiteHeader current="About" />
 
       <div className={styles.teletext}>
@@ -93,8 +95,7 @@ export default async function AboutPage() {
             <img src="/illustrations/suport.svg" className={styles.illustration} alt="" />
             <div className={styles.sectionContent}>
               <p className={styles.body} style={{ color: '#000' }}>
-                Bis jetzt geht alles auf meinen Nacken — Hosting, APIs, Zeit. Wenn du willst,
-                dass das Ding weiterlebt, kannst du mir einen Kaffee spendieren.
+                Der ganze Aufwand — Unterhalt, Updates und alles was dazu gehört — geht auf meinen Nacken. Wenn du willst, dass das Ding weiterlebt, kannst du mir einen Kaffee spendieren.
               </p>
               <a
                 href="https://buymeacoffee.com/grunderdiga"
