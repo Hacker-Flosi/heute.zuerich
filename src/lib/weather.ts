@@ -3,9 +3,10 @@
 // Docs: https://open-meteo.com/en/docs
 
 export interface WeatherResult {
-  isRainy: boolean       // true if rain/snow expected today
-  description: string   // human readable, e.g. "Regen erwartet"
-  icon: string          // emoji
+  isRainy: boolean                          // today (backwards compat)
+  isRainyDays: [boolean, boolean, boolean]  // [heute, morgen, übermorgen]
+  description: string
+  icon: string
 }
 
 // City coordinates
@@ -41,20 +42,22 @@ export async function fetchWeather(city: string): Promise<WeatherResult | null> 
   if (!coords) return null
 
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&daily=weathercode,precipitation_sum&timezone=Europe%2FZurich&forecast_days=1`
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&daily=weathercode,precipitation_sum&timezone=Europe%2FZurich&forecast_days=3`
     const res = await fetch(url, { next: { revalidate: 3600 } })
     if (!res.ok) return null
 
     const data = await res.json()
-    const code: number = data?.daily?.weathercode?.[0] ?? 0
-    const precip: number = data?.daily?.precipitation_sum?.[0] ?? 0
+    const codes: number[] = data?.daily?.weathercode ?? [0, 0, 0]
+    const precips: number[] = data?.daily?.precipitation_sum ?? [0, 0, 0]
 
-    const isRainy = BAD_WEATHER_CODES.has(code) || precip >= 1.0
+    const isRainyDays = [0, 1, 2].map(
+      i => BAD_WEATHER_CODES.has(codes[i] ?? 0) || (precips[i] ?? 0) >= 1.0
+    ) as [boolean, boolean, boolean]
 
-    if (!isRainy) return { isRainy: false, description: 'Gutes Wetter', icon: '☀️' }
+    const isRainy = isRainyDays[0]
+    const { description, icon } = isRainy ? describeCode(codes[0] ?? 0) : { description: 'Gutes Wetter', icon: '☀️' }
 
-    const { description, icon } = describeCode(code)
-    return { isRainy: true, description, icon }
+    return { isRainy, isRainyDays, description, icon }
   } catch {
     return null
   }
