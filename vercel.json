@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/instagram",
-      "schedule": "45 5 * * *"
+      "schedule": "0 7 * * *"
     }
   ],
   "functions": {

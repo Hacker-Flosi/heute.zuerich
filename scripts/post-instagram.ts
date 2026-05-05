@@ -233,6 +233,7 @@ export async function postInstagram(): Promise<void> {
   const totalEvents = Object.values(eventsByCity).reduce((s, e) => s + e.length, 0)
   if (totalEvents === 0) {
     console.warn('[instagram] Keine Events für heute — abgebrochen')
+    await sendCrashAlert('Instagram Cron', new Error('0 Events in Sanity — Pipeline noch nicht abgeschlossen oder fehlgeschlagen'))
     return
   }
 
