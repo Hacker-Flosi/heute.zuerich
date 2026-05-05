@@ -137,14 +137,3 @@ export async function scrapeEventfrog(
   console.log(`[Eventfrog] ${events.length} Events für ${date} (${page} Seiten, Safety-Cap)`)
   return events
 }
-
-
-/** @deprecated Adaptiver Scraper — alle Städte nutzen jetzt scrapeEventfrog direkt. */
-export function scrapeEventfrogExtended(date: string): Promise<RawEvent[]> {
-  return scrapeEventfrog(date)
-}
-
-/** @deprecated Adaptiver Scraper — alle Städte nutzen jetzt scrapeEventfrog direkt. */
-export function scrapeEventfrogMedium(date: string): Promise<RawEvent[]> {
-  return scrapeEventfrog(date)
-}

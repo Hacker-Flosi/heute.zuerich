@@ -7,7 +7,7 @@ import { sendTelegramNotification, sendCrashAlert, sendFeaturedEventReminders } 
 import type { FeaturedEventAlert } from './notify'
 import { savePipelineSnapshot, updateVenueStats } from './stats'
 import type { CityResult } from './notify'
-import { scrapeEventfrog, scrapeEventfrogExtended, scrapeEventfrogMedium } from './scrapers/eventfrog'
+import { scrapeEventfrog } from './scrapers/eventfrog'
 import { scrapeCoucou } from './scrapers/coucou'
 import { scrapeHellozurich } from './scrapers/hellozurich'
 import { scrapeGangus } from './scrapers/gangus'
@@ -32,13 +32,13 @@ type ScraperFn = (date: string) => Promise<RawEvent[]>
 
 
 const CITY_CONFIG: Record<string, { twoLayer: boolean; scrapers: ScraperFn[] }> = {
-  zuerich:     { twoLayer: true, scrapers: [scrapeEventfrog, scrapeHellozurich, scrapeResidentAdvisor] },
-  stgallen:    { twoLayer: true, scrapers: [scrapeEventfrogMedium, scrapeSaiten, scrapeStGallenVenues] },
-  luzern:      { twoLayer: true, scrapers: [scrapeGangus, scrapeEventfrogMedium] },
-  winterthur:  { twoLayer: true, scrapers: [scrapeEventfrogExtended, scrapeCoucou] },
+  zuerich:    { twoLayer: true, scrapers: [scrapeEventfrog, scrapeHellozurich, scrapeResidentAdvisor] },
+  stgallen:   { twoLayer: true, scrapers: [scrapeEventfrog, scrapeSaiten, scrapeStGallenVenues] },
+  luzern:     { twoLayer: true, scrapers: [scrapeGangus, scrapeEventfrog] },
+  winterthur: { twoLayer: true, scrapers: [scrapeEventfrog, scrapeCoucou] },
   // Bern: Coming Soon — Scraper bereit (Petzi + Dampfzentrale), aber Stadt noch nicht aktiv
   // bern: { twoLayer: true, scrapers: [scrapePetzi, scrapeDampfzentrale] },
-  basel: { twoLayer: true, scrapers: [scrapeEventfrog, scrapeBaselVenues] },
+  basel:      { twoLayer: true, scrapers: [scrapeEventfrog, scrapeBaselVenues] },
 }
 
 // Zürich: blacklist approach (exclude surrounding cities)
@@ -346,6 +346,30 @@ async function hasEventsForDate(city: string, date: string): Promise<boolean> {
 }
 
 
+// Retry once (after 60s) if all scrapers return empty — covers transient API failures.
+async function runScrapers(
+  scrapers: ScraperFn[],
+  date: string,
+): Promise<{ raw: RawEvent[]; scraperErrors: number }> {
+  for (let attempt = 0; attempt <= 1; attempt++) {
+    if (attempt > 0) {
+      console.warn(`  [Retry] Scraping leer — 60s warten und erneut versuchen...`)
+      await new Promise((r) => setTimeout(r, 60_000))
+    }
+    const results = await Promise.allSettled(scrapers.map((fn) => fn(date)))
+    let scraperErrors = 0
+    const raw: RawEvent[] = []
+    for (const r of results) {
+      if (r.status === 'fulfilled') raw.push(...r.value)
+      else { console.error('  Scraper Fehler:', r.reason); scraperErrors++ }
+    }
+    if (raw.length > 0) return { raw, scraperErrors }
+    console.warn(`  [Scraping] Versuch ${attempt + 1}/2: 0 Events gefunden`)
+  }
+  console.error(`  [FEHLER] Beide Scraping-Versuche leer für ${date}`)
+  return { raw: [], scraperErrors: 0 }
+}
+
 async function loadActiveVenues(city: string): Promise<SanityVenue[]> {
   const client = getSanityClient()
   return client.fetch<SanityVenue[]>(
@@ -444,15 +468,9 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
       continue
     }
 
-    // ── Scraping
+    // ── Scraping (mit Retry)
     console.log('  [1/5] Scraping...')
-    const results = await Promise.allSettled(scrapers.map((fn) => fn(date)))
-    const raw: RawEvent[] = []
-    let scraperErrors = 0
-    for (const r of results) {
-      if (r.status === 'fulfilled') raw.push(...r.value)
-      else { console.error('  Scraper Fehler:', r.reason); scraperErrors++ }
-    }
+    const { raw, scraperErrors } = await runScrapers(scrapers, date)
 
     // ── Geo-filter (Zürich uses blacklist; all other cities use whitelist)
     const geoFilter = city === 'zuerich' ? geoFilterZuerich : (e: RawEvent) => geoFilterCity(e, city)
@@ -662,13 +680,7 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]): Promise<City
       continue
     }
 
-    const results = await Promise.allSettled(scrapers.map((fn) => fn(date)))
-    const raw: RawEvent[] = []
-    let scraperErrors = 0
-    for (const r of results) {
-      if (r.status === 'fulfilled') raw.push(...r.value)
-      else { console.error('  Scraper Fehler:', r.reason); scraperErrors++ }
-    }
+    const { raw, scraperErrors } = await runScrapers(scrapers, date)
 
     // Venue URL enrichment
     for (const e of raw) {
