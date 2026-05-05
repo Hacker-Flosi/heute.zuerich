@@ -347,14 +347,21 @@ async function hasEventsForDate(city: string, date: string): Promise<boolean> {
 
 
 // Retry once (after 60s) if all scrapers return empty — covers transient API failures.
+// Re-checks hasEventsForDate before the retry so a concurrent run that already
+// wrote events during the wait window will abort the retry rather than overwrite.
 async function runScrapers(
   scrapers: ScraperFn[],
   date: string,
-): Promise<{ raw: RawEvent[]; scraperErrors: number }> {
+  city: string,
+): Promise<{ raw: RawEvent[]; scraperErrors: number; skip?: true }> {
   for (let attempt = 0; attempt <= 1; attempt++) {
     if (attempt > 0) {
       console.warn(`  [Retry] Scraping leer — 60s warten und erneut versuchen...`)
       await new Promise((r) => setTimeout(r, 60_000))
+      if (await hasEventsForDate(city, date)) {
+        console.log(`  [Retry] Abgebrochen — Events inzwischen von anderem Run geschrieben`)
+        return { raw: [], scraperErrors: 0, skip: true }
+      }
     }
     const results = await Promise.allSettled(scrapers.map((fn) => fn(date)))
     let scraperErrors = 0
@@ -470,7 +477,8 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
 
     // ── Scraping (mit Retry)
     console.log('  [1/5] Scraping...')
-    const { raw, scraperErrors } = await runScrapers(scrapers, date)
+    const { raw, scraperErrors, skip } = await runScrapers(scrapers, date, city)
+    if (skip) { result.skipped[offsetIdx] = true; continue }
 
     // ── Geo-filter (Zürich uses blacklist; all other cities use whitelist)
     const geoFilter = city === 'zuerich' ? geoFilterZuerich : (e: RawEvent) => geoFilterCity(e, city)
@@ -680,7 +688,8 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]): Promise<City
       continue
     }
 
-    const { raw, scraperErrors } = await runScrapers(scrapers, date)
+    const { raw, scraperErrors, skip } = await runScrapers(scrapers, date, city)
+    if (skip) { result.skipped[offset] = true; continue }
 
     // Venue URL enrichment
     for (const e of raw) {
