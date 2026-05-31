@@ -24,6 +24,8 @@ function patchEventfrogService() {
     }
     params.append('apiKey', this._key)
     const url = `https://api.eventfrog.net/api/v1${edge}?${params.toString()}`
+    // Throttle all sub-requests (events + locations + groups) to avoid 429s
+    await new Promise((r) => setTimeout(r, 400))
     // Retry up to 3× on 429 with exponential backoff (30s, 60s, 120s)
     for (let attempt = 0; attempt < 3; attempt++) {
       const response = await fetch(url, { method: 'GET' })
@@ -66,7 +68,7 @@ function toZurichDate(d: Date): string {
 export async function scrapeEventfrog(
   date: string,
   maxPages = 50,
-  pageDelayMs = 250,
+  pageDelayMs = 2000,
 ): Promise<RawEvent[]> {
   patchEventfrogService()
 
