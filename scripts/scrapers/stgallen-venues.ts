@@ -1,7 +1,6 @@
 // scripts/scrapers/stgallen-venues.ts
 // Direktes Scraping der wichtigsten St. Gallen Nightlife-Venues
-// Ergänzt saiten.ch (Kultur) mit Club/Konzert-Coverage
-// Venues: Palace, Grabenhalle, KUGL, OYA Bar
+// Venues: Palace, Grabenhalle, KUGL, OYA Bar, Flon, Talhof
 
 import * as cheerio from 'cheerio'
 import type { RawEvent } from '../types'
@@ -50,7 +49,6 @@ async function scrapePalace(date: string): Promise<RawEvent[]> {
 
   if (matches.length === 0) return []
 
-  // Detail-Fragmente parallel laden (max CONCURRENCY)
   const results: RawEvent[] = []
   for (let i = 0; i < matches.length; i += CONCURRENCY) {
     const batch = matches.slice(i, i + CONCURRENCY)
@@ -62,8 +60,7 @@ async function scrapePalace(date: string): Promise<RawEvent[]> {
       const name = $('div.act').first().text().trim()
       if (!name) return null
 
-      // "Tür\u00a020:00" → "20:00"
-      const adminText = $('div.admin span').first().text().replace(/\u00a0/g, ' ').trim()
+      const adminText = $('div.admin span').first().text().replace(/ /g, ' ').trim()
       const timeMatch = adminText.match(/(\d{2}:\d{2})/)
       const time = timeMatch ? timeMatch[1] : '20:00'
 
@@ -86,41 +83,61 @@ async function scrapePalace(date: string): Promise<RawEvent[]> {
 }
 
 // ─── Grabenhalle ──────────────────────────────────────────────────────────────
-// grabenhalle.ch — WordPress Datum-Archiv: grabenhalle.ch/YYYY/MM/DD/
-// Struktur: div#listing > .post → h2.posttitle a + div.smallMeta (icon-time)
+// grabenhalle.ch — WP REST API (ajde_events) + detail pages for data-time timestamps
+// RSS is capped at 10 items; REST API gives up to 50 which covers ~1 month ahead.
 
 async function scrapeGrabenhalle(date: string): Promise<RawEvent[]> {
-  const [year, month, day] = date.split('-')
-  const html = await fetchHtml(`https://grabenhalle.ch/${year}/${month}/${day}/`)
-  if (!html) {
-    console.log('  [stgallen-venues/grabenhalle] Fetch fehlgeschlagen')
+  let apiItems: Array<{ title: string; link: string }> = []
+  try {
+    const res = await fetch(
+      'https://www.grabenhalle.ch/wp-json/wp/v2/ajde_events?per_page=50&orderby=date&order=desc',
+      { headers: HEADERS, signal: AbortSignal.timeout(TIMEOUT_MS) }
+    )
+    if (res.ok) {
+      const data = await res.json() as Array<{ title: { rendered: string }; link: string }>
+      apiItems = data.map(e => ({
+        title: e.title.rendered.replace(/&#[0-9]+;/g, (m) => String.fromCharCode(parseInt(m.slice(2,-1)))).replace(/<[^>]+>/g, '').trim(),
+        link: e.link,
+      }))
+    }
+  } catch { /* fall through to empty */ }
+
+  if (!apiItems.length) {
+    console.log('  [stgallen-venues/grabenhalle] API nicht erreichbar')
     return []
   }
 
-  const $ = cheerio.load(html)
   const results: RawEvent[] = []
+  for (let i = 0; i < apiItems.length; i += CONCURRENCY) {
+    const batch = apiItems.slice(i, i + CONCURRENCY)
+    const fetched = await Promise.all(batch.map(async ({ title, link }) => {
+      const detail = await fetchHtml(link)
+      if (!detail) return null
 
-  $('#listing .post').each((_, el) => {
-    const name = $(el).find('h2.posttitle a').text().trim()
-    const url  = $(el).find('h2.posttitle a').attr('href') ?? ''
-    if (!name) return
+      // EventON stores event time as data-time="<startTs>-<endTs>" (Unix seconds, UTC)
+      const tsMatch = detail.match(/data-time="(\d+)-(\d+)"/)
+      if (!tsMatch) return null
 
-    // smallMeta: "... icon-time &nbsp;&nbsp; 19:00 &nbsp;&nbsp; icon-group ..."
-    const metaText = $(el).find('div.smallMeta').text().replace(/\u00a0/g, ' ')
-    const timeMatch = metaText.match(/(\d{1,2}:\d{2})/)
-    const time = timeMatch ? timeMatch[1].padStart(5, '0') : '20:00'
+      const startDate = new Date(parseInt(tsMatch[1]) * 1000)
+      const local = new Date(startDate.toLocaleString('en-US', { timeZone: 'Europe/Zurich' }))
+      const eventDate = `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, '0')}-${String(local.getDate()).padStart(2, '0')}`
+      if (eventDate !== date) return null
 
-    results.push({
-      name,
-      rawName: name,
-      location: 'Grabenhalle',
-      date,
-      time,
-      url,
-      source: 'stgallen-venues' as const,
-      locationCity: 'St. Gallen',
-    } satisfies RawEvent)
-  })
+      const time = `${String(local.getHours()).padStart(2, '0')}:${String(local.getMinutes()).padStart(2, '0')}`
+
+      return {
+        name: title,
+        rawName: title,
+        location: 'Grabenhalle',
+        date,
+        time,
+        url: link,
+        source: 'stgallen-venues' as const,
+        locationCity: 'St. Gallen',
+      } satisfies RawEvent
+    }))
+    fetched.forEach(e => { if (e) results.push(e) })
+  }
 
   console.log(`  [stgallen-venues/grabenhalle] ${results.length} Events`)
   return results
@@ -128,7 +145,7 @@ async function scrapeGrabenhalle(date: string): Promise<RawEvent[]> {
 
 // ─── KUGL ─────────────────────────────────────────────────────────────────────
 // kugl.ch/programm/ — Single-Page-Listing
-// Struktur: div.event-item → div.event-date (DD.MM.) + div.event-headline + a.event-detail[href] + div.event-subline
+// Struktur: div.event-item → div.event-date (DD.MM.) + div.event-headline + a.event-detail[href]
 
 async function scrapeKugl(date: string): Promise<RawEvent[]> {
   const html = await fetchHtml('https://kugl.ch/programm/')
@@ -175,7 +192,6 @@ async function scrapeKugl(date: string): Promise<RawEvent[]> {
 
 // ─── OYA Bar ──────────────────────────────────────────────────────────────────
 // oya-bar.ch/programm/ — Listing mit Datum im Titel ("Samstag 25. April")
-// Detail-Seite für Event-Name + Zeit
 
 const DE_MONTHS: Record<string, number> = {
   januar: 1, februar: 2, märz: 3, april: 4, mai: 5, juni: 6,
@@ -183,7 +199,6 @@ const DE_MONTHS: Record<string, number> = {
 }
 
 function parseOyaTitle(text: string, year: number): string | null {
-  // "Samstag 25. April" → "2026-04-25"
   const m = text.trim().match(/(\d{1,2})\.\s+(\w+)/i)
   if (!m) return null
   const day = parseInt(m[1])
@@ -199,12 +214,10 @@ async function fetchOyaDetail(url: string): Promise<{ name: string; time: string
   const $ = cheerio.load(html)
   const content = $('div.offbeat-event-content')
 
-  // Zweite <strong>-Zeile ist meistens der Event-Name (erste ist das Datum)
   const strongs = content.find('p strong, p b').map((_, el) => $(el).text().trim()).get()
   const name = strongs.find(s => s.length > 3 && !s.match(/^\d/) && !s.toLowerCase().includes('uhr') && !s.toLowerCase().startsWith('vorverkauf') && !s.toLowerCase().startsWith('acts'))
   if (!name) return null
 
-  // Zeit: "19 Uhr" oder "19:00 Uhr" oder "19:30"
   const bodyText = content.text()
   const timeMatch = bodyText.match(/(\d{1,2}):(\d{2})\s*Uhr/) ?? bodyText.match(/(\d{1,2})\s*Uhr/)
   let time = '21:00'
@@ -240,7 +253,6 @@ async function scrapeOya(date: string): Promise<RawEvent[]> {
     return []
   }
 
-  // Detail-Seiten parallel laden
   const results: RawEvent[] = []
   for (let i = 0; i < candidates.length; i += CONCURRENCY) {
     const batch = candidates.slice(i, i + CONCURRENCY)
@@ -268,7 +280,6 @@ async function scrapeOya(date: string): Promise<RawEvent[]> {
 // ─── Flon St. Gallen ──────────────────────────────────────────────────────────
 // flon-sg.ch/programm — SSR HTML
 // Listing: a[href*="/veranstaltungen/YYYY-MM-DD"] → Text "SA 2.5.2026 Eventname"
-// Detail-Seite für Zeit: /veranstaltungen/YYYY-MM-DD
 
 async function scrapeFlon(date: string): Promise<RawEvent[]> {
   const html = await fetchHtml('https://flon-sg.ch/programm')
@@ -306,7 +317,6 @@ async function scrapeFlon(date: string): Promise<RawEvent[]> {
     } satisfies RawEvent)
   })
 
-  // Fetch detail page for time (one request per matched date)
   if (results.length > 0) {
     const detail = await fetchHtml(`https://flon-sg.ch/veranstaltungen/${date}`)
     if (detail) {
@@ -340,7 +350,6 @@ async function scrapeTalhof(date: string): Promise<RawEvent[]> {
 
   $('div.event').each((_, el) => {
     const dateText = $(el).find('span.date').text().trim()
-    // "Di 28.4.2026" or "Fr 1.5.2026"
     const dateMatch = dateText.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/)
     if (!dateMatch) return
     if (parseInt(dateMatch[1]) !== day || parseInt(dateMatch[2]) !== month || parseInt(dateMatch[3]) !== year) return
@@ -348,7 +357,6 @@ async function scrapeTalhof(date: string): Promise<RawEvent[]> {
     const name = $(el).find('span.title').text().trim()
     if (!name) return
 
-    // "Türöffnung: 21:00" or "Türöffnung: 21:00 / Eintritt: 5"
     const pText = $(el).find('p').first().text()
     const timeMatch = pText.match(/(\d{2}:\d{2})/)
     const time = timeMatch ? timeMatch[1] : '21:00'

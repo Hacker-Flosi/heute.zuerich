@@ -330,6 +330,8 @@ function fillToTarget(chosen: RawEvent[], pool: RawEvent[]): RawEvent[] {
   return [...chosen, ...remaining.slice(0, needed)]
 }
 
+const MIN_EVENTS_THRESHOLD = 10
+
 async function hasEventsForDate(city: string, date: string): Promise<boolean> {
   // Use write client (no CDN) so deletions are immediately visible
   const client = getSanityWriteClient()
@@ -340,6 +342,11 @@ async function hasEventsForDate(city: string, date: string): Promise<boolean> {
   // If all events are saiten-only, treat as incomplete — allow re-scraping
   if (total > 0 && saitenOnly === 0) {
     console.log(`  [Skip] Nur saiten-Events (${total}) — wird neu gescrapt`)
+    return false
+  }
+  // If too few events, treat as incomplete — writeToSanity deletes stale docs before re-writing
+  if (total > 0 && total < MIN_EVENTS_THRESHOLD) {
+    console.log(`  [Skip] Nur ${total} Events (< ${MIN_EVENTS_THRESHOLD}) — wird neu gescrapt`)
     return false
   }
   return total > 0
