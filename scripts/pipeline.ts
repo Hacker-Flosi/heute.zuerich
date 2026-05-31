@@ -520,12 +520,9 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
         e.venueId = `venue-${city}-${venue.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
         // Venue website always wins — overrides any scraper URL
         if (venue.website) e.url = venue.website
-        // Title inference takes priority for specific types (workshop, markt, kunst, open_air)
-        // Venue category is used as fallback for generic titles
-        const titleType = inferEventTypeFromTitle(e.name)
+        // Title inference wins when it finds a keyword; undefined falls back to venue category
         const venueType = eventTypeFromVenueCategory(venue.category)
-        const specificTypes = new Set(['kunst', 'markt', 'open_air', 'special', 'dj_club', 'kultur'])
-        e.eventType = specificTypes.has(titleType) ? titleType : venueType
+        e.eventType = inferEventTypeFromTitle(e.name) ?? venueType
         layer1.push(e)
       } else {
         remainder.push(e)
@@ -541,7 +538,7 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
     console.log('  [3/5] Layer 2 — Discovery...')
     for (const e of remainder) {
       e.layer = 'discovery'
-      e.eventType = inferEventTypeFromTitle(e.name)
+      e.eventType = inferEventTypeFromTitle(e.name) ?? 'special'
     }
 
     const combined = deduplicateEvents([...dedupL1, ...remainder])

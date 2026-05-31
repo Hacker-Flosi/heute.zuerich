@@ -11,6 +11,7 @@ const DJ_CLUB: string[] = [
   'techno', 'house', 'trance', 'drum and bass', 'dnb', 'd&b',
   'hardstyle', 'minimal', 'dark disco', 'afro house', 'deep house',
   'bass music', 'gabber', 'jungle', 'breakbeat', 'dubstep',
+  'psytrance', 'psy trance', 'goa trance',
   // Formate
   'dj set', 'dj-set', 'dj night', 'deejay', 'b2b', 'back2back',
   'back-to-back', 'warm-up', 'warmup', 'warm up', 'residency',
@@ -23,51 +24,68 @@ const PARTY: string[] = [
   'r&b', 'rnb', 'rap', 'trap', 'afrobeats', 'reggaeton', 'dancehall',
   'chart', 'charts night', 'ladies night', 'after party', 'afterparty',
   'karaoke', 'day drinking', 'apéro abend', 'apérobar',
+  'schlager', 'fasnacht', 'fasching', 'karneval',
+  '80er', '90er', '2000er',
+  'halloween', 'silvester',
 ]
 
 const KONZERT: string[] = [
   // Explizit
   'konzert', 'concert', 'live concert', 'live-konzert', 'gig',
-  'live musik', 'live music', ' live ', '- live',
+  'live musik', 'live music', ' live', '(live)', '– live',
+  'live-musik',
   // Genres mit Live-Kontext
   'jazz', 'blues', 'folk', 'singer-songwriter', 'acoustic',
   'metal', 'punk', 'indie', 'pop concert', 'rock concert',
   'classical', 'klassik', 'orchester', 'orchestra', 'ensemble', 'sinfonie',
   'philharmonic', 'kammermusik', 'chor',
+  // Spezifische Musik-Genres
+  'gospel', 'a cappella', 'acappella', 'klezmer', 'bluegrass',
+  'liedermacher', 'chanson', 'weltmusik', 'world music',
+  // Veranstaltungsformate
+  'jam session', 'open mic', 'open-mic',
+  'musikabend', 'jazzabend', 'jazzband', 'jazz session',
+  'matinée', 'matinee',
   // Musik-Festivals / Reihen
   'musiktage', 'musikfestival', 'musikfest', 'jazzfestival',
-  // Formate
+  // Release / Tour
   'solo show', 'release show', 'album release', 'album launch',
-  'headliner', 'support act', 'concert tour', 'world tour', 'europe tour',
+  'headliner', 'support act', 'concert tour', 'world tour', 'europe tour', 'tournee',
 ]
 
 const KUNST: string[] = [
   'vernissage', 'finissage', 'kunstausstellung', 'art opening',
   'ausstellung', 'exhibition', 'galerie', 'installation',
-  'art show', 'gruppenausstellung',
+  'art show', 'gruppenausstellung', 'werkschau',
+  'kunstmesse', 'buchmesse',
 ]
 
 const MARKT: string[] = [
   'flohmarkt', 'vintage markt', 'brocante', 'design markt', 'designmarkt',
   'food festival', 'foodfestival', 'streetfood', 'food market',
   'weihnachtsmarkt', 'wochenmarkt', 'night market', 'antikmarkt',
-  'trödelmarkt', 'kunstmarkt',
+  'trödelmarkt', 'kunstmarkt', 'bazaar', 'bazar',
 ]
 
 const OPEN_AIR: string[] = [
   'open air', 'openair', 'open-air', 'outdoor festival',
   'rooftop', 'quartierfest', 'strassenfest', 'sommerfest',
-  'gartenfest', 'seeufer', 'lakeside', 'beach party',
+  'gartenfest', 'seeufer', 'lakeside', 'beach party', 'stadtfest',
 ]
 
 const KULTUR: string[] = [
   'theater', 'theatre', 'schauspiel', 'oper', 'ballet', 'ballett',
-  'tanztheater', 'tanzperformance', 'tanz abend', 'tanznacht',
+  'tanztheater', 'tanzperformance', 'tanz abend', 'tanznacht', 'tanzabend',
   'impro', 'improtheater', 'comedy', 'stand-up', 'standup', 'stand up',
   'kabarett', 'lesung', 'poetry slam', 'spoken word',
-  'film screening', 'filmvorführung', 'kino abend', 'screening',
-  'podium', 'panel', 'talk', 'vortrag', 'lecture',
+  'film screening', 'filmvorführung', 'kino abend', 'screening', 'filmreihe',
+  'podium', 'panel', 'talk', 'vortrag', 'lecture', 'diskussion',
   'führung', 'guided tour', 'circus', 'zirkus', 'magic show',
+  // Aufführungsformate
+  'performance', 'premiere', 'première', 'uraufführung',
+  'musical', 'gastspiel',
+  'kindertheater', 'puppentheater', 'figurentheater',
+  'buchpräsentation', 'leseabend',
 ]
 
 const SPECIAL: string[] = [
@@ -93,9 +111,11 @@ const VENUE_CATEGORY_MAP: Record<string, EventType> = {
 
 /**
  * Infer EventType from event title via keyword matching.
- * Order: specific/unambiguous types first, broad/fallback types last.
+ * Returns undefined when no keyword matched — callers use this to fall back
+ * to venue category (Layer 1) or 'special' (Layer 2 / standalone).
+ * Order: specific/unambiguous types first, broad types last.
  */
-export function inferEventTypeFromTitle(title: string): EventType {
+export function inferEventTypeFromTitle(title: string): EventType | undefined {
   const t = title.toLowerCase()
 
   if (KUNST.some((k) => t.includes(k)))    return 'kunst'
@@ -107,7 +127,7 @@ export function inferEventTypeFromTitle(title: string): EventType {
   if (KULTUR.some((k) => t.includes(k)))   return 'kultur'
   if (SPECIAL.some((k) => t.includes(k)))  return 'special'
 
-  return 'special' // fallback
+  return undefined
 }
 
 /**
