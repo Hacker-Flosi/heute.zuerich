@@ -151,6 +151,51 @@
   opacity: 0.85;
 }
 
+.ballBg {
+  position: absolute;
+  right: 1rem;
+  top: 0;
+  bottom: 0;
+  height: 100%;
+  width: auto;
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .ballBg {
+    right: 2rem;
+  }
+}
+
+.publicViewingLink {
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+.publicViewingLink:hover {
+  filter: brightness(1.15) !important;
+}
+
+.badgeGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  flex-shrink: 0;
+}
+
+.publicViewingIcon {
+  width: 1.6rem;
+  height: 1.6rem;
+  flex-shrink: 0;
+  color: #00C853;
+}
+
+.publicViewingBadge {
+  background: #00C853;
+  color: #000;
+}
+
 .sponsoredBadge {
   font-family: var(--font-mono);
   font-size: 0.55rem;

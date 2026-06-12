@@ -75,16 +75,18 @@ export const formatDateShort = (offset: number): string => {
 export type EventType =
   | 'konzert' | 'dj_club' | 'party' | 'kultur'
   | 'kunst' | 'markt' | 'open_air' | 'special'
+  | 'public_viewing'
 
 export const EVENT_TYPE_LABELS: Record<EventType, string> = {
-  konzert:  'Konzert',
-  dj_club:  'DJ / Club',
-  party:    'Party',
-  kultur:   'Kultur',
-  kunst:    'Kunst',
-  markt:    'Markt',
-  open_air: 'Open Air',
-  special:  'Special',
+  konzert:        'Konzert',
+  dj_club:        'DJ / Club',
+  party:          'Party',
+  kultur:         'Kultur',
+  kunst:          'Kunst',
+  markt:          'Markt',
+  open_air:       'Open Air',
+  special:        'Special',
+  public_viewing: 'Public Viewing',
 }
 
 export const CITY_LABELS: Record<string, string> = {

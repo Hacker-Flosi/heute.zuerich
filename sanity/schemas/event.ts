@@ -84,6 +84,7 @@ export default defineType({
           { title: 'Markt / Festival', value: 'markt' },
           { title: 'Open Air / Outdoor', value: 'open_air' },
           { title: 'Special', value: 'special' },
+          { title: 'Public Viewing', value: 'public_viewing' },
         ],
       },
     }),

@@ -10,6 +10,7 @@ export type EventType =
   | 'markt'
   | 'open_air'
   | 'special'
+  | 'public_viewing'
 
 export type PipelineLayer = 'venue' | 'discovery'
 

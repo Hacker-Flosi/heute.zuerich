@@ -88,6 +88,16 @@ const KULTUR: string[] = [
   'buchpräsentation', 'leseabend',
 ]
 
+const PUBLIC_VIEWING: string[] = [
+  'public viewing', 'public-viewing', 'publicviewing',
+  'live viewing', 'watch party', 'watchparty',
+  'wm 2026', 'wm2026', 'world cup 2026',
+  'em 2026', 'em2026', 'euro 2026',
+  'fussball live', 'fußball live', 'football live',
+  'spiele live', 'match live',
+  'fifa',
+]
+
 const SPECIAL: string[] = [
   'workshop', 'pop-up', 'popup', 'pop up',
   'after work', 'afterwork', 'after-work',
@@ -118,6 +128,7 @@ const VENUE_CATEGORY_MAP: Record<string, EventType> = {
 export function inferEventTypeFromTitle(title: string): EventType | undefined {
   const t = title.toLowerCase()
 
+  if (PUBLIC_VIEWING.some((k) => t.includes(k))) return 'public_viewing'
   if (KUNST.some((k) => t.includes(k)))    return 'kunst'
   if (MARKT.some((k) => t.includes(k)))    return 'markt'
   if (DJ_CLUB.some((k) => t.includes(k)))  return 'dj_club'
