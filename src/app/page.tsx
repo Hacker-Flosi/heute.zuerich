@@ -1,29 +1,26 @@
 // src/app/page.tsx — Landing page: city selection
 
-import Link from 'next/link'
-import { getSanityClient } from '@/lib/sanity'
-import { SITE_SETTINGS_QUERY } from '@/lib/queries'
 import LogoAnimated from '@/components/LogoAnimated'
 import SiteFooter from '@/components/SiteFooter'
 import ClearRainMode from '@/components/ClearRainMode'
+import BalloonsScene from '@/components/BalloonsScene'
 import styles from './page.module.css'
 
 export const revalidate = 3600
 
 const CITIES = [
-  { slug: 'zuerich', label: 'Zürich', active: true },
-  { slug: 'basel', label: 'Basel', active: true },
-  { slug: 'stgallen', label: 'St.Gallen', active: true },
-  { slug: 'luzern', label: 'Luzern', active: true },
-  { slug: 'winterthur', label: 'Winterthur', active: true },
-  { slug: 'bern', label: 'Bern', active: false },
+  { slug: 'zuerich',    label: 'Zürich',     active: true,  color: '#FF6B35' },
+  { slug: 'basel',      label: 'Basel',      active: true,  color: '#C864FF' },
+  { slug: 'stgallen',   label: 'St.Gallen',  active: true,  color: '#FFFFFF' },
+  { slug: 'winterthur', label: 'Winterthur', active: true,  color: '#FF4D94' },
+  { slug: 'luzern',     label: 'Luzern',     active: true,  color: '#00E5FF' },
 ]
 
 export const metadata = {
   alternates: { canonical: '/' },
 }
 
-export default async function Home() {
+export default function Home() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -36,8 +33,6 @@ export default async function Home() {
       'query-input': 'required name=city',
     },
   }
-  const settings = await getSanityClient().fetch<Record<string, { asset: { url: string } } | null>>(SITE_SETTINGS_QUERY)
-  const logoUrl = settings?.homeLogo?.asset?.url ?? null
 
   return (
     <main className={styles.main}>
@@ -53,20 +48,7 @@ export default async function Home() {
         <h1 className={styles.srOnly}>waslauft.in — Was läuft heute in deiner Stadt?</h1>
       </header>
 
-      <section className={styles.cities}>
-        {CITIES.map((city) =>
-          city.active ? (
-            <Link key={city.slug} href={`/${city.slug}`} className={styles.cityLink}>
-              {city.label}
-            </Link>
-          ) : (
-            <div key={city.slug} className={styles.cityDisabled}>
-              <span>{city.label}</span>
-              <span className={styles.comingSoon}>Coming Soon</span>
-            </div>
-          )
-        )}
-      </section>
+      <BalloonsScene cities={CITIES} />
 
       <SiteFooter />
     </main>

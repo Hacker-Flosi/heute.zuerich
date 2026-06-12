@@ -12,6 +12,7 @@ import ThemeToggle from './ThemeToggle'
 import RainIntro from './RainIntro'
 import RainEffect from './RainEffect'
 import SiteFooter from './SiteFooter'
+import CityPillDropdown from './CityPillDropdown'
 import styles from './EventList.module.css'
 
 const INDOOR_TYPES = new Set(['konzert', 'dj_club', 'party', 'kultur', 'kunst', 'special'])
@@ -45,7 +46,7 @@ const TAB_LABELS = [
   getTabLabel('Übermorgen', 2),
 ]
 
-export default function EventList({ cityLabel, today, tomorrow, dayAfter, rainToday, rainTomorrow, rainDayAfter, isRainy, isRainyDays, featuredEvents }: EventListProps) {
+export default function EventList({ city, today, tomorrow, dayAfter, rainToday, rainTomorrow, rainDayAfter, isRainy, isRainyDays, featuredEvents }: EventListProps) {
   const [activeTab, setActiveTab] = useState<number>(() => {
     if (typeof window === 'undefined') return 0
     const saved = sessionStorage.getItem('activeTab')
@@ -130,7 +131,7 @@ export default function EventList({ cityLabel, today, tomorrow, dayAfter, rainTo
         <Link href="/" className={styles.logo}>
           <LogoAnimated />
         </Link>
-        <h1 className={styles.city}>{cityLabel}</h1>
+        <CityPillDropdown currentSlug={city} />
       </header>
 
       {/* Sticky: only the pills, transparent background */}

@@ -31,6 +31,14 @@ export function getTextColor(hex: string): '#000000' | '#ffffff' {
   return L < 0.179 ? '#ffffff' : '#000000'
 }
 
+export const CITY_CONFIG = [
+  { slug: 'zuerich',    label: 'Zürich',     color: '#FF6B35' },
+  { slug: 'basel',      label: 'Basel',      color: '#C864FF' },
+  { slug: 'stgallen',   label: 'St.Gallen',  color: '#FFFFFF' },
+  { slug: 'winterthur', label: 'Winterthur', color: '#FF4D94' },
+  { slug: 'luzern',     label: 'Luzern',     color: '#00E5FF' },
+] as const
+
 // Datumshelfer
 export const getDateString = (offset: number = 0): string => {
   // Use Swiss timezone so midnight–2 AM doesn't show yesterday's events

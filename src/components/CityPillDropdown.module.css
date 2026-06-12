@@ -1,0 +1,67 @@
+/* CityPillDropdown.module.css */
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.85rem 0.28rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.8rem;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: #000;
+  background: var(--pill-bg, #fff);
+  border: 1.5px solid #000;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: box-shadow 0.1s ease;
+}
+
+.pill:hover {
+  box-shadow: 3px 4px 0 #000;
+}
+
+.arrow {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-top: 0.1rem;
+}
+
+/* Full-screen overlay — same as homepage */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: #00E05A;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Overlay header must match EventList header pixel-perfectly to prevent jumping */
+.overlayHeader {
+  padding: 1.2rem 1rem 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  line-height: 1;
+  color: #000;
+}
+
+@media (min-width: 768px) {
+  .pill { font-size: 2.4rem; padding: 0.25rem 1rem 0.32rem; }
+  .overlayHeader { padding: 1.5rem 2rem 1rem; }
+}
+
+@media (min-width: 1024px) {
+  .pill { font-size: 2.8rem; }
+  .overlayHeader { padding: 2rem 3rem 1rem; }
+}
