@@ -3,6 +3,7 @@
 import LogoAnimated from '@/components/LogoAnimated'
 import SiteFooter from '@/components/SiteFooter'
 import ClearRainMode from '@/components/ClearRainMode'
+import SetHomeBackground from '@/components/SetHomeBackground'
 import BalloonsScene from '@/components/BalloonsScene'
 import styles from './page.module.css'
 
@@ -37,6 +38,7 @@ export default function Home() {
   return (
     <main className={styles.main}>
       <ClearRainMode />
+      <SetHomeBackground />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

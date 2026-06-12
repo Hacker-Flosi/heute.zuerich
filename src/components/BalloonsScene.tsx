@@ -13,11 +13,11 @@ export interface BalloonCity {
 
 // ── Physics constants ──────────────────────────────────────────────────────────
 
-const BUOYANCY    = 0.07    // upward acceleration (px/frame²)
+const BUOYANCY    = 0.14    // upward acceleration (px/frame²)
 const LIN_DAMP    = 0.984   // linear velocity damping per frame
 const ANG_DAMP    = 0.978   // angular velocity damping — air resistance on rotation
 const DRIFT       = 0.025   // random horizontal noise per frame
-const MAX_V       = 5.0     // max linear velocity (px/frame)
+const MAX_V       = 7.0     // max linear velocity (px/frame)
 const MAX_OMEGA   = 0.05    // max angular velocity (rad/frame)
 const RESTITUTION = 0.35    // collision bounciness
 const CEIL_REST   = 0.12    // softer ceiling — balloons settle gently at top
@@ -208,8 +208,8 @@ export default function BalloonsScene({ cities, onNavigate }: { cities: BalloonC
 
         bodies.push({
           idx: i, x, y,
-          vx: (Math.random() - 0.5) * 2,
-          vy: -(Math.random() * 1.5 + 0.5),
+          vx: (Math.random() - 0.5) * 3,
+          vy: -(Math.random() * 3 + 1.5),
           angle: (Math.random() - 0.5) * 0.5,
           omega: (Math.random() - 0.5) * 0.015,
           w, h, r,
