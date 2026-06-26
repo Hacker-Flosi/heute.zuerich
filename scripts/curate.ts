@@ -147,7 +147,7 @@ Antworte AUSSCHLIESSLICH in JSON:
 {"curated_events": [{"id": "original name", "name": "bereinigter Name", "location": "Venue kurz", "eventType": "konzert", "reason": "1 Satz"}]}`
 
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 1500,
     system: systemPrompt,
     messages: [{
@@ -193,7 +193,7 @@ Antworte AUSSCHLIESSLICH in JSON:
 {"selected": ["exakter event name 1", "exakter event name 2", "exakter event name 3", "exakter event name 4", "exakter event name 5"]}`
 
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 500,
     system: systemPrompt,
     messages: [{
@@ -222,7 +222,7 @@ export async function curateEvents(rawEvents: RawEvent[], city: string): Promise
   const cityLabel = city === 'zuerich' ? 'Zürich' : city
 
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 4000,
     system: buildSystemPrompt(city),
     messages: [
@@ -275,7 +275,7 @@ Antworte AUSSCHLIESSLICH in JSON:
 {"curated_events": [{"id": "original name", "name": "bereinigter Name", "location": "Venue kurz", "eventType": "konzert", "reason": "1 Satz warum bei Regen"}]}`
 
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 2000,
     system: systemPrompt,
     messages: [{
