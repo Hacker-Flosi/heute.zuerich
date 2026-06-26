@@ -382,9 +382,13 @@ async function runScrapers(
     const results = await Promise.allSettled(scrapers.map((fn) => fn(date)))
     let scraperErrors = 0
     const raw: RawEvent[] = []
-    for (const r of results) {
+    for (let i = 0; i < results.length; i++) {
+      const r = results[i]
       if (r.status === 'fulfilled') raw.push(...r.value)
-      else { console.error('  Scraper Fehler:', r.reason); scraperErrors++ }
+      else {
+        console.error(`  Scraper Fehler (${scrapers[i].name}):`, r.reason)
+        scraperErrors++
+      }
     }
     if (raw.length > 0) return { raw, scraperErrors }
     console.warn(`  [Scraping] Versuch ${attempt + 1}/2: 0 Events gefunden`)
@@ -637,7 +641,8 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
     }
     const sourceCounts = { eventfrog: 0, hellozurich: 0, gangus: 0, ra: 0 }
     for (const e of raw) {
-      if (e.source && e.source in sourceCounts) sourceCounts[e.source as keyof typeof sourceCounts]++
+      const src = e.source === 'residentadvisor' ? 'ra' : e.source
+      if (src && src in sourceCounts) sourceCounts[src as keyof typeof sourceCounts]++
     }
     const typeCounts: Record<string, number> = {}
     for (const e of final) {
@@ -782,7 +787,8 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]): Promise<City
       }
       const sourceCounts = { eventfrog: 0, hellozurich: 0, gangus: 0, ra: 0 }
       for (const e of raw) {
-        if (e.source && e.source in sourceCounts) sourceCounts[e.source as keyof typeof sourceCounts]++
+        const src = e.source === 'residentadvisor' ? 'ra' : e.source
+      if (src && src in sourceCounts) sourceCounts[src as keyof typeof sourceCounts]++
       }
       const typeCounts: Record<string, number> = {}
       for (const e of locationLimited) {
