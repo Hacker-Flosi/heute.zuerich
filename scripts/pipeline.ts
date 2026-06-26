@@ -41,11 +41,20 @@ const CITY_CONFIG: Record<string, { twoLayer: boolean; scrapers: ScraperFn[] }> 
   basel:      { twoLayer: true, scrapers: [scrapeEventfrog, scrapeBaselVenues] },
 }
 
-// Zürich: blacklist approach (exclude surrounding cities)
+// Zürich: blacklist approach (exclude surrounding cities & agglomeration)
 const ZH_EXCLUDED = [
+  // Grossstädte
   'winterthur', 'baden', 'brugg', 'aarau', 'rapperswil', 'zug',
   'schaffhausen', 'frauenfeld', 'olten', 'solothurn', 'luzern',
   'bern', 'st. gallen',
+  // Agglomeration Ost & Zürichsee Ost
+  'uster', 'wetzikon', 'illnau', 'effretikon', 'gossau',
+  // Agglomeration Nord (Flughafengebiet)
+  'rümlang', 'kloten', 'bülach', 'bassersdorf', 'dietlikon', 'bauma',
+  // Agglomeration West
+  'dietikon', 'spreitenbach',
+  // Venue-spezifisch: Winterthur-Venues ohne Stadtfeld im Scraper
+  'eulachpark',
 ]
 
 // All other cities: whitelist approach (location must contain at least one term)
