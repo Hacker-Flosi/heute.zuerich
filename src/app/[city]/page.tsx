@@ -69,15 +69,24 @@ export default async function CityPage({ params }: PageProps) {
   const { today, tomorrow, dayAfter, rainToday, rainTomorrow, rainDayAfter, logoUrl, weather, featuredEvents } = await getPageData(city)
   const label = CITY_LABELS[city]
 
-  const jsonLd = {
+  // Event-Structured-Data nur für die heute sichtbaren Events (Tab "Heute" ist
+  // beim initialen Render aktiv) — Google verlangt, dass strukturierte Daten
+  // dem tatsächlich sichtbaren Seiteninhalt entsprechen.
+  const jsonLd = today.map((e) => ({
     '@context': 'https://schema.org',
-    '@type': 'EventSeries',
-    name: `Was läuft heute in ${label}?`,
-    url: `https://waslauft.in/${city}`,
-    location: { '@type': 'City', name: label, addressCountry: 'CH' },
-    organizer: { '@type': 'Organization', name: 'waslauft.in', url: 'https://waslauft.in' },
+    '@type': 'Event',
+    name: e.name,
+    startDate: e.time && e.time !== '00:00' ? `${e.date}T${e.time}:00+02:00` : e.date,
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-  }
+    eventStatus: 'https://schema.org/EventScheduled',
+    location: {
+      '@type': 'Place',
+      name: e.location,
+      address: { '@type': 'PostalAddress', addressLocality: label, addressCountry: 'CH' },
+    },
+    ...(e.url ? { url: e.url } : {}),
+    organizer: { '@type': 'Organization', name: 'waslauft.in', url: 'https://waslauft.in' },
+  }))
 
   return (
     <main>

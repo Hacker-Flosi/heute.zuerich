@@ -46,7 +46,7 @@ const TAB_LABELS = [
   getTabLabel('Übermorgen', 2),
 ]
 
-export default function EventList({ city, today, tomorrow, dayAfter, rainToday, rainTomorrow, rainDayAfter, isRainy, isRainyDays, featuredEvents }: EventListProps) {
+export default function EventList({ city, cityLabel, today, tomorrow, dayAfter, rainToday, rainTomorrow, rainDayAfter, isRainy, isRainyDays, featuredEvents }: EventListProps) {
   const [activeTab, setActiveTab] = useState<number>(() => {
     if (typeof window === 'undefined') return 0
     const saved = sessionStorage.getItem('activeTab')
@@ -131,6 +131,7 @@ export default function EventList({ city, today, tomorrow, dayAfter, rainToday, 
         <Link href="/" className={styles.logo}>
           <LogoAnimated />
         </Link>
+        <h1 className={styles.srOnly}>Was läuft heute in {cityLabel}?</h1>
         <CityPillDropdown currentSlug={city} />
       </header>
 

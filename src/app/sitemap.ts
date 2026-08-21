@@ -7,8 +7,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: base, changeFrequency: 'daily', priority: 1.0, lastModified: today },
     { url: `${base}/zuerich`, changeFrequency: 'daily', priority: 0.9, lastModified: today },
+    { url: `${base}/basel`, changeFrequency: 'daily', priority: 0.9, lastModified: today },
     { url: `${base}/stgallen`, changeFrequency: 'daily', priority: 0.9, lastModified: today },
     { url: `${base}/luzern`, changeFrequency: 'daily', priority: 0.9, lastModified: today },
+    { url: `${base}/winterthur`, changeFrequency: 'daily', priority: 0.9, lastModified: today },
     { url: `${base}/about`, changeFrequency: 'monthly', priority: 0.3 },
   ]
 }
