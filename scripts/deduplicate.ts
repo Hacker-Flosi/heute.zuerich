@@ -57,6 +57,29 @@ function locationWordOverlap(a: string, b: string): number {
 }
 
 /**
+ * Fraction of the shorter name's significant words (≥5 Zeichen) that appear in the other name.
+ * Fängt Fälle wie "WAAGHAUS WAGT „Sturz in die Sonne“ Matthias Peter/R.Hufenus" vs.
+ * "Ramuz – Sturz in die Sonne" — derselbe Kern-Titel, nur mit Venue-Branding/Autor ummantelt,
+ * wo weder Substring-Check noch Gesamt-Levenshtein-Ähnlichkeit greifen.
+ */
+// Generische Institutions-/Themenwörter — reichen allein nicht als Duplikat-Signal
+// (z.B. "Kunst Museum" oder "Schweiz" tauchen in vielen unterschiedlichen Ausstellungstiteln auf)
+const NAME_OVERLAP_STOPWORDS = new Set([
+  'kunst', 'museum', 'galerie', 'zentrum', 'ausstellung', 'sammlung',
+  'schweiz', 'stadt', 'gallen', 'zürich', 'luzern', 'basel', 'winterthur', 'bern',
+])
+
+function nameWordOverlap(a: string, b: string): { ratio: number; count: number } {
+  const wordsA = a.split(/\s+/).filter((w) => w.length >= 5 && !NAME_OVERLAP_STOPWORDS.has(w))
+  const wordsB = b.split(/\s+/).filter((w) => w.length >= 5 && !NAME_OVERLAP_STOPWORDS.has(w))
+  if (!wordsA.length || !wordsB.length) return { ratio: 0, count: 0 }
+  const [shorter, longer] = wordsA.length <= wordsB.length ? [wordsA, wordsB] : [wordsB, wordsA]
+  const longerSet = new Set(longer)
+  const overlap = shorter.filter((w) => longerSet.has(w)).length
+  return { ratio: overlap / shorter.length, count: overlap }
+}
+
+/**
  * Berechnet die Zeitdifferenz in Minuten zwischen zwei Uhrzeiten
  */
 function timeDiffMinutes(time1: string, time2: string): number {
@@ -79,14 +102,22 @@ function isSameEvent(a: RawEvent, b: RawEvent): boolean {
   const condensedA = normalizedLocationA.replace(/\s+/g, '')
   const condensedB = normalizedLocationB.replace(/\s+/g, '')
 
-  // Location match: exact, substring, condensed, or word-overlap (≥50% of shorter name's words)
-  const locationMatch =
+  // Strong location match: exact, substring, or condensed — no fuzzy word-overlap.
+  // Used to gate the name-word-overlap check below, where a loose location match
+  // (e.g. "Kunst Museum Beim Stadthaus" ~ "Kunst Museum Reinhart am Stadtgarten" — two
+  // distinct wings of the same institution) would compound with generic shared name
+  // words ("Kunst", "Museum") into false positives.
+  const strongLocationMatch =
     normalizedLocationA === normalizedLocationB ||
     normalizedLocationA.includes(normalizedLocationB) ||
     normalizedLocationB.includes(normalizedLocationA) ||
     condensedA === condensedB ||
     condensedA.includes(condensedB) ||
-    condensedB.includes(condensedA) ||
+    condensedB.includes(condensedA)
+
+  // Location match: strong match, or word-overlap (≥50% of shorter name's words)
+  const locationMatch =
+    strongLocationMatch ||
     locationWordOverlap(normalizedLocationA, normalizedLocationB) >= 0.5
 
   if (!locationMatch) return false
@@ -103,6 +134,16 @@ function isSameEvent(a: RawEvent, b: RawEvent): boolean {
   // Fuzzy-Match: Zeitdifferenz als zusätzlicher Filter
   const timeDiff = timeDiffMinutes(a.time, b.time)
   if (timeDiff > 30) return false
+
+  // Wort-Overlap: gleicher Kern-Titel, aber von einer Quelle mit Venue-Branding/Zusatzinfo ummantelt.
+  // Nur bei starkem Location-Match (nicht bloss Fuzzy-Overlap) — sonst können zwei
+  // unterschiedliche Flügel/Abteilungen derselben Institution fälschlich zusammenfallen.
+  // Mind. 2 gemeinsame markante Wörter nötig, ausser es ist das EINZIGE markante Wort
+  // im kürzeren Titel (z.B. ein Artist-Name wie "Scenarios").
+  if (strongLocationMatch) {
+    const overlap = nameWordOverlap(nameA, nameB)
+    if (overlap.count >= 2 || (overlap.count === 1 && overlap.ratio === 1)) return true
+  }
 
   const maxLen = Math.max(nameA.length, nameB.length)
   if (maxLen === 0) return false
