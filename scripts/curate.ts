@@ -2,6 +2,27 @@
 // AI-Kuratierungs-Script für waslauft.in
 
 import Anthropic from '@anthropic-ai/sdk'
+import { jsonrepair } from 'jsonrepair'
+
+/**
+ * Claude liefert gelegentlich leicht fehlerhaftes JSON (unescaped quotes,
+ * fehlende Kommas, abgeschnittene Strings). jsonrepair fängt die üblichen
+ * Fälle ab, bevor JSON.parse hart fehlschlägt.
+ */
+function extractJSON<T>(text: string): T | null {
+  const clean = text.replace(/```json|```/g, '').trim()
+  const jsonMatch = clean.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) return null
+  try {
+    return JSON.parse(jsonMatch[0]) as T
+  } catch {
+    try {
+      return JSON.parse(jsonrepair(jsonMatch[0])) as T
+    } catch {
+      return null
+    }
+  }
+}
 
 const VENUE_TIERS = `
 ## Venue-Tiers Zürich
@@ -157,11 +178,8 @@ Antworte AUSSCHLIESSLICH in JSON:
   })
 
   const text = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('')
-  const clean = text.replace(/```json|```/g, '').trim()
-  const jsonMatch = clean.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) return []
-  const parsed = JSON.parse(jsonMatch[0])
-  return parsed.curated_events || []
+  const parsed = extractJSON<{ curated_events?: CuratedResult[] }>(text)
+  return parsed?.curated_events || []
 }
 
 // ─── Instagram Post Selection ─────────────────────────────────────────────────
@@ -203,15 +221,8 @@ Antworte AUSSCHLIESSLICH in JSON:
   })
 
   const text = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('')
-  const clean = text.replace(/```json|```/g, '').trim()
-  const jsonMatch = clean.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) return events.slice(0, 5).map((e) => e.name)
-  try {
-    const parsed = JSON.parse(jsonMatch[0])
-    return parsed.selected || events.slice(0, 5).map((e) => e.name)
-  } catch {
-    return events.slice(0, 5).map((e) => e.name)
-  }
+  const parsed = extractJSON<{ selected?: string[] }>(text)
+  return parsed?.selected || events.slice(0, 5).map((e) => e.name)
 }
 
 export async function curateEvents(rawEvents: RawEvent[], city: string): Promise<CuratedResult[]> {
@@ -238,10 +249,8 @@ export async function curateEvents(rawEvents: RawEvent[], city: string): Promise
     .map((block) => block.text)
     .join('')
 
-  const clean = text.replace(/```json|```/g, '').trim()
-  const parsed = JSON.parse(clean)
-
-  return parsed.curated_events || []
+  const parsed = extractJSON<{ curated_events?: CuratedResult[] }>(text)
+  return parsed?.curated_events || []
 }
 
 /**
@@ -285,9 +294,6 @@ Antworte AUSSCHLIESSLICH in JSON:
   })
 
   const text = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('')
-  const clean = text.replace(/```json|```/g, '').trim()
-  const jsonMatch = clean.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) return []
-  const parsed = JSON.parse(jsonMatch[0])
-  return parsed.curated_events || []
+  const parsed = extractJSON<{ curated_events?: CuratedResult[] }>(text)
+  return parsed?.curated_events || []
 }
