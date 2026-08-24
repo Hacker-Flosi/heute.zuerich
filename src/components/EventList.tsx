@@ -56,6 +56,11 @@ export default function EventList({ city, cityLabel, today, tomorrow, dayAfter, 
   const [badWeather, setBadWeather] = useState<boolean>(isRainy ?? false)
   const [showRain, setShowRain] = useState<boolean>(false)
 
+  function selectTab(i: number) {
+    setActiveTab(i)
+    sessionStorage.setItem('activeTab', String(i))
+  }
+
   // Re-sync toggle if isRainy changes (e.g. navigating between cities)
   useEffect(() => {
     setBadWeather(isRainy ?? false)
@@ -142,7 +147,7 @@ export default function EventList({ city, cityLabel, today, tomorrow, dayAfter, 
             <button
               key={i}
               className={`${styles.tab} ${i === activeTab ? styles.tabActive : ''}`}
-              onClick={() => { setActiveTab(i); sessionStorage.setItem('activeTab', String(i)) }}
+              onClick={() => selectTab(i)}
             >
               {label}
             </button>

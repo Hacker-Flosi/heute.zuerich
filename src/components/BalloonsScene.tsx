@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { usePageTransition } from './PageTransitionProvider'
 import styles from './BalloonsScene.module.css'
 
 export interface BalloonCity {
@@ -178,6 +179,15 @@ export default function BalloonsScene({ cities, onNavigate }: { cities: BalloonC
   const containerRef = useRef<HTMLDivElement>(null)
   const pillRefs     = useRef<(HTMLElement | null)[]>(Array(cities.length).fill(null))
   const rafRef       = useRef<number>(0)
+  const { transitionTo } = usePageTransition()
+
+  function handleCityClick(e: React.MouseEvent<HTMLAnchorElement>, href: string, color: string) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+    e.preventDefault()
+    // onNavigate (Dropdown schliessen) erst wenn der Wisch den Screen voll abdeckt —
+    // sonst blitzt die dahinterliegende Liste kurz auf, bevor der Übergang zudeckt.
+    transitionTo(href, color, onNavigate)
+  }
 
   useEffect(() => {
     const container = containerRef.current
@@ -327,7 +337,7 @@ export default function BalloonsScene({ cities, onNavigate }: { cities: BalloonC
             className={styles.pill}
             ref={(el: HTMLAnchorElement | null) => { pillRefs.current[i] = el }}
             style={{ '--pill-bg': city.color } as React.CSSProperties}
-            onClick={onNavigate}
+            onClick={(e) => handleCityClick(e, `/${city.slug}`, city.color)}
           >
             {city.label}
           </Link>

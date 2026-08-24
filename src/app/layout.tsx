@@ -3,6 +3,7 @@
 import type { Metadata } from 'next'
 import Script from 'next/script'
 import CookieBanner from '@/components/CookieBanner'
+import PageTransitionProvider from '@/components/PageTransitionProvider'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -72,8 +73,10 @@ export default function RootLayout({
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-TME0GKBTFB" strategy="afterInteractive" />
       </head>
       <body>
-        {children}
-        <CookieBanner />
+        <PageTransitionProvider>
+          {children}
+          <CookieBanner />
+        </PageTransitionProvider>
       </body>
     </html>
   )

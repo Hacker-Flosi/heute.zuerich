@@ -1,0 +1,60 @@
+// src/components/PageTransitionProvider.tsx — Farbwisch-Übergang bei Stadtwechsel
+
+'use client'
+
+import React, { createContext, useContext, useRef, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import styles from './PageTransitionProvider.module.css'
+
+interface TransitionContextValue {
+  // onCovered läuft erst, wenn der Screen voll abgedeckt ist (z.B. Dropdown schliessen) —
+  // damit nichts vom Seitenwechsel sichtbar wird, bevor der Wisch alles verdeckt hat.
+  transitionTo: (href: string, color: string, onCovered?: () => void) => void
+}
+
+const TransitionContext = createContext<TransitionContextValue | null>(null)
+
+export function usePageTransition(): TransitionContextValue {
+  const ctx = useContext(TransitionContext)
+  if (!ctx) throw new Error('usePageTransition muss innerhalb von PageTransitionProvider verwendet werden')
+  return ctx
+}
+
+// Muss zur @keyframes pageWipe Timing in PageTransitionProvider.module.css passen:
+// bei 42% ist der Screen voll abgedeckt — dort wird navigiert.
+const DURATION_MS = 780
+const NAVIGATE_AT_MS = 330
+
+export default function PageTransitionProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+  const panelRef = useRef<HTMLDivElement>(null)
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([])
+
+  // Direkte DOM-Manipulation statt React-State: läuft synchron im selben Klick-Handler
+  // wie z.B. das Schliessen des Städte-Dropdowns, sodass beides im selben Frame gemalt
+  // wird — kein sichtbarer Frame mit der alten Seite, bevor der Wisch startet.
+  const transitionTo = useCallback((href: string, panelColor: string, onCovered?: () => void) => {
+    timers.current.forEach(clearTimeout)
+    timers.current = []
+
+    const el = panelRef.current
+    if (!el) { onCovered?.(); router.push(href); return }
+
+    el.style.backgroundColor = panelColor
+    el.classList.remove(styles.panelActive)
+    void el.offsetWidth // Reflow erzwingen — Animation neu starten bei schnell aufeinanderfolgenden Klicks
+    el.classList.add(styles.panelActive)
+
+    // Erst wenn der Screen voll abgedeckt ist (Panel bei 42% der Animation): dahinter
+    // verstecktes Menü schliessen und navigieren — nichts vom Wechsel wird sichtbar.
+    timers.current.push(setTimeout(() => { onCovered?.(); router.push(href) }, NAVIGATE_AT_MS))
+    timers.current.push(setTimeout(() => panelRef.current?.classList.remove(styles.panelActive), DURATION_MS))
+  }, [router])
+
+  return (
+    <TransitionContext.Provider value={{ transitionTo }}>
+      {children}
+      <div ref={panelRef} className={styles.panel} aria-hidden="true" />
+    </TransitionContext.Provider>
+  )
+}
