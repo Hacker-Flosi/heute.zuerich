@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/pipeline",
-      "schedule": "0 5 * * *"
+      "schedule": "40 5 * * *"
     },
     {
       "path": "/api/cron/instagram",
