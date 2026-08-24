@@ -1,6 +1,6 @@
 // src/app/layout.tsx
 
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
 import CookieBanner from '@/components/CookieBanner'
 import PageTransitionProvider from '@/components/PageTransitionProvider'
@@ -52,6 +52,10 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/manifest.json',
+}
+
+export const viewport: Viewport = {
+  themeColor: '#EEEEEE',
 }
 
 export default function RootLayout({
