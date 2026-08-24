@@ -56,15 +56,11 @@ export default function PageTransitionProvider({ children }: { children: React.R
   const panelRef = useRef<HTMLDivElement>(null)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
-  // Baseline beim Erstladen + hält das Meta-Tag synchron zu Theme-/Regen-Wechseln
-  // ausserhalb von Navigationen (z.B. Dark-Mode-Toggle ohne Seitenwechsel).
+  // Baseline beim Erstladen. Bewusst kein MutationObserver auf data-theme/data-rain:
+  // EventList setzt data-rain bei jedem Tab-Wechsel neu (auch ohne Wertänderung),
+  // was sonst bei jedem Klick unnötig getComputedStyle + Meta-Tag-Neueinfügen auslöst.
   useEffect(() => {
     sampleBodyBackground()
-    const observer = new MutationObserver(() => {
-      requestAnimationFrame(sampleBodyBackground)
-    })
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-rain'] })
-    return () => observer.disconnect()
   }, [])
 
   // Direkte DOM-Manipulation statt React-State: läuft synchron im selben Klick-Handler
