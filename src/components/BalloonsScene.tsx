@@ -19,10 +19,12 @@ const LIN_DAMP    = 0.984   // linear velocity damping per frame
 const ANG_DAMP    = 0.978   // angular velocity damping — air resistance on rotation
 const DRIFT       = 0.025   // random horizontal noise per frame
 const MAX_V       = 7.0     // max linear velocity (px/frame)
+const THROW_MAX_V = 26.0    // higher velocity cap when a pill is thrown by the user
 const MAX_OMEGA   = 0.05    // max angular velocity (rad/frame)
 const RESTITUTION = 0.35    // collision bounciness
 const CEIL_REST   = 0.12    // softer ceiling — balloons settle gently at top
 const GAP         = 10      // wall clearance (px)
+const DRAG_THRESHOLD = 6    // px pointer movement before a tap becomes a drag
 
 // ── Body ──────────────────────────────────────────────────────────────────────
 
@@ -39,6 +41,17 @@ interface Body {
   r:       number    // capsule radius = h/2
   invMass: number    // 1/mass  (uniform mass = 1)
   invI:    number    // 1/moment-of-inertia
+}
+
+interface DragState {
+  idx: number
+  pointerId: number
+  startClientX: number
+  startClientY: number
+  grabOffsetX: number  // pointer position relative to the pill's center at grab time
+  grabOffsetY: number
+  moved: boolean
+  history: { x: number; y: number; t: number }[]  // recent pointer positions, for throw velocity
 }
 
 // ── Vec helpers (inline, no allocations in hot path) ─────────────────────────
@@ -179,9 +192,14 @@ export default function BalloonsScene({ cities, onNavigate }: { cities: BalloonC
   const containerRef = useRef<HTMLDivElement>(null)
   const pillRefs     = useRef<(HTMLElement | null)[]>(Array(cities.length).fill(null))
   const rafRef       = useRef<number>(0)
+  const bodiesRef    = useRef<Body[]>([])
+  const dragRef      = useRef<DragState | null>(null)
+  const wasDraggingRef = useRef(false)
   const { transitionTo } = usePageTransition()
 
   function handleCityClick(e: React.MouseEvent<HTMLAnchorElement>, href: string, color: string) {
+    // Ein Klick, der aus einem Wurf/Drag hervorgeht, soll nicht navigieren.
+    if (wasDraggingRef.current) { wasDraggingRef.current = false; e.preventDefault(); return }
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
     e.preventDefault()
     // onNavigate (Dropdown schliessen) erst wenn der Wisch den Screen voll abdeckt —
@@ -189,18 +207,77 @@ export default function BalloonsScene({ cities, onNavigate }: { cities: BalloonC
     transitionTo(href, color, onNavigate)
   }
 
+  function handlePointerDown(e: React.PointerEvent<HTMLElement>, idx: number) {
+    if (e.button !== 0 && e.pointerType === 'mouse') return
+    const body = bodiesRef.current[idx]
+    if (!body) return
+    dragRef.current = {
+      idx,
+      pointerId: e.pointerId,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      grabOffsetX: 0,
+      grabOffsetY: 0,
+      moved: false,
+      history: [{ x: e.clientX, y: e.clientY, t: performance.now() }],
+    }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLElement>) {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== e.pointerId) return
+
+    const dx = e.clientX - drag.startClientX
+    const dy = e.clientY - drag.startClientY
+    if (!drag.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return
+    drag.moved = true
+
+    const container = containerRef.current
+    const body = bodiesRef.current[drag.idx]
+    if (!container || !body) return
+
+    const rect = container.getBoundingClientRect()
+    body.x = e.clientX - rect.left
+    body.y = e.clientY - rect.top
+    body.vx = 0
+    body.vy = 0
+
+    drag.history.push({ x: e.clientX, y: e.clientY, t: performance.now() })
+    if (drag.history.length > 6) drag.history.shift()
+  }
+
+  function endDrag(e: React.PointerEvent<HTMLElement>) {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== e.pointerId) return
+    dragRef.current = null
+    if (!drag.moved) return
+
+    wasDraggingRef.current = true
+    const body = bodiesRef.current[drag.idx]
+    if (!body) return
+
+    // Wurf-Geschwindigkeit aus den letzten Pointer-Positionen ableiten
+    const hist = drag.history
+    const first = hist[0]
+    const last = hist[hist.length - 1]
+    const dt = Math.max(16, last.t - first.t)
+    const vx = ((last.x - first.x) / dt) * 16
+    const vy = ((last.y - first.y) / dt) * 16
+    body.vx = Math.max(-THROW_MAX_V, Math.min(THROW_MAX_V, vx))
+    body.vy = Math.max(-THROW_MAX_V, Math.min(THROW_MAX_V, vy))
+  }
+
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
-
-    let bodies: Body[] = []
 
     function init() {
       const W = container!.offsetWidth
       const H = container!.offsetHeight
       if (W === 0 || H === 0) return
 
-      bodies = []
+      const bodies: Body[] = []
       for (let i = 0; i < cities.length; i++) {
         const el = pillRefs.current[i]
         if (!el) continue
@@ -231,14 +308,19 @@ export default function BalloonsScene({ cities, onNavigate }: { cities: BalloonC
         el.style.top  = `${y - h / 2}px`
         el.setAttribute('data-ready', '1')
       }
+      bodiesRef.current = bodies
     }
 
     function step() {
       const W = container!.offsetWidth
       const H = container!.offsetHeight
+      const bodies = bodiesRef.current
+      const draggedIdx = dragRef.current?.moved ? dragRef.current.idx : -1
 
-      // ── Integrate forces & damping ─────────────────────────────────────────
+      // ── Integrate forces & damping (skip the pill currently held by the user) ──
       for (const b of bodies) {
+        if (b.idx === draggedIdx) continue
+
         b.vy   -= BUOYANCY
         b.vx   += (Math.random() - 0.5) * DRIFT
         b.vx   *= LIN_DAMP
@@ -257,7 +339,7 @@ export default function BalloonsScene({ cities, onNavigate }: { cities: BalloonC
         b.angle += b.omega
       }
 
-      // ── Wall collisions ────────────────────────────────────────────────────
+      // ── Wall collisions (auch für die gezogene Pille — bleibt im Container) ──
       for (const b of bodies) {
         // Compute spine extents
         let [p1x, p1y, p2x, p2y] = getSpine(b)
@@ -299,7 +381,7 @@ export default function BalloonsScene({ cities, onNavigate }: { cities: BalloonC
         }
       }
 
-      // ── Capsule-capsule collisions ─────────────────────────────────────────
+      // ── Capsule-capsule collisions (die gezogene Pille schiebt andere weg) ──
       for (let i = 0; i < bodies.length; i++) {
         for (let j = i + 1; j < bodies.length; j++) {
           collideCapsules(bodies[i], bodies[j])
@@ -337,7 +419,13 @@ export default function BalloonsScene({ cities, onNavigate }: { cities: BalloonC
             className={styles.pill}
             ref={(el: HTMLAnchorElement | null) => { pillRefs.current[i] = el }}
             style={{ '--pill-bg': city.color } as React.CSSProperties}
+            draggable={false}
+            onDragStart={(e) => e.preventDefault()}
             onClick={(e) => handleCityClick(e, `/${city.slug}`, city.color)}
+            onPointerDown={(e) => handlePointerDown(e, i)}
+            onPointerMove={handlePointerMove}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
           >
             {city.label}
           </Link>

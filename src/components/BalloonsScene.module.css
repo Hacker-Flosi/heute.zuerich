@@ -21,8 +21,15 @@
   background: var(--pill-bg, #fff);
   border-radius: 999px;
   border: 1.5px solid #000;
-  cursor: pointer;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
   transition: opacity 0.25s ease;
+}
+
+.pill:active {
+  cursor: grabbing;
 }
 
 .pill[data-ready] {

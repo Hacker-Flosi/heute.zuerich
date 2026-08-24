@@ -28,11 +28,16 @@ const NAVIGATE_AT_MS = 330
 /**
  * Mobile Safari färbt die Safe-Area/Statusleiste anhand des Seitenhintergrunds ein,
  * hinkt dabei aber bei SPA-Navigation spürbar hinterher (~2s), weil es ohne
- * `theme-color`-Meta-Tag selbst raten/samplen muss. Mit explizitem Tag reagiert es
- * praktisch sofort, wenn wir den content-Wert selbst setzen.
+ * `theme-color`-Meta-Tag selbst raten/samplen muss. Nur das content-Attribut eines
+ * bestehenden Tags zu mutieren reicht auf echten iOS-Geräten oft nicht — Safari
+ * übernimmt die Änderung zuverlässiger, wenn das Tag komplett neu eingefügt wird.
  */
 function setThemeColor(color: string) {
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color)
+  document.querySelectorAll('meta[name="theme-color"]').forEach((el) => el.remove())
+  const meta = document.createElement('meta')
+  meta.setAttribute('name', 'theme-color')
+  meta.setAttribute('content', color)
+  document.head.appendChild(meta)
 }
 
 /** Liest die tatsächlich gerenderte Hintergrundfarbe aus (funktioniert für jede
