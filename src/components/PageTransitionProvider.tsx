@@ -24,6 +24,10 @@ export function usePageTransition(): TransitionContextValue {
 // bei 42% ist der Screen voll abgedeckt — dort wird navigiert.
 const DURATION_MS = 780
 const NAVIGATE_AT_MS = 330
+// Fenster, in dem die neue Seite ihre Elemente gestaffelt einblendet (CSS reagiert
+// auf html.page-entering, siehe EventBlock.module.css). Grosszügig bemessen, damit
+// auch ein langsamerer RSC-Fetch noch sicher hineinfällt.
+const ENTER_WINDOW_MS = 1100
 
 /**
  * Mobile Safari färbt die Safe-Area/Statusleiste anhand des Seitenhintergrunds ein,
@@ -36,7 +40,12 @@ const NAVIGATE_AT_MS = 330
  * React bei der nächsten Navigation abstürzen (Hydration-Fehler).
  */
 function setThemeColor(color: string) {
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color)
+  const meta = document.querySelector('meta[name="theme-color"]')
+  if (!meta) return
+  // In einem eigenen rAF-Tick setzen, getrennt vom synchronen Reflow, den die
+  // Panel-Klassenänderung nebenan erzwingt — Safari übernimmt die Änderung
+  // zuverlässiger, wenn sie nicht mitten in einem erzwungenen Reflow passiert.
+  requestAnimationFrame(() => meta.setAttribute('content', color))
 }
 
 /** Liest die tatsächlich gerenderte Hintergrundfarbe aus (funktioniert für jede
@@ -82,7 +91,17 @@ export default function PageTransitionProvider({ children }: { children: React.R
 
     // Erst wenn der Screen voll abgedeckt ist (Panel bei 42% der Animation): dahinter
     // verstecktes Menü schliessen und navigieren — nichts vom Wechsel wird sichtbar.
-    timers.current.push(setTimeout(() => { onCovered?.(); router.push(href) }, NAVIGATE_AT_MS))
+    timers.current.push(setTimeout(() => {
+      onCovered?.()
+      router.push(href)
+      // Markiert das Fenster, in dem die neu gemountete Seite ihre Elemente gestaffelt
+      // einblenden darf. Nur hier aktiv — ein Tab-Wechsel innerhalb einer Stadtseite
+      // setzt diese Klasse nie, bleibt also unanimiert.
+      document.documentElement.classList.add('page-entering')
+      timers.current.push(setTimeout(() => {
+        document.documentElement.classList.remove('page-entering')
+      }, ENTER_WINDOW_MS))
+    }, NAVIGATE_AT_MS))
     timers.current.push(setTimeout(() => {
       panelRef.current?.classList.remove(styles.panelActive)
       // Wisch ist weg — jetzt auf die tatsächliche Hintergrundfarbe der neuen Seite zurück.

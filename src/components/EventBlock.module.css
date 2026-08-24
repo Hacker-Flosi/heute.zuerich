@@ -5,6 +5,24 @@
   list-style: none;
 }
 
+/* Gestaffeltes Einblenden von oben nach unten — nur direkt nach einer echten
+   Seiten-Navigation (siehe PageTransitionProvider), nicht bei Tab-Wechseln. */
+:global(html.page-entering) .item {
+  animation: pageEnter 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 30ms);
+}
+
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(-14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(html.page-entering) .item {
+    animation: none;
+  }
+}
+
 [data-theme="dark"] .link {
   background-color: #000 !important;
   color: #fff !important;
