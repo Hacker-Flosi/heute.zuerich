@@ -27,17 +27,16 @@ const NAVIGATE_AT_MS = 330
 
 /**
  * Mobile Safari färbt die Safe-Area/Statusleiste anhand des Seitenhintergrunds ein,
- * hinkt dabei aber bei SPA-Navigation spürbar hinterher (~2s), weil es ohne
- * `theme-color`-Meta-Tag selbst raten/samplen muss. Nur das content-Attribut eines
- * bestehenden Tags zu mutieren reicht auf echten iOS-Geräten oft nicht — Safari
- * übernimmt die Änderung zuverlässiger, wenn das Tag komplett neu eingefügt wird.
+ * hinkt dabei aber bei SPA-Navigation spürbar hinterher, weil es ohne `theme-color`-
+ * Meta-Tag selbst raten/samplen muss.
+ *
+ * Nur das content-Attribut mutieren (nicht das Element ersetzen!) — Next.js verwaltet
+ * dieses Tag selbst als Teil seiner Head-Metadaten über Navigationen hinweg. Ein
+ * Remove+Recreate bringt Next's eigene Head-Reconciliation durcheinander und lässt
+ * React bei der nächsten Navigation abstürzen (Hydration-Fehler).
  */
 function setThemeColor(color: string) {
-  document.querySelectorAll('meta[name="theme-color"]').forEach((el) => el.remove())
-  const meta = document.createElement('meta')
-  meta.setAttribute('name', 'theme-color')
-  meta.setAttribute('content', color)
-  document.head.appendChild(meta)
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color)
 }
 
 /** Liest die tatsächlich gerenderte Hintergrundfarbe aus (funktioniert für jede
