@@ -3,7 +3,6 @@
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
 import ClearRainMode from '@/components/ClearRainMode'
-import ConsentRevokeButton from './ConsentRevokeButton'
 import styles from '../about/about.module.css'
 import type { Metadata } from 'next'
 
@@ -32,7 +31,7 @@ export default function DatenschutzPage() {
         <p className={styles.body}>
           waslauft.in erhebt keine personenbezogenen Daten. Es gibt kein Login, keine Registrierung,
           keinen Newsletter und keine Nutzerkonten. Die Seite zeigt täglich kuratierte Events — anonym
-          und ohne Tracking, sofern du dem nicht zustimmst.
+          und ohne Tracking.
         </p>
 
         <h2 className={styles.contactHeadline}>Hosting</h2>
@@ -51,31 +50,6 @@ export default function DatenschutzPage() {
           EU-U.S. Data Privacy Framework zertifiziert. Datenschutzerklärung:{' '}
           <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className={styles.email}>
             policies.google.com/privacy
-          </a>
-        </p>
-
-        <h2 className={styles.contactHeadline}>Google Analytics</h2>
-        <p className={styles.body}>
-          Mit deiner Einwilligung setzen wir <strong>Google Analytics 4</strong> (Anbieter: Google LLC) ein,
-          um anonymisierte Nutzungsstatistiken zu erheben — Seitenaufrufe, Verweildauer und Herkunftsregionen.
-          IP-Adressen werden vor der Speicherung anonymisiert. Die Daten werden auf Servern von Google (USA)
-          gespeichert und nach 14 Monaten automatisch gelöscht.
-        </p>
-        <p className={styles.body}>
-          Ohne deine Zustimmung wird Google Analytics nicht aktiviert. Die Einwilligung basiert auf Art. 6
-          Abs. 1 lit. a DSGVO / Art. 31 Abs. 1 nDSG und kann jederzeit widerrufen werden.
-        </p>
-
-        <h2 className={styles.contactHeadline}>Einwilligung widerrufen</h2>
-        <p className={styles.body}>
-          Du kannst deine Cookie-Einwilligung jederzeit zurückziehen. Die Einstellung wird im{' '}
-          <code>localStorage</code> deines Browsers gespeichert.
-        </p>
-        <ConsentRevokeButton />
-        <p className={styles.body} style={{ marginTop: '0.75rem' }}>
-          Browser-Opt-Out:{' '}
-          <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className={styles.email}>
-            tools.google.com/dlpage/gaoptout
           </a>
         </p>
 

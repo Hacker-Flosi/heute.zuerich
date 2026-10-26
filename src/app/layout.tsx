@@ -1,8 +1,6 @@
 // src/app/layout.tsx
 
 import type { Metadata, Viewport } from 'next'
-import Script from 'next/script'
-import CookieBanner from '@/components/CookieBanner'
 import PageTransitionProvider from '@/components/PageTransitionProvider'
 import './globals.css'
 
@@ -67,19 +65,10 @@ export default function RootLayout({
     <html lang="de">
       <head>
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
-        <Script id="gtag-consent" strategy="afterInteractive">{`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('consent', 'default', { analytics_storage: 'denied' });
-          gtag('js', new Date());
-          gtag('config', 'G-TME0GKBTFB');
-        `}</Script>
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-TME0GKBTFB" strategy="afterInteractive" />
       </head>
       <body>
         <PageTransitionProvider>
           {children}
-          <CookieBanner />
         </PageTransitionProvider>
       </body>
     </html>

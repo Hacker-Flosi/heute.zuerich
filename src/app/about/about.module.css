@@ -447,25 +447,6 @@
 
 .email:hover { opacity: 0.7; }
 
-.revokeButton {
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--fg);
-  background: transparent;
-  border: 2px solid var(--fg);
-  padding: 0.6rem 1.2rem;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.revokeButton:hover {
-  background: var(--fg);
-  color: var(--bg);
-}
-
 @media (min-width: 768px) {
 
   /* Global padding */
