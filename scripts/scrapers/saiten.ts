@@ -12,8 +12,7 @@ const API = 'https://www.saiten.ch/api/calendar-list.json'
 const HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; waslauft-bot/1.0)' }
 const TIMEOUT_MS = 10_000
 const CONCURRENCY = 5
-// Max pages to scan — each page has 50 items, events are chronological
-// On busy days (holidays), übermorgen events can appear on pages 10+
+// Max pages per day — each page has 50 items, a normal day has ~7 pages
 const MAX_PAGES = 20
 
 async function fetchHtml(url: string): Promise<string | null> {
@@ -29,18 +28,25 @@ async function fetchHtml(url: string): Promise<string | null> {
   }
 }
 
-async function fetchApiPage(page: number): Promise<string | null> {
-  try {
-    const res = await fetch(`${API}?mode=events&page=${page}`, {
-      headers: HEADERS,
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    })
-    if (!res.ok) return null
-    const json = await res.json() as { content: string }
-    return json.content
-  } catch {
-    return null
+async function fetchApiPage(page: number, date: string): Promise<{ content: string; totalPages: number } | null> {
+  // days=YYYYMMDD filtert serverseitig auf einen Tag (wie der Datumsfilter auf saiten.ch/kalender)
+  const days = date.replace(/-/g, '')
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await fetch(`${API}?mode=events&days=${days}&page=${page}`, {
+        headers: HEADERS,
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      })
+      if (res.ok) {
+        const json = await res.json() as { content: string; totalPages?: number }
+        return { content: json.content, totalPages: json.totalPages ?? 1 }
+      }
+      console.warn(`[Saiten] Seite ${page}: HTTP ${res.status} (Versuch ${attempt}/2)`)
+    } catch (err) {
+      console.warn(`[Saiten] Seite ${page}: ${err instanceof Error ? err.message : err} (Versuch ${attempt}/2)`)
+    }
   }
+  return null
 }
 
 /** Check if a date string like "Do.9.4." or "9.4.—11.4." contains the target YYYY-MM-DD */
@@ -162,11 +168,16 @@ export async function scrapeSaiten(date: string): Promise<RawEvent[]> {
   const allEntries: Array<{ slug: string; name: string; location: string; time: string }> = []
 
   for (let page = 1; page <= MAX_PAGES; page++) {
-    const html = await fetchApiPage(page)
-    if (!html) break
+    const result = await fetchApiPage(page, date)
+    if (!result) {
+      // Ohne Seite 1 gibt es gar nichts — als Fehler melden statt still 0 Events
+      if (page === 1) throw new Error('Saiten-API nicht erreichbar')
+      break
+    }
 
-    const { entries } = parseItems(html, date, seenSlugs)
+    const { entries } = parseItems(result.content, date, seenSlugs)
     allEntries.push(...entries)
+    if (page >= result.totalPages) break
   }
 
   const entries = allEntries

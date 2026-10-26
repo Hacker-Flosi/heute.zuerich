@@ -65,37 +65,43 @@ function toZurichDate(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
+// Mittelpunkt + Radius pro Stadt. Eventfrog filtert serverseitig nach Datum und Ort —
+// ohne Filter wären es ~2'500 Events pro Tag für die ganze Schweiz (Stand Okt. 2026).
+const CITY_GEO: Record<string, { lat: number; lng: number; r: number }> = {
+  zuerich:    { lat: 47.3769, lng: 8.5417, r: 12 },
+  basel:      { lat: 47.5596, lng: 7.5886, r: 8 },
+  stgallen:   { lat: 47.4245, lng: 9.3767, r: 8 },
+  luzern:     { lat: 47.0502, lng: 8.3093, r: 8 },
+  winterthur: { lat: 47.4988, lng: 8.7237, r: 6 },
+}
+
 export async function scrapeEventfrog(
   date: string,
-  maxPages = 50,
-  pageDelayMs = 2000,
+  city: string,
+  maxPages = 10,
+  pageDelayMs = 1000,
 ): Promise<RawEvent[]> {
   patchEventfrogService()
 
   const apiKey = process.env.EVENTFROG_API_KEY
   if (!apiKey) throw new Error('EVENTFROG_API_KEY nicht gesetzt')
+  const geo = CITY_GEO[city]
+  if (!geo) throw new Error(`Eventfrog: keine Koordinaten für Stadt "${city}"`)
 
   const service = new EventfrogService(apiKey)
   const events: RawEvent[] = []
   let page = 1
 
   while (page <= maxPages) {
-    const request = new EventfrogEventRequest({ perPage: 100, page })
+    const request = new EventfrogEventRequest({ perPage: 100, page, from: date, to: date, ...geo })
     const batch = await service.loadEvents(request) as any[]
 
     if (!batch.length) break
 
-    let seenPastTargetDate = false
-
     for (const event of batch) {
       const startDate: Date = event.startDate
-      const eventDate = toZurichDate(startDate)
-
-      // Once any event in this batch is past our target date, all events for that
-      // date have already been seen — Eventfrog returns events sorted chronologically.
-      if (eventDate > date) seenPastTargetDate = true
-
-      if (eventDate !== date) continue
+      // from/to liefert auch mehrtägige Events, die an diesem Tag laufen — nur Starts am Tag behalten
+      if (toZurichDate(startDate) !== date) continue
 
       const time = startDate.toLocaleTimeString('de-CH', {
         hour: '2-digit', minute: '2-digit', hour12: false,
@@ -125,17 +131,17 @@ export async function scrapeEventfrog(
     }
 
     if (batch.length < 100) break
-
-    // Adaptive stop: past target date → all events for this date collected
-    if (seenPastTargetDate) {
-      console.log(`[Eventfrog] Vollständig: ${events.length} Events für ${date} (${page} Seiten)`)
-      return events
-    }
-
     if (pageDelayMs > 0) await new Promise((r) => setTimeout(r, pageDelayMs))
     page++
   }
 
-  console.log(`[Eventfrog] ${events.length} Events für ${date} (${page} Seiten, Safety-Cap)`)
+  console.log(`[Eventfrog] ${events.length} Events für ${city} ${date} (${page} Seiten)`)
   return events
+}
+
+/** Scraper-Funktion für CITY_CONFIG — bindet die Stadt, Name bleibt für Fehler-Logs lesbar. */
+export function eventfrogFor(city: string): (date: string) => Promise<RawEvent[]> {
+  const fn = (date: string) => scrapeEventfrog(date, city)
+  Object.defineProperty(fn, 'name', { value: 'scrapeEventfrog' })
+  return fn
 }

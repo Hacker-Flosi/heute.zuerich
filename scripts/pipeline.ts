@@ -7,7 +7,7 @@ import { sendTelegramNotification, sendCrashAlert, sendFeaturedEventReminders } 
 import type { FeaturedEventAlert } from './notify'
 import { savePipelineSnapshot, updateVenueStats } from './stats'
 import type { CityResult } from './notify'
-import { scrapeEventfrog } from './scrapers/eventfrog'
+import { eventfrogFor } from './scrapers/eventfrog'
 import { scrapeCoucou } from './scrapers/coucou'
 import { scrapeHellozurich } from './scrapers/hellozurich'
 import { scrapeGangus } from './scrapers/gangus'
@@ -32,13 +32,13 @@ type ScraperFn = (date: string) => Promise<RawEvent[]>
 
 
 const CITY_CONFIG: Record<string, { twoLayer: boolean; scrapers: ScraperFn[] }> = {
-  zuerich:    { twoLayer: true, scrapers: [scrapeEventfrog, scrapeHellozurich, scrapeResidentAdvisor] },
-  stgallen:   { twoLayer: true, scrapers: [scrapeEventfrog, scrapeSaiten, scrapeStGallenVenues] },
-  luzern:     { twoLayer: true, scrapers: [scrapeGangus, scrapeEventfrog] },
-  winterthur: { twoLayer: true, scrapers: [scrapeEventfrog, scrapeCoucou] },
+  zuerich:    { twoLayer: true, scrapers: [eventfrogFor('zuerich'), scrapeHellozurich, scrapeResidentAdvisor] },
+  stgallen:   { twoLayer: true, scrapers: [eventfrogFor('stgallen'), scrapeSaiten, scrapeStGallenVenues] },
+  luzern:     { twoLayer: true, scrapers: [scrapeGangus, eventfrogFor('luzern')] },
+  winterthur: { twoLayer: true, scrapers: [eventfrogFor('winterthur'), scrapeCoucou] },
   // Bern: Coming Soon — Scraper bereit (Petzi + Dampfzentrale), aber Stadt noch nicht aktiv
   // bern: { twoLayer: true, scrapers: [scrapePetzi, scrapeDampfzentrale] },
-  basel:      { twoLayer: true, scrapers: [scrapeEventfrog, scrapeBaselVenues] },
+  basel:      { twoLayer: true, scrapers: [eventfrogFor('basel'), scrapeBaselVenues] },
 }
 
 // Zürich: blacklist approach (exclude surrounding cities & agglomeration)
@@ -61,7 +61,7 @@ const ZH_EXCLUDED = [
 const CITY_INCLUSIONS: Record<string, string[]> = {
   basel:       ['basel', 'riehen'],
   bern:        ['bern', 'muri bei bern', 'köniz'],
-  stgallen:    ['st. gallen', 'st gallen', 'st.gallen', 'saint-gallen'],
+  stgallen:    ['st. gallen', 'st gallen', 'st.gallen', 'sankt gallen', 'saint-gallen'],
   luzern:      ['luzern', 'lucerne', 'kriens', 'horw', 'ebikon'],
   winterthur:  ['winterthur'],
 }
@@ -340,13 +340,17 @@ function fillToTarget(chosen: RawEvent[], pool: RawEvent[]): RawEvent[] {
 }
 
 const MIN_EVENTS_THRESHOLD = 10
+// Viele Quellen füllen sich erst kurzfristig. Tage unter TARGET_EVENTS werden darum
+// als "Morgen" und "Heute" nochmals gescrapt, sofern der letzte Stand älter ist.
+const REFRESH_AFTER_HOURS = 20
 
-async function hasEventsForDate(city: string, date: string): Promise<boolean> {
+async function hasEventsForDate(city: string, date: string, refreshStale = false): Promise<boolean> {
   // Use write client (no CDN) so deletions are immediately visible
   const client = getSanityWriteClient()
-  const [total, saitenOnly] = await Promise.all([
+  const [total, saitenOnly, newest] = await Promise.all([
     client.fetch<number>(`count(*[_type == "event" && city == $city && date == $date])`, { city, date }),
     client.fetch<number>(`count(*[_type == "event" && city == $city && date == $date && source != "saiten"])`, { city, date }),
+    client.fetch<string | null>(`*[_type == "event" && city == $city && date == $date] | order(_createdAt desc)[0]._createdAt`, { city, date }),
   ])
   // If all events are saiten-only, treat as incomplete — allow re-scraping
   if (total > 0 && saitenOnly === 0) {
@@ -358,9 +362,48 @@ async function hasEventsForDate(city: string, date: string): Promise<boolean> {
     console.log(`  [Skip] Nur ${total} Events (< ${MIN_EVENTS_THRESHOLD}) — wird neu gescrapt`)
     return false
   }
+  if (refreshStale && total > 0 && total < TARGET_EVENTS && newest) {
+    const ageHours = (Date.now() - new Date(newest).getTime()) / 3_600_000
+    if (ageHours > REFRESH_AFTER_HOURS) {
+      console.log(`  [Refresh] ${total} Events, Stand ${Math.round(ageHours)}h alt — wird neu gescrapt`)
+      return false
+    }
+  }
   return total > 0
 }
 
+
+// Snapshot-Feldnamen dürfen keine Bindestriche enthalten
+const SOURCE_STAT_FIELD: Partial<Record<RawEvent['source'], string>> = {
+  residentadvisor: 'ra',
+  'stgallen-venues': 'stgallenVenues',
+  'basel-venues': 'baselVenues',
+}
+
+// Scraper-Gesundheit pro Stadt über alle Tage dieses Runs — landet im Telegram-Report,
+// damit ein still kaputter Scraper (Fehler oder dauerhaft 0 Events) sofort auffällt.
+// residentadvisor liefert unter der Woche regulär 0 Events.
+const ZERO_OK_SCRAPERS = new Set(['scrapeResidentAdvisor'])
+const scraperHealth = new Map<string, Map<string, { events: number; runs: number; error?: string }>>()
+
+function recordScraper(city: string, name: string, events: number, error?: string) {
+  if (!scraperHealth.has(city)) scraperHealth.set(city, new Map())
+  const h = scraperHealth.get(city)!.get(name) ?? { events: 0, runs: 0 }
+  h.events += events
+  h.runs++
+  if (error) h.error = error
+  scraperHealth.get(city)!.set(name, h)
+}
+
+export function scraperIssues(city: string): string[] {
+  const issues: string[] = []
+  for (const [name, h] of scraperHealth.get(city) ?? []) {
+    const label = name.replace(/^scrape/, '')
+    if (h.error) issues.push(`${label}: ${h.error}`)
+    else if (h.events === 0 && !ZERO_OK_SCRAPERS.has(name)) issues.push(`${label}: 0 Events in ${h.runs} Tag(en)`)
+  }
+  return issues
+}
 
 // Retry once (after 60s) if all scrapers return empty — covers transient API failures.
 // Re-checks hasEventsForDate before the retry so a concurrent run that already
@@ -384,9 +427,12 @@ async function runScrapers(
     const raw: RawEvent[] = []
     for (let i = 0; i < results.length; i++) {
       const r = results[i]
-      if (r.status === 'fulfilled') raw.push(...r.value)
-      else {
+      if (r.status === 'fulfilled') {
+        raw.push(...r.value)
+        recordScraper(city, scrapers[i].name, r.value.length)
+      } else {
         console.error(`  Scraper Fehler (${scrapers[i].name}):`, r.reason)
+        recordScraper(city, scrapers[i].name, 0, String(r.reason instanceof Error ? r.reason.message : r.reason).slice(0, 120))
         scraperErrors++
       }
     }
@@ -411,7 +457,7 @@ async function writeToSanity(
   city: string,
   curatedIds: Set<string>,
   rainReserveIds: Set<string> = new Set(),
-) {
+): Promise<boolean> {
   const client = getSanityWriteClient()
 
   // Delete stale docs for this city+date
@@ -419,6 +465,11 @@ async function writeToSanity(
     `*[_type == "event" && city == $city && date == $date]._id`,
     { city, date }
   )
+  // Refresh darf einen Tag nie verschlechtern (z.B. wenn eine Quelle gerade ausfällt)
+  if (existingIds.length >= MIN_EVENTS_THRESHOLD && events.length < existingIds.length) {
+    console.log(`  [Sanity] Neuer Stand (${events.length}) kleiner als bestehender (${existingIds.length}) — behalte bestehende Events`)
+    return false
+  }
   if (existingIds.length > 0) {
     const del = client.transaction()
     for (const id of existingIds) del.delete(id)
@@ -473,6 +524,7 @@ async function writeToSanity(
     }
     if (spotifyCount > 0) console.log(`  [Spotify] ${spotifyCount} Artist-Links eingetragen`)
   }
+  return true
 }
 
 // ─── Two-Layer Pipeline (Zürich) ──────────────────────────────────────────────
@@ -489,7 +541,7 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
     const label = ['Heute', 'Morgen', 'Übermorgen'][offset]
     console.log(`\n  ── ${label} (${date}) ──`)
 
-    if (await hasEventsForDate(city, date)) {
+    if (await hasEventsForDate(city, date, offset < 2)) {
       console.log('  [Skip] Bereits kuratiert — übersprungen')
       result.skipped[offset] = true
       continue
@@ -631,7 +683,10 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
       }
     }
 
-    await writeToSanity(final, date, city, curatedIds, rainReserveIds)
+    if (!await writeToSanity(final, date, city, curatedIds, rainReserveIds)) {
+      result.skipped[offset] = true
+      continue
+    }
     result.counts[offset] = final.length
 
     // ── Stats
@@ -639,9 +694,9 @@ async function runTwoLayer(city: string, scrapers: ScraperFn[]): Promise<CityRes
     for (const e of final) {
       if (e.location) venueCounts[e.location] = (venueCounts[e.location] || 0) + 1
     }
-    const sourceCounts = { eventfrog: 0, hellozurich: 0, gangus: 0, ra: 0 }
+    const sourceCounts = { eventfrog: 0, hellozurich: 0, gangus: 0, ra: 0, saiten: 0, coucou: 0, stgallenVenues: 0, baselVenues: 0 }
     for (const e of raw) {
-      const src = e.source === 'residentadvisor' ? 'ra' : e.source
+      const src = SOURCE_STAT_FIELD[e.source] ?? e.source
       if (src && src in sourceCounts) sourceCounts[src as keyof typeof sourceCounts]++
     }
     const typeCounts: Record<string, number> = {}
@@ -700,7 +755,7 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]): Promise<City
     const label = ['Heute', 'Morgen', 'Übermorgen'][offset]
     console.log(`\n  ── ${label} (${date}) ──`)
 
-    if (await hasEventsForDate(city, date)) {
+    if (await hasEventsForDate(city, date, offset < 2)) {
       console.log('  [Skip] Bereits kuratiert — übersprungen')
       result.skipped[offset] = true
       continue
@@ -777,7 +832,10 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]): Promise<City
       }
 
       const locationLimited = enforceLocationLimit(unique)
-      await writeToSanity(locationLimited, date, city, curatedNames, rainReserveIds)
+      if (!await writeToSanity(locationLimited, date, city, curatedNames, rainReserveIds)) {
+        result.skipped[offset] = true
+        continue
+      }
       result.counts[offset] = locationLimited.length
 
       // ── Stats
@@ -785,9 +843,9 @@ async function runSingleLayer(city: string, scrapers: ScraperFn[]): Promise<City
       for (const e of locationLimited) {
         if (e.location) venueCounts[e.location] = (venueCounts[e.location] || 0) + 1
       }
-      const sourceCounts = { eventfrog: 0, hellozurich: 0, gangus: 0, ra: 0 }
+      const sourceCounts = { eventfrog: 0, hellozurich: 0, gangus: 0, ra: 0, saiten: 0, coucou: 0, stgallenVenues: 0, baselVenues: 0 }
       for (const e of raw) {
-        const src = e.source === 'residentadvisor' ? 'ra' : e.source
+        const src = SOURCE_STAT_FIELD[e.source] ?? e.source
       if (src && src in sourceCounts) sourceCounts[src as keyof typeof sourceCounts]++
       }
       const typeCounts: Record<string, number> = {}
@@ -903,6 +961,7 @@ async function _runPipeline(start: number) {
       const result = config.twoLayer
         ? await runTwoLayer(city, config.scrapers)
         : await runSingleLayer(city, config.scrapers)
+      result.errors.push(...scraperIssues(city))
       cityResults.push(result)
     } catch (err) {
       console.error(`[FEHLER] Pipeline für ${city} abgebrochen:`, err)

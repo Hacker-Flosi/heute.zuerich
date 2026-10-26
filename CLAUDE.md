@@ -164,7 +164,15 @@ npm run seed-venues   # Venues in Sanity seeden (einmalig)
 ```
 
 ### Skip-Logik (Ressourcen-Optimierung)
-Jeder Run verarbeitet Heute/Morgen/Übermorgen, überspringt aber Daten die bereits Events haben. Im Normalfall verarbeitet jeder Run nur **1 neuen Tag** pro Stadt = **3 Eventfrog-Calls total**, kein Rate-Limiting.
+Jeder Run verarbeitet Heute/Morgen/Übermorgen, überspringt aber Daten die bereits genug Events haben:
+- Unter 10 Events → immer neu scrapen
+- Heute/Morgen mit weniger als 30 Events und Stand älter als 20h → nochmals scrapen (viele Quellen füllen sich erst kurzfristig)
+- Ein Refresh überschreibt nie mit weniger Events als vorher (`writeToSanity` behält dann den alten Stand)
+
+### Schutz gegen stille Ausfälle
+- **Telegram-Report** listet pro Stadt jeden Scraper mit Fehler oder 0 Events im ganzen Run (`scraperIssues` in pipeline.ts; RA ausgenommen)
+- **Watchdog** in `/api/cron/pipeline` (Vercel, täglich): aktiviert den GitHub-Workflow neu (GitHub deaktiviert ihn nach 60 Tagen ohne Commit), warnt wenn für morgen in einer Stadt keine Events existieren und wenn `GITHUB_TOKEN` in ≤14 Tagen abläuft
+- **Snapshot** zählt alle Quellen einzeln (`sources.*`)
 
 ### Venue Matching (Layer 1)
 ```
@@ -189,6 +197,8 @@ Pass 2: Token-Overlap — min. 4 Zeichen, VENUE_STOPWORDS ausgeschlossen
 ## Scraper-Details
 
 ### Eventfrog (`scripts/scrapers/eventfrog.ts`)
+- Serverseitig gefiltert: `from`/`to` (Datum) + `lat`/`lng`/`r` (Stadtzentrum, Radius km) — `eventfrogFor(city)` in CITY_CONFIG
+- Ohne Filter liefert die API ~2'500 Events/Tag für die ganze Schweiz → nie wieder ungefiltert blättern
 - npm Package `eventfrog-api` — enthält einen Prototype-Patch für Node.js
 - Das Package nutzt protocol-relative URLs (`//api.eventfrog.net`), die Node.js ablehnt
 - Patch überschreibt `_get` auf dem Prototype um `https://` zu erzwingen
@@ -211,8 +221,12 @@ Pass 2: Token-Overlap — min. 4 Zeichen, VENUE_STOPWORDS ausgeschlossen
 - Kulturkalender (Museen, Theater, Konzerte) — kein Nightlife
 - Dient als Discovery-Pool für Layer 2
 
-### Nicht mehr verwendet
-- ~~saiten.ch~~ — gibt 250 identische Dauerausstellungen jeden Tag zurück, nutzlos für tagesgenaue Events
+### Saiten (`scripts/scrapers/saiten.ts`)
+- `api/calendar-list.json?mode=events&days=YYYYMMDD` filtert auf einen Tag (~7 Seiten à 50)
+- Seite 1 nicht erreichbar → Fehler statt still 0 Events
+
+### denkmal.org (in `basel-venues.ts`)
+- Seit Redesign Sept. 2026: Selektoren über `data-testid` (event-list-item, event-venue, event-description), nicht über CSS-Klassen
 
 ---
 
@@ -313,8 +327,8 @@ Mobile: vertikal gestapelt, kein border-top, `padding-bottom: 3rem`
 1. **Kein AI-Branding im UI** — "AI-kuratiert" darf nirgendwo erscheinen
 2. **city-Feld Pflicht** — jedes Sanity-Event/Venue braucht `city`
 3. **GROQ immer mit city filtern** — `*[_type == "event" && city == $city && ...]`
-4. **Basel + Bern nicht in CITY_CONFIG** bis sie aktiv gehen
-5. **saiten.ch nicht verwenden** — Dauerausstellungen, tagesunspezifisch
+4. **Bern nicht in CITY_CONFIG** bis es aktiv geht
+5. **Scraper ohne Fehler-Signal vermeiden** — wenn eine Quelle nicht erreichbar ist, werfen statt `[]` zurückgeben, sonst erscheint der Ausfall nicht im Telegram-Report
 6. **curate.ts JSON-Parse** — immer via Regex `match(/\{[\s\S]*\}/)` extrahieren, nie direkt `JSON.parse()` auf Claude-Output
 
 ---

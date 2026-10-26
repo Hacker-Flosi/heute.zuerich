@@ -17,6 +17,11 @@ export interface PipelineReport {
   errors: string[]
 }
 
+// Nachrichten gehen mit parse_mode HTML raus — Fehlertexte können < oder & enthalten
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
 function cityLabel(slug: string): string {
   return { zuerich: 'Zürich', stgallen: 'St.Gallen', luzern: 'Luzern', winterthur: 'Winterthur', basel: 'Basel' }[slug] ?? slug
 }
@@ -33,15 +38,12 @@ function buildMessage(report: PipelineReport, date: string): string {
     const [heute, morgen, dayafter] = city.counts
     const [s0, s1, s2] = city.skipped
 
-    if (city.errors.length > 0) {
-      lines.push(`⚠️ ${label}`)
-      for (const err of city.errors) lines.push(`   ${err}`)
-    } else {
-      const todayStr = s0 ? `heute: –` : `heute: ${heute}`
-      const morgenStr = s1 ? `morgen: –` : `morgen: ${morgen}`
-      const dayafterStr = s2 ? `übermorgen: –` : `übermorgen: ${dayafter}`
-      lines.push(`${label}   ${todayStr} | ${morgenStr} | ${dayafterStr}`)
-    }
+    const todayStr = s0 ? `heute: –` : `heute: ${heute}`
+    const morgenStr = s1 ? `morgen: –` : `morgen: ${morgen}`
+    const dayafterStr = s2 ? `übermorgen: –` : `übermorgen: ${dayafter}`
+    const icon = city.errors.length > 0 ? '⚠️ ' : ''
+    lines.push(`${icon}${label}   ${todayStr} | ${morgenStr} | ${dayafterStr}`)
+    for (const err of city.errors) lines.push(`   ${escapeHtml(err)}`)
   }
 
   lines.push('')
@@ -57,7 +59,7 @@ function buildMessage(report: PipelineReport, date: string): string {
   if (report.errors.length > 0) {
     lines.push('')
     lines.push('Fehler:')
-    for (const err of report.errors) lines.push(`  • ${err}`)
+    for (const err of report.errors) lines.push(`  • ${escapeHtml(err)}`)
   }
 
   lines.push(`\n⏱ ${report.durationSeconds.toFixed(1)}s`)
@@ -129,6 +131,25 @@ export async function sendCrashAlert(context: string, err: unknown): Promise<voi
       body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
     })
   } catch { /* noop — nichts mehr zu tun */ }
+}
+
+/** Warnung ohne Absturz (z.B. vom täglichen Watchdog) — eine Zeile pro Problem. */
+export async function sendWarning(title: string, problems: string[]): Promise<void> {
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  const chatId = process.env.TELEGRAM_CHAT_ID
+  if (!token || !chatId || problems.length === 0) return
+
+  const text = `🟠 <b>waslauft.in — ${escapeHtml(title)}</b>\n\n${problems.map((p) => `• ${escapeHtml(p)}`).join('\n')}`
+
+  try {
+    await fetch(`${TELEGRAM_API}/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+    })
+  } catch (err) {
+    console.error('  [Telegram] Fehler beim Senden der Warnung:', err)
+  }
 }
 
 export async function sendTelegramNotification(report: PipelineReport): Promise<void> {

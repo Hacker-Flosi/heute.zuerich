@@ -238,8 +238,10 @@ async function scrapeHirscheneck(date: string): Promise<RawEvent[]> {
 
 // ─── Denkmal.org Basel ────────────────────────────────────────────────────────
 // denkmal.org/de/basel/{date} — Nuxt SSR, vollständiges Event-HTML im Body
-// Struktur: li.DayEvents-list-item → a.Event[href] + span.text-overflow-ellipsis (Venue)
-//           + time[datetime] (ISO-Zeit) + div.Event-description (Titel)
+// Struktur (Redesign Sept. 2026): [data-testid=event-list-item] → a[href]
+//   + [data-testid=event-venue] (Venue) + span[aria-hidden] ("22h" / "19:30h")
+//   + [data-testid=event-description] (Titel, danach Genre-Spans)
+// data-testid statt CSS-Klassen, weil die Klassen jetzt Tailwind-Utilities sind
 
 async function scrapeDenkmal(date: string): Promise<RawEvent[]> {
   const html = await fetchHtml(`https://denkmal.org/de/basel/${date}`)
@@ -251,22 +253,21 @@ async function scrapeDenkmal(date: string): Promise<RawEvent[]> {
   const $ = cheerio.load(html)
   const results: RawEvent[] = []
 
-  $('li.DayEvents-list-item').each((_, el) => {
-    const link = $(el).find('a.Event').first()
+  $('[data-testid="event-list-item"]').each((_, el) => {
+    const link = $(el).find('a[href]').first()
     const href = link.attr('href')
     if (!href) return
 
     const url = `https://denkmal.org${href}`
 
-    // ISO time from datetime attribute: "2026-04-26T17:00:00+02:00"
-    const datetime = link.find('time').first().attr('datetime') ?? ''
-    const timeMatch = datetime.match(/T(\d{2}:\d{2})/)
-    const time = timeMatch ? timeMatch[1] : '22:00'
+    const timeText = link.find('span[aria-hidden="true"]').first().text().trim()
+    const timeMatch = timeText.match(/^(\d{1,2})(?:[:.](\d{2}))?h/)
+    const time = timeMatch ? `${timeMatch[1].padStart(2, '0')}:${timeMatch[2] ?? '00'}` : '22:00'
 
-    const venue = link.find('span.text-overflow-ellipsis').first().text().trim()
+    const venue = link.find('[data-testid="event-venue"]').first().text().trim()
 
-    // Title is the first text node of Event-description (before the Genres span)
-    const descEl = link.find('div.Event-description').first()
+    // Title is the text before the Genres span
+    const descEl = link.find('[data-testid="event-description"]').first()
     const titleRaw = descEl.clone().children().remove().end().text().replace(/\s+/g, ' ').trim()
     // Strip trailing period added by denkmal
     const name = titleRaw.replace(/\.$/, '').trim()

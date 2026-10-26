@@ -39,6 +39,10 @@ export default defineType({
         defineField({ name: 'hellozurich', type: 'number', title: 'hellozurich' }),
         defineField({ name: 'gangus',      type: 'number', title: 'Gangus' }),
         defineField({ name: 'ra',          type: 'number', title: 'Resident Advisor' }),
+        defineField({ name: 'saiten',      type: 'number', title: 'Saiten' }),
+        defineField({ name: 'coucou',      type: 'number', title: 'Coucou' }),
+        defineField({ name: 'stgallenVenues', type: 'number', title: 'St. Gallen Venues' }),
+        defineField({ name: 'baselVenues', type: 'number', title: 'Basel Venues (inkl. denkmal.org)' }),
       ],
     }),
 
